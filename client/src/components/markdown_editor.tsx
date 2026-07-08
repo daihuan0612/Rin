@@ -322,6 +322,29 @@ export function MarkdownEditor({ content, setContent, placeholder = "> Write you
     );
   };
 
+  const formatIndent = () => {
+    const editorInstance = editorRef.current;
+    if (!editorInstance) return;
+    const selection = editorInstance.getSelection();
+    if (!selection) return;
+    const model = editorInstance.getModel();
+    if (!model) return;
+    const lineContent = model.getLineContent(selection.startLineNumber);
+    const indent = "\u3000\u3000";
+    if (lineContent.startsWith(indent)) {
+      replaceSelection(
+        new Selection(selection.startLineNumber, 1, selection.startLineNumber, 3),
+        "",
+      );
+    } else {
+      const pos = { lineNumber: selection.startLineNumber, column: 1 };
+      replaceSelection(
+        new Selection(pos.lineNumber, pos.column, pos.lineNumber, pos.column),
+        indent,
+      );
+    }
+  };
+
   const formatQuote = () => {
     formatSelectedLines(
       (line) => line.startsWith("> ") ? line : `> ${line}`,
@@ -345,6 +368,7 @@ export function MarkdownEditor({ content, setContent, placeholder = "> Write you
 
   const markdownActions = [
     { key: "heading", icon: "ri-heading", label: t("markdown_editor.toolbar.heading"), onClick: formatHeading },
+    { key: "indent", icon: "ri-indent-increase", label: t("markdown_editor.toolbar.indent"), onClick: formatIndent },
     { key: "bold", icon: "ri-bold", label: t("markdown_editor.toolbar.bold"), onClick: () => wrapSelection("**", "**", t("markdown_editor.placeholder.bold")) },
     { key: "italic", icon: "ri-italic", label: t("markdown_editor.toolbar.italic"), onClick: () => wrapSelection("*", "*", t("markdown_editor.placeholder.italic")) },
     { key: "link", icon: "ri-link", label: t("markdown_editor.toolbar.link"), onClick: insertLink },
