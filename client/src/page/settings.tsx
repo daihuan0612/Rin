@@ -572,6 +572,14 @@ export function Settings() {
 
           <ItemTitle title={t("settings.friend.title")} />
           <ItemSwitch
+            title={t("settings.friend.page.title")}
+            description={t("settings.friend.page.desc")}
+            checked={Boolean(clientConfig.get("friend_page_enable"))}
+            onChange={(checked) => {
+              setConfigValue("client", "friend_page_enable", checked);
+            }}
+          />
+          <ItemSwitch
             title={t("settings.friend.apply.title")}
             description={t("settings.friend.apply.desc")}
             checked={Boolean(clientConfig.get("friend_apply_enable"))}
