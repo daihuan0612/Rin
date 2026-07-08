@@ -33,6 +33,7 @@ import type {
   AuthStatus,
   LoginRequest,
   LoginResponse,
+  CommentAdminListResponse,
 } from "@rin/api";
 
 export interface SettingsConfigResponse {

@@ -46,7 +46,7 @@ export function SettingsCardHeader({
   badge,
 }: {
   title: string;
-  description: string;
+  description: ReactNode;
   badge?: ReactNode;
 }) {
   return (
@@ -55,7 +55,7 @@ export function SettingsCardHeader({
         <p className="text-base font-semibold tracking-[-0.02em] t-primary">{title}</p>
         {badge}
       </div>
-      <p className="mt-1 max-w-2xl text-sm leading-6 text-neutral-500 dark:text-neutral-400">{description}</p>
+      <div className="mt-1 max-w-2xl text-sm leading-6 text-neutral-500 dark:text-neutral-400">{description}</div>
     </div>
   );
 }
