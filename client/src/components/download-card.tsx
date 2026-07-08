@@ -13,7 +13,6 @@ export function DownloadCard({ url, filename, password }: DownloadCardProps) {
   const [unlocked, setUnlocked] = useState(!password);
   const [error, setError] = useState(false);
   const displayName = filename || url.split("/").pop() || t("download.default_filename");
-  const fileSize = "";
 
   const handleUnlock = () => {
     if (!password) return;
@@ -25,7 +24,7 @@ export function DownloadCard({ url, filename, password }: DownloadCardProps) {
       } else {
         setError(true);
       }
-    } catch {
+    } catch (_e) {
       setError(true);
     }
   };
@@ -52,9 +51,6 @@ export function DownloadCard({ url, filename, password }: DownloadCardProps) {
         </div>
         <div className="flex-grow min-w-0">
           <div className="font-medium t-primary truncate">{displayName}</div>
-          {fileSize && (
-            <div className="text-sm text-neutral-500 mt-0.5">{fileSize}</div>
-          )}
         </div>
         {unlocked ? (
           <button
