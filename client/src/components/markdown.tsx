@@ -430,10 +430,10 @@ export function Markdown({ content }: { content: string }) {
         },
         video({ node, children, ...props }) {
           return (
-            <div className="my-4 w-full overflow-hidden rounded-xl">
+            <div className="my-4 w-full overflow-hidden rounded-xl flex justify-center bg-black/5">
               <video
                 {...props}
-                className="w-full h-auto block"
+                className="max-h-[70vh] w-auto h-auto block"
                 controls
                 preload="metadata"
               >
