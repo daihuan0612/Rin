@@ -345,6 +345,30 @@ export function MarkdownEditor({ content, setContent, placeholder = "> Write you
     }
   };
 
+  const formatNovel = () => {
+    const editorInstance = editorRef.current;
+    if (!editorInstance) return;
+    const model = editorInstance.getModel();
+    if (!model) return;
+    const fullText = model.getValue();
+    const lines = fullText.split("\n");
+    const chapterRegex = /^\s*绗琜涓€浜屼笁鍥涗簲鍏竷鍏節鍗佺櫨鍗冧竾0-9]+[鍥炵珷鑺傞儴鍗穄\s*/;
+    const indent = "\u3000\u3000";
+    const result = lines.map((line) => {
+      const trimmed = line.trim();
+      if (!trimmed) return line;
+      if (chapterRegex.test(trimmed)) {
+        const clean = trimmed.replace(/^#+\s*/, "");
+        return clean.startsWith("#") ? `## ${clean}` : `## ${clean}`;
+      }
+      if (line.startsWith(indent) || line.startsWith("#") || line.startsWith(">") || line.startsWith("```") || line.startsWith("- ") || line.startsWith("* ") || line.match(/^\d+\.\s/)) return line;
+      return indent + line;
+    });
+    const newText = result.join("\n");
+    model.setValue(newText);
+    setContent(newText);
+  };
+
   const formatQuote = () => {
     formatSelectedLines(
       (line) => line.startsWith("> ") ? line : `> ${line}`,
@@ -369,6 +393,7 @@ export function MarkdownEditor({ content, setContent, placeholder = "> Write you
   const markdownActions = [
     { key: "heading", icon: "ri-heading", label: t("markdown_editor.toolbar.heading"), onClick: formatHeading },
     { key: "indent", icon: "ri-indent-increase", label: t("markdown_editor.toolbar.indent"), onClick: formatIndent },
+    { key: "novel", icon: "ri-book-2-line", label: t("markdown_editor.toolbar.novel"), onClick: formatNovel },
     { key: "bold", icon: "ri-bold", label: t("markdown_editor.toolbar.bold"), onClick: () => wrapSelection("**", "**", t("markdown_editor.placeholder.bold")) },
     { key: "italic", icon: "ri-italic", label: t("markdown_editor.toolbar.italic"), onClick: () => wrapSelection("*", "*", t("markdown_editor.placeholder.italic")) },
     { key: "link", icon: "ri-link", label: t("markdown_editor.toolbar.link"), onClick: insertLink },
