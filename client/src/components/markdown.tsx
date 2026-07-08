@@ -445,9 +445,10 @@ export function Markdown({ content }: { content: string }) {
         div({ children, node: _node, ...props }) {
           const className = (props.className || "") as string;
           if (className.includes("rin-download-card")) {
-            const url = (props["data-url"] as string) || "";
-            const filename = (props["data-filename"] as string) || undefined;
-            const password = (props["data-password"] as string) || undefined;
+            const propsAny = props as Record<string, unknown>;
+            const url = (propsAny["data-url"] as string) || "";
+            const filename = (propsAny["data-filename"] as string) || undefined;
+            const password = (propsAny["data-password"] as string) || undefined;
             if (url) {
               return <DownloadCard url={url} filename={filename} password={password} />;
             }
