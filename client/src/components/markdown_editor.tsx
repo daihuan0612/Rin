@@ -3,10 +3,13 @@ import { editor, Range, Selection } from 'monaco-editor';
 import React, { useRef, useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import Loading from 'react-loading';
+import Modal from "react-modal";
 import { FlatInset, FlatTabButton } from "@rin/ui";
+import { Button } from "./button";
 import { useAlert } from "./dialog";
 import { useColorMode } from "../utils/darkModeUtils";
 import { buildMarkdownImage, uploadImageFile } from "../utils/image-upload";
+import { parseVideoUrl } from "../utils/video-embed";
 import { Markdown } from "./markdown";
 
 
@@ -72,6 +75,8 @@ export function MarkdownEditor({ content, setContent, placeholder = "> Write you
   const isComposingRef = useRef(false);
   const [preview, setPreview] = useState<'edit' | 'preview' | 'comparison'>('edit');
   const [uploading, setUploading] = useState(false);
+  const [videoModalOpen, setVideoModalOpen] = useState(false);
+  const [videoUrl, setVideoUrl] = useState("");
   const { showAlert, AlertUI } = useAlert();
 
   async function insertImage(
@@ -206,6 +211,30 @@ export function MarkdownEditor({ content, setContent, placeholder = "> Write you
     replaceSelection(editorState.selection, "\n---\n");
   };
 
+  const openVideoDialog = () => {
+    const editorState = getEditorAndSelection();
+    if (!editorState) return;
+    setVideoUrl("");
+    setVideoModalOpen(true);
+  };
+
+  const handleInsertVideo = () => {
+    const parsed = parseVideoUrl(videoUrl);
+    if (!parsed) {
+      showAlert(t("markdown_editor.video.invalid_url"));
+      return;
+    }
+    const editorState = getEditorAndSelection();
+    if (!editorState) {
+      setVideoModalOpen(false);
+      return;
+    }
+    const textToInsert = `\n${parsed.embedHtml}\n`;
+    replaceSelection(editorState.selection, textToInsert);
+    setVideoModalOpen(false);
+    setVideoUrl("");
+  };
+
   const formatSelectedLines = (
     formatter: (line: string, index: number) => string,
     emptyLineFallback: string,
@@ -280,6 +309,7 @@ export function MarkdownEditor({ content, setContent, placeholder = "> Write you
     { key: "italic", icon: "ri-italic", label: t("markdown_editor.toolbar.italic"), onClick: () => wrapSelection("*", "*", t("markdown_editor.placeholder.italic")) },
     { key: "link", icon: "ri-link", label: t("markdown_editor.toolbar.link"), onClick: insertLink },
     { key: "image", icon: "ri-image-line", label: t("markdown_editor.toolbar.image"), onClick: insertMarkdownImage },
+    { key: "video", icon: "ri-video-line", label: t("markdown_editor.toolbar.insert_video"), onClick: openVideoDialog },
     { key: "quote", icon: "ri-double-quotes-l", label: t("markdown_editor.toolbar.quote"), onClick: formatQuote },
     { key: "unordered-list", icon: "ri-list-unordered", label: t("markdown_editor.toolbar.unordered_list"), onClick: formatUnorderedList },
     { key: "ordered-list", icon: "ri-list-ordered", label: t("markdown_editor.toolbar.ordered_list"), onClick: formatOrderedList },
@@ -486,6 +516,62 @@ export function MarkdownEditor({ content, setContent, placeholder = "> Write you
         </div>
       </div>
       <AlertUI />
+      <Modal
+        isOpen={videoModalOpen}
+        shouldCloseOnOverlayClick={true}
+        shouldCloseOnEsc={true}
+        onRequestClose={() => setVideoModalOpen(false)}
+        style={{
+          content: {
+            top: '50%',
+            left: '50%',
+            right: 'auto',
+            bottom: 'auto',
+            marginRight: '-50%',
+            transform: 'translate(-50%, -50%)',
+            padding: '0',
+            border: 'none',
+            borderRadius: '16px',
+            display: 'flex',
+            flexDirection: 'column',
+            justifyContent: 'center',
+            alignItems: 'center',
+            background: 'transparent',
+            maxWidth: '40em',
+            width: '90%',
+          },
+          overlay: {
+            backgroundColor: 'rgba(0, 0, 0, 0.5)',
+            zIndex: 1000,
+          },
+        }}
+      >
+        <div className="flex flex-col items-start p-4 bg-w space-y-4 w-full min-w-56 sm:min-w-96">
+          <h1 className="text-2xl font-bold t-primary">
+            {t("markdown_editor.video.title")}
+          </h1>
+          <p className="text-sm text-neutral-500">
+            {t("markdown_editor.video.description")}
+          </p>
+          <input
+            type="text"
+            value={videoUrl}
+            onChange={(e) => setVideoUrl(e.target.value)}
+            placeholder={t("markdown_editor.video.placeholder")}
+            className="w-full px-3 py-2 rounded-lg border border-black/10 dark:border-white/10 bg-transparent t-primary focus:outline-none focus:ring-2 focus:ring-theme"
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                e.preventDefault();
+                handleInsertVideo();
+              }
+            }}
+          />
+          <div className="w-full flex flex-row items-center justify-end space-x-2 mt-2">
+            <Button secondary onClick={() => setVideoModalOpen(false)} title={t('cancel')} />
+            <Button onClick={handleInsertVideo} title={t('confirm')} />
+          </div>
+        </div>
+      </Modal>
     </div>
   );
 }

@@ -154,6 +154,7 @@
       "horizontal_rule": "分割线",
       "image": "图片链接",
       "inline_code": "行内代码",
+      "insert_video": "插入视频",
       "italic": "斜体",
       "label": "Markdown 工具栏",
       "link": "链接",
@@ -161,6 +162,12 @@
       "quote": "引用",
       "unordered_list": "无序列表",
       "upload_image": "上传图片"
+    },
+    "video": {
+      "title": "插入视频",
+      "description": "支持 B站、YouTube、Vimeo 以及 MP4/WebM 等直链/代理视频链接",
+      "placeholder": "请粘贴视频链接，例如 https://www.bilibili.com/video/BV1xx411c7mD",
+      "invalid_url": "无效的视频链接，请检查后重试"
     }
   },
   "error": {

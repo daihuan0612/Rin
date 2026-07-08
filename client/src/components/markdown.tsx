@@ -411,17 +411,33 @@ export function Markdown({ content }: { content: string }) {
         },
         iframe({ node, src, title, ...props }) {
           return (
-            <div className="my-4 w-full">
-              <iframe
+            <div className="my-4 w-full overflow-hidden rounded-xl">
+              <div className="relative w-full" style={{ paddingTop: "56.25%" }}>
+                <iframe
+                  {...props}
+                  src={src}
+                  title={title || "Embedded content"}
+                  className="absolute top-0 left-0 w-full h-full border-0"
+                  loading="lazy"
+                  referrerPolicy="no-referrer"
+                  sandbox="allow-scripts allow-same-origin allow-popups allow-forms"
+                  allowFullScreen
+                />
+              </div>
+            </div>
+          );
+        },
+        video({ node, children, ...props }) {
+          return (
+            <div className="my-4 w-full overflow-hidden rounded-xl">
+              <video
                 {...props}
-                src={src}
-                title={title || "Embedded content"}
-                className="w-full rounded-xl border border-black/10 dark:border-white/10"
-                style={{ minHeight: "400px" }}
-                loading="lazy"
-                referrerPolicy="no-referrer"
-                sandbox="allow-scripts allow-same-origin allow-popups allow-forms"
-              />
+                className="w-full h-auto block"
+                controls
+                preload="metadata"
+              >
+                {children}
+              </video>
             </div>
           );
         },

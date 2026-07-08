@@ -154,6 +154,7 @@
       "horizontal_rule": "Horizontal rule",
       "image": "Image link",
       "inline_code": "Inline code",
+      "insert_video": "Insert video",
       "italic": "Italic",
       "label": "Markdown toolbar",
       "link": "Link",
@@ -161,6 +162,12 @@
       "quote": "Quote",
       "unordered_list": "Unordered list",
       "upload_image": "Upload image"
+    },
+    "video": {
+      "title": "Insert Video",
+      "description": "Supports Bilibili, YouTube, Vimeo, and MP4/WebM video links",
+      "placeholder": "Paste video link, e.g. https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+      "invalid_url": "Invalid video link, please check and try again"
     }
   },
   "error": {

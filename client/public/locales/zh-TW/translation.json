@@ -160,7 +160,14 @@
       "ordered_list": "有序列表",
       "quote": "引用",
       "unordered_list": "無序列表",
-      "upload_image": "上傳圖片"
+      "upload_image": "上傳圖片",
+      "insert_video": "插入影片"
+    },
+    "video": {
+      "title": "插入影片",
+      "description": "支援 B站、YouTube、Vimeo 以及 MP4/WebM 影片連結",
+      "placeholder": "請貼上影片連結，例如 https://www.bilibili.com/video/BV1xx411c7mD",
+      "invalid_url": "無效的影片連結，請檢查後重試"
     }
   },
   "error": {
