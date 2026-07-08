@@ -298,6 +298,19 @@ export interface UploadResponse {
   url: string;
 }
 
+export interface StorageImageItem {
+  key: string;
+  fileName: string;
+  size: number;
+  uploaded: string;
+  url: string;
+}
+
+export interface StorageListResponse {
+  items: StorageImageItem[];
+  total: number;
+}
+
 // ============================================================================
 // Search Types
 // ============================================================================

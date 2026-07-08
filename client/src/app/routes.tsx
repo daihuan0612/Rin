@@ -20,6 +20,7 @@ import { FriendsPage } from "../page/friends";
 import { HealthPage } from "../page/health";
 import { HashtagPage } from "../page/hashtag";
 import { HashtagsPage } from "../page/hashtags";
+import { ImagesAdminPage } from "../page/images-admin";
 import { LoginPage } from "../page/login";
 import { MomentsPage } from "../page/moments";
 import { ProfilePage } from "../page/profile";
@@ -91,6 +92,10 @@ export function AppRoutes() {
 
       <AdminRoute path="/admin/comments" requirePermission title={t("comment.admin.title")} description={t("admin.comments_description")}>
         <CommentsAdminPage />
+      </AdminRoute>
+
+      <AdminRoute path="/admin/images" requirePermission title={t("images.admin.title")} description={t("admin.images_description")}>
+        <ImagesAdminPage />
       </AdminRoute>
 
       <AppRoute path="/callback">

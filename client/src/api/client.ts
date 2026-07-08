@@ -34,6 +34,7 @@ import type {
   LoginRequest,
   LoginResponse,
   CommentAdminListResponse,
+  StorageListResponse,
 } from "@rin/api";
 
 export interface SettingsConfigResponse {
@@ -586,6 +587,16 @@ class StorageAPI {
     if (key) formData.append("key", key);
     
     return this.http.post<UploadResponse>("/api/storage", formData);
+  }
+
+  // GET /api/storage/list
+  async list(): Promise<ApiResponse<StorageListResponse>> {
+    return this.http.get<StorageListResponse>("/api/storage/list");
+  }
+
+  // DELETE /api/storage/:key
+  async delete(key: string): Promise<ApiResponse<{ success: boolean }>> {
+    return this.http.delete<{ success: boolean }>(`/api/storage/${encodeURIComponent(key)}`);
   }
 }
 
