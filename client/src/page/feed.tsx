@@ -291,10 +291,15 @@ export function FeedPage({ id, TOC, clean }: { id: string, TOC: () => JSX.Elemen
                     </div>
                   )}
                   <div className="flex flex-row items-center">
-                    <img
-                      src={feed.user.avatar || "/avatar.png"}
-                      className="w-8 h-8 rounded-full"
-                    />
+                    {feed.user.avatar ? (
+                      <img
+                        src={feed.user.avatar}
+                        className="w-8 h-8 rounded-full object-cover"
+                        alt={feed.user.username}
+                      />
+                    ) : (
+                      <AvatarPlaceholder name={feed.user.username} size={32} />
+                    )}
                     <div className="ml-2">
                       <span className="text-gray-400 text-sm cursor-default">
                         {feed.user.username}
@@ -583,6 +588,37 @@ function Comments({ id }: { id: string }) {
   );
 }
 
+function getAvatarColor(name: string): string {
+  const colors = [
+    '#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4',
+    '#FFEAA7', '#DDA0DD', '#98D8C8', '#F7DC6F',
+    '#BB8FCE', '#85C1E9', '#F8B500', '#00CED1',
+  ];
+  let hash = 0;
+  for (let i = 0; i < name.length; i++) {
+    hash = name.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  return colors[Math.abs(hash) % colors.length];
+}
+
+function AvatarPlaceholder({ name, size = 32 }: { name: string; size?: number }) {
+  const initial = name.charAt(0).toUpperCase();
+  const bgColor = getAvatarColor(name);
+  return (
+    <div
+      className="rounded-full flex items-center justify-center text-white font-bold flex-shrink-0"
+      style={{
+        width: size,
+        height: size,
+        backgroundColor: bgColor,
+        fontSize: size * 0.45,
+      }}
+    >
+      {initial}
+    </div>
+  );
+}
+
 function CommentItem({
   comment,
   onRefresh,
@@ -595,7 +631,8 @@ function CommentItem({
   const { t } = useTranslation();
   const profile = useContext(ProfileContext);
   const commenterName = comment.user?.username || comment.guestName || t("anonymous");
-  const commenterAvatar = comment.user?.avatar || "/avatar.png";
+  
+  const commenterAvatar = comment.user?.avatar || null;
   function deleteComment() {
     showConfirm(
       t("delete.comment.title"),
@@ -616,10 +653,17 @@ function CommentItem({
   }
   return (
     <div className="flex flex-row items-start rounded-xl mt-2">
-      <img
-        src={commenterAvatar}
-        className="w-8 h-8 rounded-full mt-4"
-      />
+      {commenterAvatar ? (
+        <img
+          src={commenterAvatar}
+          className="w-8 h-8 rounded-full mt-4 object-cover"
+          alt={commenterName}
+        />
+      ) : (
+        <div className="mt-4">
+          <AvatarPlaceholder name={commenterName} size={32} />
+        </div>
+      )}
       <div className="flex flex-col flex-1 w-0 ml-2 bg-w rounded-xl p-4">
         <div className="flex flex-row">
           <span className="t-primary text-base font-bold">
