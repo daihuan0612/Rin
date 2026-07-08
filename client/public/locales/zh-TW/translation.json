@@ -92,6 +92,14 @@
   "cancel": "取消",
   "clear": "清除",
   "close": "關閉",
+  "download": {
+    "button": "下載",
+    "default_filename": "檔案下載",
+    "password_placeholder": "請輸入提取碼",
+    "password_error": "密碼錯誤，請重試",
+    "unlock": "解鎖"
+  },
+  "optional": "可選",
   "comment": {
     "empty": "留言內容不能為空",
     "placeholder": {
@@ -161,13 +169,25 @@
       "quote": "引用",
       "unordered_list": "無序列表",
       "upload_image": "上傳圖片",
-      "insert_video": "插入影片"
+      "insert_video": "插入影片",
+      "insert_download": "插入下載"
     },
     "video": {
       "title": "插入影片",
       "description": "支援 B站、YouTube、Vimeo 以及 MP4/WebM 影片連結",
       "placeholder": "請貼上影片連結，例如 https://www.bilibili.com/video/BV1xx411c7mD",
       "invalid_url": "無效的影片連結，請檢查後重試"
+    },
+    "download": {
+      "title": "插入下載連結",
+      "description": "插入一個帶樣式的下載按鈕，可設定密碼保護",
+      "url_label": "下載連結",
+      "url_placeholder": "請輸入檔案下載連結，例如 https://example.com/file.zip",
+      "url_required": "請輸入下載連結",
+      "filename_label": "檔案名稱",
+      "filename_placeholder": "顯示的檔案名，留空則從連結自動取得",
+      "password_label": "提取密碼",
+      "password_placeholder": "設定密碼後需要輸入密碼才能下載，留空則不需要密碼"
     }
   },
   "error": {
@@ -364,6 +384,10 @@
       "title": "維護"
     },
     "friend": {
+      "page": {
+        "title": "顯示朋友們頁面",
+        "desc": "在導航欄顯示朋友們入口，關閉後訪問 /friends 仍可直接進入"
+      },
       "apply": {
         "desc": "允許其他用戶申請友情連結（需審核）",
         "title": "友情連結申請"
