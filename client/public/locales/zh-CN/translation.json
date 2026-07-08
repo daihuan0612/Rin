@@ -92,6 +92,7 @@
   "cancel": "取消",
   "clear": "清除",
   "close": "关闭",
+  "optional": "可选",
   "comment": {
     "empty": "评论内容不能为空",
     "placeholder": {
@@ -130,6 +131,13 @@
     "title": "删除"
   },
   "description": "描述",
+  "download": {
+    "button": "下载",
+    "default_filename": "文件下载",
+    "password_placeholder": "请输入提取码",
+    "password_error": "密码错误，请重试",
+    "unlock": "解锁"
+  },
   "draft": "草稿",
   "draft_bin": "草稿箱",
   "edit": "编辑",
@@ -155,6 +163,7 @@
       "image": "图片链接",
       "inline_code": "行内代码",
       "insert_video": "插入视频",
+      "insert_download": "插入下载",
       "italic": "斜体",
       "label": "Markdown 工具栏",
       "link": "链接",
@@ -168,6 +177,17 @@
       "description": "支持 B站、YouTube、Vimeo 以及 MP4/WebM 等直链/代理视频链接",
       "placeholder": "请粘贴视频链接，例如 https://www.bilibili.com/video/BV1xx411c7mD",
       "invalid_url": "无效的视频链接，请检查后重试"
+    },
+    "download": {
+      "title": "插入下载链接",
+      "description": "插入一个带样式的下载按钮，可设置密码保护",
+      "url_label": "下载链接",
+      "url_placeholder": "请输入文件下载链接，例如 https://example.com/file.zip",
+      "url_required": "请输入下载链接",
+      "filename_label": "文件名称",
+      "filename_placeholder": "显示的文件名，留空则从链接自动获取",
+      "password_label": "提取密码",
+      "password_placeholder": "设置密码后需要输入密码才能下载，留空则不需要密码"
     }
   },
   "error": {
@@ -364,6 +384,10 @@
       "title": "维护"
     },
     "friend": {
+      "page": {
+        "title": "显示朋友们页面",
+        "desc": "在导航栏显示朋友们入口，关闭后访问 /friends 仍可直接进入"
+      },
       "apply": {
         "desc": "允许其他用户申请友链（需审核）",
         "title": "友链申请"
