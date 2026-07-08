@@ -70,7 +70,7 @@ export function FeedsPage() {
     return (
         <>
             <Helmet>
-                <title>{`${siteConfig.name} - ${t('article.title')}`}</title>
+                <title>{siteConfig.name}</title>
                 <meta property="og:site_name" content={siteName} />
                 <meta property="og:title" content={t('article.title')} />
                 <meta property="og:image" content={siteConfig.avatar} />
