@@ -351,7 +351,9 @@ export function MarkdownEditor({ content, setContent, placeholder = "> Write you
     const model = editorInstance.getModel();
     if (!model) return;
     const fullText = model.getValue();
-    const lines = fullText.split("\n");
+    // Strip invisible Unicode characters (zero-width spaces, etc.)
+    const cleaned = fullText.replace(/[\u200B-\u200D\uFEFF\u00AD\u2060\u200E\u200F\u2028\u2029]/g, "");
+    const lines = cleaned.split("\n");
     const chapterRegex = /^\s*第\S+[回章节部卷]\s*/;
     const indent = "\u3000\u3000";
     const result = lines.map((line) => {
