@@ -182,7 +182,7 @@ describe('FaviconService', () => {
                     return new Response(null, { status: 200 });
                 }
 
-                if (url.endsWith('/images/favicon.webp')) {
+                if (url.includes('/images/favicon.')) {
                     return new Response('missing', { status: 404 });
                 }
 

@@ -165,6 +165,17 @@ describe('CommentService', () => {
             }, env);
             expect(createRes.status).toBe(200);
 
+            // Approve the guest comment as admin first
+            const approveRes = await app.request('/admin/approve/4', {
+                method: 'POST',
+                headers: {
+                    'Authorization': 'Bearer mock_token_3',
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ approved: 1 }),
+            }, env);
+            expect(approveRes.status).toBe(200);
+
             const res = await app.request('/1', { method: 'GET' }, env);
             expect(res.status).toBe(200);
             const data = await res.json() as any[];
