@@ -109,7 +109,7 @@ export function parseVideoUrl(input: string): ParsedVideo | null {
       url,
       embedHtml: buildVideoTag(url),
     };
-  } catch {
+  } catch (_e) {
     if (/\.(mp4|webm|ogg|mov|m4v)(\?.*)?$/i.test(url)) {
       return {
         platform: "mp4",
