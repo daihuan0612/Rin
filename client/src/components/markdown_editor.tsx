@@ -352,7 +352,7 @@ export function MarkdownEditor({ content, setContent, placeholder = "> Write you
     if (!model) return;
     const fullText = model.getValue();
     const lines = fullText.split("\n");
-    const chapterRegex = /^\s*绗琜涓€浜屼笁鍥涗簲鍏竷鍏節鍗佺櫨鍗冧竾0-9]+[鍥炵珷鑺傞儴鍗穄\s*/;
+    const chapterRegex = /^\s*绗琝S+[鍥炵珷鑺傞儴鍗穄\s*/;
     const indent = "\u3000\u3000";
     const result = lines.map((line) => {
       const trimmed = line.trim();
