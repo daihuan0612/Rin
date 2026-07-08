@@ -352,12 +352,12 @@ export function MarkdownEditor({ content, setContent, placeholder = "> Write you
     if (!model) return;
     const fullText = model.getValue();
     const lines = fullText.split("\n");
-    const chapterRegex = /^\s*绗琝S+[鍥炵珷鑺傞儴鍗穄\s*/;
+    const chapterRegex = /^\s*第\S+[回章节部卷]\s*/;
     const indent = "\u3000\u3000";
     const result = lines.map((line) => {
       const trimmed = line.trim();
       if (!trimmed) return line;
-      // Fix headings without space after # (e.g. #绗竴闆?-> # 绗竴闆?
+      // Fix headings without space after # (e.g. #第一集 -> # 第一集)
       const fixedLine = line.replace(/^(#+)(\S)/, "$1 $2");
       const fixedTrimmed = fixedLine.trim();
       if (chapterRegex.test(fixedTrimmed)) {
