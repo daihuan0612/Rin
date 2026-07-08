@@ -10,7 +10,7 @@ export function ErrorPage({error}: {error?: string}) {
     return (
         <>
             <Helmet>
-                <title>{`${t('error.title')} - ${siteConfig.name}`}</title>
+                <title>{siteConfig.name}</title>
                 <meta property="og:site_name" content={siteName} />
                 <meta property="og:title" content={t('error.title')} />
                 <meta property="og:image" content={siteConfig.avatar} />
