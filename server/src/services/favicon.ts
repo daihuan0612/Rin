@@ -12,8 +12,8 @@ export const FAVICON_ALLOWED_TYPES: { [key: string]: string } = {
     "image/webp": ".webp",
 };
 
-export function getFaviconKey(env: Env) {
-    return path_join(env.S3_FOLDER || "", "favicon.webp");
+export function getFaviconKey(env: Env, ext: string = ".webp") {
+    return path_join(env.S3_FOLDER || "", `favicon${ext}`);
 }
 
 async function buildFaviconFromSource(c: AppContext, sourceUrl: string, faviconKey: string) {
@@ -62,34 +62,36 @@ export function FaviconService(): Hono {
     app.get("/", async (c: AppContext) => {
         const env = c.get('env');
         const clientConfig = c.get('clientConfig');
-        const faviconKey = getFaviconKey(env);
         
         try {
-            const response = await profileAsync(c, 'favicon_fetch', () => getStorageObject(env, faviconKey));
+            for (const [mimeType, ext] of Object.entries(FAVICON_ALLOWED_TYPES)) {
+                const faviconKey = getFaviconKey(env, ext);
+                const response = await profileAsync(c, 'favicon_fetch', () => getStorageObject(env, faviconKey));
 
-            if (!response) {
-                const avatar = await profileAsync(c, 'favicon_avatar', () => clientConfig.get("site.avatar")) as string | undefined;
-                if (!avatar) {
-                    c.status(404);
-                    return c.text("Favicon not found");
+                if (response) {
+                    c.header("Content-Type", response.headers.get("Content-Type") || mimeType);
+                    c.header("Cache-Control", "public, max-age=31536000");
+                    return c.body(await profileAsync(c, 'favicon_body', () => response.arrayBuffer()));
                 }
-
-                const avatarUrl = new URL(avatar, c.req.url).toString();
-                const generatedFavicon = await profileAsync(c, 'favicon_generate', () => buildFaviconFromSource(c, avatarUrl, faviconKey));
-                if (!generatedFavicon.ok) {
-                    c.status(generatedFavicon.status as 200 | 400 | 401 | 403 | 404 | 500);
-                    return c.text(await generatedFavicon.text());
-                }
-
-                c.header("Content-Type", generatedFavicon.headers.get("Content-Type") || "image/webp");
-                c.header("Cache-Control", generatedFavicon.headers.get("Cache-Control") || "public, max-age=31536000");
-                return c.body(await profileAsync(c, 'favicon_generate_body', () => generatedFavicon.arrayBuffer()));
             }
 
-            c.header("Content-Type", "image/webp");
-            c.header("Cache-Control", "public, max-age=31536000");
+            const avatar = await profileAsync(c, 'favicon_avatar', () => clientConfig.get("site.avatar")) as string | undefined;
+            if (!avatar) {
+                c.status(404);
+                return c.text("Favicon not found");
+            }
 
-            return c.body(await profileAsync(c, 'favicon_body', () => response.arrayBuffer()));
+            const avatarUrl = new URL(avatar, c.req.url).toString();
+            const defaultFaviconKey = getFaviconKey(env);
+            const generatedFavicon = await profileAsync(c, 'favicon_generate', () => buildFaviconFromSource(c, avatarUrl, defaultFaviconKey));
+            if (!generatedFavicon.ok) {
+                c.status(generatedFavicon.status as 200 | 400 | 401 | 403 | 404 | 500);
+                return c.text(await generatedFavicon.text());
+            }
+
+            c.header("Content-Type", generatedFavicon.headers.get("Content-Type") || "image/webp");
+            c.header("Cache-Control", generatedFavicon.headers.get("Cache-Control") || "public, max-age=31536000");
+            return c.body(await profileAsync(c, 'favicon_generate_body', () => generatedFavicon.arrayBuffer()));
         } catch (error) {
             if (error instanceof Error) {
                 c.status(500);
@@ -130,7 +132,6 @@ export function FaviconService(): Hono {
     app.post("/", async (c: AppContext) => {
         const env = c.get('env');
         const admin = c.get('admin');
-        const faviconKey = getFaviconKey(env);
         
         try {
             if (!admin) {
@@ -157,9 +158,10 @@ export function FaviconService(): Hono {
                 return c.text("Disallowed file type");
             }
             
+            const ext = FAVICON_ALLOWED_TYPES[file.type];
             const originFaviconKey = path_join(
                 env.S3_FOLDER || "",
-                `originFavicon${FAVICON_ALLOWED_TYPES[file.type]}`,
+                `originFavicon${ext}`,
             );
 
             await profileAsync(c, 'favicon_origin_put', () => putStorageObjectAtKey(
@@ -168,34 +170,14 @@ export function FaviconService(): Hono {
                 file
             ));
 
-            const originFaviconUrl = getStoragePublicUrl(env, originFaviconKey, new URL(c.req.url).origin);
-            const imageRequest = new Request(originFaviconUrl, {
-                headers: c.req.raw.headers,
-            });
-
-            const response = await profileAsync(c, 'favicon_transform_fetch', () => fetch(imageRequest, {
-                cf: {
-                    image: {
-                        width: 144,
-                        height: 144,
-                        fit: "cover",
-                        format: "webp",
-                        quality: 100,
-                    },
-                },
-            }));
-
-            if (!response.ok) {
-                c.status(response.status as 200 | 400 | 401 | 403 | 404 | 500);
-                return c.text(await response.text());
-            }
-
-            const arrayBuffer = await profileAsync(c, 'favicon_transform_body', () => response.arrayBuffer());
+            const faviconKey = getFaviconKey(env, ext);
+            const arrayBuffer = await file.arrayBuffer();
 
             await profileAsync(c, 'favicon_put', () => putStorageObjectAtKey(
                 env,
                 faviconKey,
-                new Uint8Array(arrayBuffer)
+                new Uint8Array(arrayBuffer),
+                file.type,
             ));
 
             return c.json({ url: getStoragePublicUrl(env, faviconKey, new URL(c.req.url).origin) });
