@@ -11,6 +11,7 @@ import { Tips, TipsPage } from "../components/tips";
 import useTableOfContents from "../hooks/useTableOfContents";
 import { useSiteConfig } from "../hooks/useSiteConfig";
 import { CallbackPage } from "../page/callback";
+import { CommentsAdminPage } from "../page/comments-admin";
 import { CompatTasksPage } from "../page/compat-tasks";
 import { ErrorPage } from "../page/error";
 import { FeedPage, TOCHeader } from "../page/feed";
@@ -86,6 +87,10 @@ export function AppRoutes() {
 
       <AdminRoute path="/admin/writing/:id" requirePermission title={t("writing")} description={t("admin.writing_description")}>
         {({ id }) => <WritingPage id={tryInt(0, id)} />}
+      </AdminRoute>
+
+      <AdminRoute path="/admin/comments" requirePermission title={t("comment.admin.title")} description={t("admin.comments_description")}>
+        <CommentsAdminPage />
       </AdminRoute>
 
       <AppRoute path="/callback">

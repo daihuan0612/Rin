@@ -362,6 +362,20 @@ class CommentAPI {
   async delete(id: number): Promise<ApiResponse<void>> {
     return this.http.delete<void>(`/api/comment/${id}`);
   }
+
+  // GET /api/comment/admin/list
+  async adminList(params: { page?: number; pageSize?: number; status?: string }): Promise<ApiResponse<CommentAdminListResponse>> {
+    const query = new URLSearchParams();
+    if (params.page) query.set("page", String(params.page));
+    if (params.pageSize) query.set("pageSize", String(params.pageSize));
+    if (params.status) query.set("status", params.status);
+    return this.http.get<CommentAdminListResponse>(`/api/comment/admin/list?${query.toString()}`);
+  }
+
+  // POST /api/comment/admin/approve/:id
+  async approve(id: number, approved: number): Promise<ApiResponse<void>> {
+    return this.http.post<void>(`/api/comment/admin/approve/${id}`, { approved });
+  }
 }
 
 /**

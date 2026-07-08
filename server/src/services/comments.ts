@@ -1,6 +1,6 @@
 import { Hono } from "hono";
 import type { AppContext } from "../core/hono-types";
-import { desc, eq } from "drizzle-orm";
+import { desc, eq, and, count, isNull } from "drizzle-orm";
 import { comments, feeds, users } from "../db/schema";
 import { profileAsync } from "../core/server-timing";
 import { notify } from "../utils/webhook";
@@ -9,12 +9,92 @@ import { resolveWebhookConfig } from "./config-helpers";
 export function CommentService(): Hono {
     const app = new Hono();
 
+    app.get('/admin/list', async (c: AppContext) => {
+        const db = c.get('db');
+        const admin = c.get('admin');
+        
+        if (!admin) {
+            return c.text('Permission denied', 403);
+        }
+
+        const page = parseInt(c.req.query('page') || '1');
+        const pageSize = parseInt(c.req.query('pageSize') || '20');
+        const status = c.req.query('status') || 'all';
+
+        let whereClause: any = undefined;
+        if (status === 'pending') {
+            whereClause = eq(comments.approved, 0);
+        } else if (status === 'approved') {
+            whereClause = eq(comments.approved, 1);
+        }
+
+        const totalResult = await profileAsync(c, 'comment_admin_count', () => 
+            db.select({ count: count() }).from(comments).where(whereClause)
+        );
+        const total = totalResult[0].count;
+
+        const list = await profileAsync(c, 'comment_admin_list', () => 
+            db.query.comments.findMany({
+                where: whereClause,
+                with: {
+                    user: {
+                        columns: { id: true, username: true, avatar: true, permission: true }
+                    },
+                    feed: {
+                        columns: { id: true, title: true }
+                    }
+                },
+                orderBy: [desc(comments.createdAt)],
+                limit: pageSize,
+                offset: (page - 1) * pageSize
+            })
+        );
+
+        const result = list.map((item: any) => ({
+            ...item,
+            user: item.user || null,
+            guestName: item.guestName || "",
+            guestEmail: item.guestEmail || "",
+            guestWebsite: item.guestWebsite || "",
+        }));
+
+        return c.json({
+            list: result,
+            total,
+            page,
+            pageSize
+        });
+    });
+
+    app.post('/admin/approve/:id', async (c: AppContext) => {
+        const db = c.get('db');
+        const admin = c.get('admin');
+        
+        if (!admin) {
+            return c.text('Permission denied', 403);
+        }
+
+        const id = parseInt(c.req.param('id'));
+        const { approved } = await c.req.json() as { approved: number };
+
+        await db.update(comments)
+            .set({ approved: approved || 0 })
+            .where(eq(comments.id, id));
+
+        return c.text('OK');
+    });
+
     app.get('/:feed', async (c: AppContext) => {
         const db = c.get('db');
+        const admin = c.get('admin');
         const feedId = parseInt(c.req.param('feed'));
+
+        const whereCondition = admin 
+            ? eq(comments.feedId, feedId)
+            : and(eq(comments.feedId, feedId), eq(comments.approved, 1));
         
         const comment_list = await profileAsync(c, 'comment_list_db', () => db.query.comments.findMany({
-            where: eq(comments.feedId, feedId),
+            where: whereCondition,
             columns: { feedId: false, userId: false },
             with: {
                 user: {
@@ -24,13 +104,10 @@ export function CommentService(): Hono {
             orderBy: [desc(comments.createdAt)]
         }));
         
-        // 将结果统一为前端兼容格式：登录用户用 user 字段，游客用 guestName 等
         const result = comment_list.map((c: any) => {
             if (c.user) {
-                // 登录用户的评论
                 return c;
             }
-            // 游客评论：去掉空的 user 字段，保留 guestName 等
             const { user, ...rest } = c;
             return {
                 ...rest,
@@ -114,7 +191,7 @@ export function CommentService(): Hono {
             guestName: guestName.trim(),
             guestEmail: guestEmail?.trim() || "",
             guestWebsite: guestWebsite?.trim() || "",
-            approved: 1,
+            approved: 0,
         });
 
         const { webhookUrl, webhookMethod, webhookContentType, webhookHeaders, webhookBodyTemplate } =

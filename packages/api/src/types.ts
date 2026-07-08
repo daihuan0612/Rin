@@ -180,6 +180,18 @@ export interface Comment {
   guestWebsite?: string;
   /** 审核状态 */
   approved: boolean;
+  /** 所属文章 */
+  feed?: {
+    id: number;
+    title: string;
+  } | null;
+}
+
+export interface CommentAdminListResponse {
+  list: Comment[];
+  total: number;
+  page: number;
+  pageSize: number;
 }
 
 export interface CreateCommentRequest {
