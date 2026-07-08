@@ -825,7 +825,10 @@
       "select_all": "全选",
       "deselect_all": "取消全选",
       "delete_selected": "删除选中 ({{count}})",
-      "retry": "重试"
+      "retry": "重试",
+      "copy_url": "复制链接",
+      "preview": "预览",
+      "copied": "已复制"
     }
   }
 }
