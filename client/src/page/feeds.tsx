@@ -94,7 +94,6 @@ export function FeedsPage() {
                                 </div>
                             }
                         </div>
-                    </div>
                     <Waiting for={status === 'idle'}>
                         <div className={feedListClass}>
                             {currentFeedData.map(({ id, ...feed }: any) => (
