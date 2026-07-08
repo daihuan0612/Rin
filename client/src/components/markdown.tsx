@@ -22,6 +22,7 @@ import { drawBlurhashToCanvas } from "../utils/blurhash";
 import { useColorMode } from "../utils/darkModeUtils";
 import { parseImageUrlMetadata } from "../utils/image-upload";
 import { useImageLoadState } from "../utils/use-image-load-state";
+import { DownloadCard } from "./download-card";
 
 
 const countNewlinesBeforeNode = (text: string, offset: number) => {
@@ -442,6 +443,15 @@ export function Markdown({ content }: { content: string }) {
           );
         },
         div({ children, node, ...props }) {
+          const className = (props.className || "") as string;
+          if (className.includes("rin-download-card")) {
+            const url = (props["data-url"] as string) || "";
+            const filename = (props["data-filename"] as string) || undefined;
+            const password = (props["data-password"] as string) || undefined;
+            if (url) {
+              return <DownloadCard url={url} filename={filename} password={password} />;
+            }
+          }
           return <div {...props}>{children}</div>;
         },
       }}

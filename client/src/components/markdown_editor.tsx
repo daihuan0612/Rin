@@ -77,6 +77,10 @@ export function MarkdownEditor({ content, setContent, placeholder = "> Write you
   const [uploading, setUploading] = useState(false);
   const [videoModalOpen, setVideoModalOpen] = useState(false);
   const [videoUrl, setVideoUrl] = useState("");
+  const [downloadModalOpen, setDownloadModalOpen] = useState(false);
+  const [downloadUrl, setDownloadUrl] = useState("");
+  const [downloadFilename, setDownloadFilename] = useState("");
+  const [downloadPassword, setDownloadPassword] = useState("");
   const { showAlert, AlertUI } = useAlert();
 
   async function insertImage(
@@ -235,6 +239,42 @@ export function MarkdownEditor({ content, setContent, placeholder = "> Write you
     setVideoUrl("");
   };
 
+  const openDownloadDialog = () => {
+    const editorState = getEditorAndSelection();
+    if (!editorState) return;
+    setDownloadUrl("");
+    setDownloadFilename("");
+    setDownloadPassword("");
+    setDownloadModalOpen(true);
+  };
+
+  const handleInsertDownload = () => {
+    if (!downloadUrl.trim()) {
+      showAlert(t("markdown_editor.download.url_required"));
+      return;
+    }
+    const editorState = getEditorAndSelection();
+    if (!editorState) {
+      setDownloadModalOpen(false);
+      return;
+    }
+    const dataAttrs = [`class="rin-download-card"`, `data-url="${downloadUrl.trim()}"`];
+    if (downloadFilename.trim()) {
+      dataAttrs.push(`data-filename="${downloadFilename.trim()}"`);
+    }
+    if (downloadPassword.trim()) {
+      const encodedPassword = btoa(downloadPassword.trim());
+      dataAttrs.push(`data-password="${encodedPassword}"`);
+    }
+    const html = `<div ${dataAttrs.join(" ")}></div>`;
+    const textToInsert = `\n${html}\n`;
+    replaceSelection(editorState.selection, textToInsert);
+    setDownloadModalOpen(false);
+    setDownloadUrl("");
+    setDownloadFilename("");
+    setDownloadPassword("");
+  };
+
   const formatSelectedLines = (
     formatter: (line: string, index: number) => string,
     emptyLineFallback: string,
@@ -310,6 +350,7 @@ export function MarkdownEditor({ content, setContent, placeholder = "> Write you
     { key: "link", icon: "ri-link", label: t("markdown_editor.toolbar.link"), onClick: insertLink },
     { key: "image", icon: "ri-image-line", label: t("markdown_editor.toolbar.image"), onClick: insertMarkdownImage },
     { key: "video", icon: "ri-video-line", label: t("markdown_editor.toolbar.insert_video"), onClick: openVideoDialog },
+    { key: "download", icon: "ri-download-line", label: t("markdown_editor.toolbar.insert_download"), onClick: openDownloadDialog },
     { key: "quote", icon: "ri-double-quotes-l", label: t("markdown_editor.toolbar.quote"), onClick: formatQuote },
     { key: "unordered-list", icon: "ri-list-unordered", label: t("markdown_editor.toolbar.unordered_list"), onClick: formatUnorderedList },
     { key: "ordered-list", icon: "ri-list-ordered", label: t("markdown_editor.toolbar.ordered_list"), onClick: formatOrderedList },
@@ -569,6 +610,87 @@ export function MarkdownEditor({ content, setContent, placeholder = "> Write you
           <div className="w-full flex flex-row items-center justify-end space-x-2 mt-2">
             <Button secondary onClick={() => setVideoModalOpen(false)} title={t('cancel')} />
             <Button onClick={handleInsertVideo} title={t('confirm')} />
+          </div>
+        </div>
+      </Modal>
+      <Modal
+        isOpen={downloadModalOpen}
+        shouldCloseOnOverlayClick={true}
+        shouldCloseOnEsc={true}
+        onRequestClose={() => setDownloadModalOpen(false)}
+        style={{
+          content: {
+            top: '50%',
+            left: '50%',
+            right: 'auto',
+            bottom: 'auto',
+            marginRight: '-50%',
+            transform: 'translate(-50%, -50%)',
+            padding: '0',
+            border: 'none',
+            borderRadius: '16px',
+            display: 'flex',
+            flexDirection: 'column',
+            justifyContent: 'center',
+            alignItems: 'center',
+            background: 'transparent',
+            maxWidth: '40em',
+            width: '90%',
+          },
+          overlay: {
+            backgroundColor: 'rgba(0, 0, 0, 0.5)',
+            zIndex: 1000,
+          },
+        }}
+      >
+        <div className="flex flex-col items-start p-4 bg-w space-y-3 w-full min-w-56 sm:min-w-96">
+          <h1 className="text-2xl font-bold t-primary">
+            {t("markdown_editor.download.title")}
+          </h1>
+          <p className="text-sm text-neutral-500">
+            {t("markdown_editor.download.description")}
+          </p>
+          <div className="w-full space-y-2">
+            <label className="text-sm font-medium t-primary">
+              {t("markdown_editor.download.url_label")}
+            </label>
+            <input
+              type="text"
+              value={downloadUrl}
+              onChange={(e) => setDownloadUrl(e.target.value)}
+              placeholder={t("markdown_editor.download.url_placeholder")}
+              className="w-full px-3 py-2 rounded-lg border border-black/10 dark:border-white/10 bg-transparent t-primary focus:outline-none focus:ring-2 focus:ring-theme"
+            />
+          </div>
+          <div className="w-full space-y-2">
+            <label className="text-sm font-medium t-primary">
+              {t("markdown_editor.download.filename_label")}
+              <span className="text-neutral-400 font-normal ml-1">({t("optional")})</span>
+            </label>
+            <input
+              type="text"
+              value={downloadFilename}
+              onChange={(e) => setDownloadFilename(e.target.value)}
+              placeholder={t("markdown_editor.download.filename_placeholder")}
+              className="w-full px-3 py-2 rounded-lg border border-black/10 dark:border-white/10 bg-transparent t-primary focus:outline-none focus:ring-2 focus:ring-theme"
+            />
+          </div>
+          <div className="w-full space-y-2">
+            <label className="text-sm font-medium t-primary">
+              {t("markdown_editor.download.password_label")}
+              <span className="text-neutral-400 font-normal ml-1">({t("optional")})</span>
+            </label>
+            <input
+              type="text"
+              value={downloadPassword}
+              onChange={(e) => setDownloadPassword(e.target.value)}
+              placeholder={t("markdown_editor.download.password_placeholder")}
+              className="w-full px-3 py-2 rounded-lg border border-black/10 dark:border-white/10 bg-transparent t-primary focus:outline-none focus:ring-2 focus:ring-theme"
+            />
+          </div>
+          <div className="w-full flex flex-row items-center justify-end space-x-2 mt-2">
+            <Button secondary onClick={() => setDownloadModalOpen(false)} title={t('cancel')} />
+            <Button onClick={handleInsertDownload} title={t('confirm')} />
           </div>
         </div>
       </Modal>
