@@ -92,6 +92,14 @@
   "cancel": "キャンセル",
   "clear": "クリア",
   "close": "閉じる",
+  "download": {
+    "button": "ダウンロード",
+    "default_filename": "ファイルをダウンロード",
+    "password_placeholder": "パスワードを入力",
+    "password_error": "パスワードが間違っています。再試行してください",
+    "unlock": "解除"
+  },
+  "optional": "任意",
   "comment": {
     "empty": "コメント内容は空にできません",
     "placeholder": {
@@ -161,13 +169,25 @@
       "quote": "引用",
       "unordered_list": "箇条書き",
       "upload_image": "画像をアップロード",
-      "insert_video": "動画を挿入"
+      "insert_video": "動画を挿入",
+      "insert_download": "ダウンロードを挿入"
     },
     "video": {
       "title": "動画を挿入",
       "description": "ビリビリ、YouTube、Vimeo、MP4/WebM動画リンクに対応",
       "placeholder": "動画リンクを貼り付けてください（例：https://www.youtube.com/watch?v=dQw4w9WgXcQ）",
       "invalid_url": "無効な動画リンクです。確認して再試行してください"
+    },
+    "download": {
+      "title": "ダウンロードリンクを挿入",
+      "description": "スタイル付きダウンロードボタンを挿入、パスワード保護も設定可能",
+      "url_label": "ダウンロードURL",
+      "url_placeholder": "ファイルのダウンロードURLを入力（例：https://example.com/file.zip）",
+      "url_required": "ダウンロードURLを入力してください",
+      "filename_label": "ファイル名",
+      "filename_placeholder": "表示するファイル名、空欄の場合はURLから自動取得",
+      "password_label": "パスワード",
+      "password_placeholder": "ダウンロードに必要なパスワードを設定、空欄でパスワードなし"
     }
   },
   "error": {
@@ -355,6 +375,10 @@
       "title": "メンテナンス"
     },
     "friend": {
+      "page": {
+        "title": "フレンズページを表示",
+        "desc": "ナビゲーションバーにフレンズへのリンクを表示します。オフにしても /friends に直接アクセスできます。"
+      },
       "apply": {
         "desc": "他のユーザーが友人リンクを申請できるようにする（審査が必要）",
         "title": "友人リンク申請"
