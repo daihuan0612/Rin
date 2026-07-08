@@ -79,7 +79,7 @@ export function FeedsPage() {
             </Helmet>
             <Waiting for={feeds.draft.size + feeds.normal.size + feeds.unlisted.size > 0 || status === 'idle'}>
                 <main className="w-full flex flex-col justify-center items-center mb-8">
-                    <div className="flex flex-row justify-between">
+                    <div className="wauto flex flex-row justify-between">
                             <p className="text-sm mt-4 text-neutral-500 font-normal">
                                 {t('article.total$count', { count: currentFeeds.size })}
                             </p>
