@@ -92,6 +92,14 @@
   "cancel": "Cancel",
   "clear": "Clear",
   "close": "Close",
+  "download": {
+    "button": "Download",
+    "default_filename": "Download file",
+    "password_placeholder": "Enter password",
+    "password_error": "Incorrect password, please try again",
+    "unlock": "Unlock"
+  },
+  "optional": "Optional",
   "comment": {
     "empty": "Comment cannot be empty",
     "placeholder": {
@@ -155,6 +163,7 @@
       "image": "Image link",
       "inline_code": "Inline code",
       "insert_video": "Insert video",
+      "insert_download": "Insert download",
       "italic": "Italic",
       "label": "Markdown toolbar",
       "link": "Link",
@@ -165,9 +174,20 @@
     },
     "video": {
       "title": "Insert Video",
-      "description": "Supports Bilibili, YouTube, Vimeo, and MP4/WebM video links",
+      "description": "Supports Bilibili, YouTube, Vimeo, and MP4/WebM direct/proxy video links",
       "placeholder": "Paste video link, e.g. https://www.youtube.com/watch?v=dQw4w9WgXcQ",
       "invalid_url": "Invalid video link, please check and try again"
+    },
+    "download": {
+      "title": "Insert Download",
+      "description": "Insert a styled download button with optional password protection",
+      "url_label": "Download URL",
+      "url_placeholder": "Enter file download URL, e.g. https://example.com/file.zip",
+      "url_required": "Please enter a download URL",
+      "filename_label": "File name",
+      "filename_placeholder": "Display file name, auto-detect from URL if left blank",
+      "password_label": "Password",
+      "password_placeholder": "Set a password required to download, leave blank for no password"
     }
   },
   "error": {
@@ -364,9 +384,13 @@
       "title": "Maintenance"
     },
     "friend": {
+      "page": {
+        "title": "Show Friends page",
+        "desc": "Show Friends link in the navigation bar. The page is still accessible via /friends directly."
+      },
       "apply": {
-        "desc": "Allow other users to apply for friend links (requires review)",
-        "title": "Friend Link Application"
+        "desc": "Allow other users to apply for friend links (requires approval)",
+        "title": "Friend link application"
       },
       "health": {
         "desc": "Enable accessibility check for friends' links",
