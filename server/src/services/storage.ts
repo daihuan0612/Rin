@@ -1,7 +1,7 @@
 import { Hono } from "hono";
 import type { AppContext } from "../core/hono-types";
 import { profileAsync } from "../core/server-timing";
-import { getStorageObject, putStorageObject, resolveStorageTarget } from "../utils/storage";
+import { getStorageObject, getStoragePublicUrl, putStorageObject, resolveStorageTarget } from "../utils/storage";
 import { createS3Client, deleteObject as deleteS3Object, listObjects as listS3Objects } from "../utils/s3";
 
 function buf2hex(buffer: ArrayBuffer) {
@@ -56,6 +56,7 @@ export function StorageService(): Hono {
         const env = c.get('env');
         const target = resolveStorageTarget(env);
         const folder = target.folder;
+        const baseUrl = new URL(c.req.url).origin;
 
         try {
             if (env.R2_BUCKET) {
@@ -81,7 +82,7 @@ export function StorageService(): Hono {
                         fileName: obj.key.replace(folder, ''),
                         size: obj.size,
                         uploaded: obj.uploaded.toISOString(),
-                        url: `${target.publicBaseUrl}/${obj.key}`,
+                        url: getStoragePublicUrl(env, obj.key, baseUrl),
                     })),
                     total: sorted.length,
                 });
@@ -98,7 +99,7 @@ export function StorageService(): Hono {
                         fileName: obj.key.replace(folder, ''),
                         size: obj.size,
                         uploaded: obj.lastModified.toISOString(),
-                        url: `${target.publicBaseUrl}/${obj.key}`,
+                        url: getStoragePublicUrl(env, obj.key, baseUrl),
                     })),
                     total: sorted.length,
                 });
