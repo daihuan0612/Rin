@@ -428,7 +428,7 @@ export function Markdown({ content }: { content: string }) {
             </div>
           );
         },
-        video({ node, children, ...props }) {
+        video({ children, ...props }) {
           return (
             <div className="my-4 w-full overflow-hidden rounded-xl flex justify-center bg-black/5">
               <video
@@ -442,7 +442,7 @@ export function Markdown({ content }: { content: string }) {
             </div>
           );
         },
-        div({ children, node, ...props }) {
+        div({ children, node: _node, ...props }) {
           const className = (props.className || "") as string;
           if (className.includes("rin-download-card")) {
             const url = (props["data-url"] as string) || "";
