@@ -357,12 +357,15 @@ export function MarkdownEditor({ content, setContent, placeholder = "> Write you
     const result = lines.map((line) => {
       const trimmed = line.trim();
       if (!trimmed) return line;
-      if (chapterRegex.test(trimmed)) {
-        const clean = trimmed.replace(/^#+\s*/, "");
+      // Fix headings without space after # (e.g. #绗竴闆?-> # 绗竴闆?
+      const fixedLine = line.replace(/^(#+)(\S)/, "$1 $2");
+      const fixedTrimmed = fixedLine.trim();
+      if (chapterRegex.test(fixedTrimmed)) {
+        const clean = fixedTrimmed.replace(/^#+\s*/, "");
         return clean.startsWith("#") ? `## ${clean}` : `## ${clean}`;
       }
-      if (line.startsWith(indent) || line.startsWith("#") || line.startsWith(">") || line.startsWith("```") || line.startsWith("- ") || line.startsWith("* ") || line.match(/^\d+\.\s/)) return line;
-      return indent + line;
+      if (fixedLine.startsWith(indent) || fixedLine.startsWith("#") || fixedLine.startsWith(">") || fixedLine.startsWith("```") || fixedLine.startsWith("- ") || fixedLine.startsWith("* ") || fixedLine.match(/^\d+\.\s/)) return fixedLine;
+      return indent + fixedLine;
     });
     const newText = result.join("\n");
     model.setValue(newText);
