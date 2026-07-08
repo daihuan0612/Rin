@@ -1,815 +1,815 @@
 {
   "about": {
-    "notfound": "灏囨枃绔犲垾鍚嶈ō瀹氱偤 about 鍙互鍓靛缓闂滄柤闋侀潰",
-    "title": "闂滄柤"
+    "notfound": "將文章別名設定為 about 可以創建關於頁面",
+    "title": "關於"
   },
   "admin": {
-    "back_to_site": "杩斿洖绔欓粸",
-    "comments_description": "瀵╂牳鍜岀鐞嗘墍鏈夋枃绔犵殑璁€鑰呯暀瑷€锛岃檿鐞嗗緟瀵╂牳鍏у銆?,
-    "compat_tasks_description": "鎵规瑙哥櫦鍚戝墠鐩稿浠诲嫏锛岀敤鏂艰榻婃鍙叉枃绔犵己澶辩殑 AI 鎽樿鑸囧湒鐗?blurhash 涓辜璩囨枡銆?,
-    "health_description": "妾㈡煡闂滈嵉閰嶇疆銆佺己澶辩殑鏁村悎闋咃紝浠ュ強鍙兘褰遍熆鏈嶅嫏姝ｅ父閬嬭鐨勯ⅷ闅€?,
-    "queue_status_description": "鏌ョ湅 AI 鎽樿浣囧垪閫插害銆佹渶杩戜换鍕欑祼鏋滆垏澶辨晽璩囪▕銆?,
-    "settings_description": "鍦ㄧ当涓€鐨勫緦鍙扮┖闁撲腑绠＄悊绔欓粸琛岀偤銆佹暣鍚堥厤缃垏鐧间綀瑕忓墖銆?,
-    "title": "寰屽彴绠＄悊",
-    "writing_description": "鍦ㄧ崹绔嬬殑绠＄悊宸ヤ綔鍗€涓法瀵€佺法杓甫鐧间綀鍏у銆?
+    "back_to_site": "返回站點",
+    "comments_description": "審核和管理所有文章的讀者留言，處理待審核內容。",
+    "compat_tasks_description": "批次觸發向前相容任務，用於補齊歷史文章缺失的 AI 摘要與圖片 blurhash 中繼資料。",
+    "health_description": "檢查關鍵配置、缺失的整合項，以及可能影響服務正常運行的風險。",
+    "queue_status_description": "查看 AI 摘要佇列進度、最近任務結果與失敗資訊。",
+    "settings_description": "在統一的後台空間中管理站點行為、整合配置與發佈規則。",
+    "title": "後台管理",
+    "writing_description": "在獨立的管理工作區中編寫、編輯並發佈內容。"
   },
   "compat_tasks": {
-    "title": "鐩稿浠诲嫏",
-    "loading": "姝ｅ湪杓夊叆鐩稿浠诲嫏鐙€鎱?..",
-    "generated_at": "鏈€杩戞洿鏂版檪闁擄細{{date}}",
-    "running": "鍩疯涓?,
-    "yes": "鏄?,
-    "no": "鍚?,
+    "title": "相容任務",
+    "loading": "正在載入相容任務狀態...",
+    "generated_at": "最近更新時間：{{date}}",
+    "running": "執行中",
+    "yes": "是",
+    "no": "否",
     "ai_summary": {
-      "title": "瑁滈綂 AI 鎽樿",
-      "description": "鎺冩弿姝峰彶宸茬櫦浣堟枃绔狅紝鐐哄皻鏈敓鎴愭憳瑕佺殑鍏у閲嶆柊鍏ュ垪銆?,
-      "eligible": "寰呰檿鐞?{{count}} 绡?,
-      "force_eligible": "鍙挤鍒堕噸璺?{{count}} 绡?,
-      "enabled": "AI 鎽樿宸插暉鐢細{{value}}",
-      "queue_configured": "浣囧垪宸茶ō瀹氾細{{value}}",
-      "run": "闁嬪瑁滈綂",
-      "run_force": "寮峰埗鍏ㄩ儴閲嶈窇",
-      "result": "AI 鎽樿浠诲嫏宸插叆鍒?{{queued}} 绡囷紝鐣ラ亷 {{skipped}} 绡囥€?,
-      "result_force": "宸插挤鍒堕噸璺戝叆鍒?{{queued}} 绡?AI 鎽樿浠诲嫏锛岀暐閬?{{skipped}} 绡囥€?
+      "title": "補齊 AI 摘要",
+      "description": "掃描歷史已發佈文章，為尚未生成摘要的內容重新入列。",
+      "eligible": "待處理 {{count}} 篇",
+      "force_eligible": "可強制重跑 {{count}} 篇",
+      "enabled": "AI 摘要已啟用：{{value}}",
+      "queue_configured": "佇列已設定：{{value}}",
+      "run": "開始補齊",
+      "run_force": "強制全部重跑",
+      "result": "AI 摘要任務已入列 {{queued}} 篇，略過 {{skipped}} 篇。",
+      "result_force": "已強制重跑入列 {{queued}} 篇 AI 摘要任務，略過 {{skipped}} 篇。"
     },
     "blurhash": {
-      "title": "瑁滈綂鍦栫墖 Blurhash",
-      "description": "鎺冩弿姝峰彶鏂囩珷涓殑鍦栫墖锛岀偤缂哄け鍗犱綅鍦栬垏灏哄涓辜璩囨枡鐨勫湒鐗囪榻?markdown fragment銆?,
-      "eligible": "寰呰檿鐞?{{count}} 绡?,
-      "note": "姝や换鍕欐渻鍦ㄧ洰鍓嶇€忚鍣ㄤ腑鍩疯锛岄€愮瘒杓夊叆鍦栫墖涓﹀洖瀵腑绻艰硣鏂欍€?,
-      "run": "闁嬪瑁滈綂",
-      "progress": "宸茶檿鐞?{{processed}} / {{total}}锛屾洿鏂?{{updated}} 绡囷紝澶辨晽 {{failed}} 绡囥€?,
-      "result": "Blurhash 瑁滈綂瀹屾垚锛氬叡鎺冩弿 {{total}} 绡囷紝鎴愬姛鏇存柊 {{updated}} 绡囷紝澶辨晽 {{failed}} 绡囥€?
+      "title": "補齊圖片 Blurhash",
+      "description": "掃描歷史文章中的圖片，為缺失占位圖與尺寸中繼資料的圖片補齊 markdown fragment。",
+      "eligible": "待處理 {{count}} 篇",
+      "note": "此任務會在目前瀏覽器中執行，逐篇載入圖片並回寫中繼資料。",
+      "run": "開始補齊",
+      "progress": "已處理 {{processed}} / {{total}}，更新 {{updated}} 篇，失敗 {{failed}} 篇。",
+      "result": "Blurhash 補齊完成：共掃描 {{total}} 篇，成功更新 {{updated}} 篇，失敗 {{failed}} 篇。"
     }
   },
   "ai_summary": {
     "message": {
-      "completed": "AI 鎽樿宸茬敓鎴愩€?,
-      "failed": "AI 鎽樿鐢熸垚澶辨晽銆?,
-      "idle": "AI 鎽樿浠诲嫏鐩墠鏈煼琛屻€?,
-      "pending": "AI 鎽樿浠诲嫏宸查€插叆浣囧垪銆?,
-      "processing": "AI 鎽樿姝ｅ湪鐢熸垚涓€?
+      "completed": "AI 摘要已生成。",
+      "failed": "AI 摘要生成失敗。",
+      "idle": "AI 摘要任務目前未執行。",
+      "pending": "AI 摘要任務已進入佇列。",
+      "processing": "AI 摘要正在生成中。"
     },
     "status": {
-      "completed": "宸插畬鎴?,
-      "failed": "澶辨晽",
-      "idle": "闁掔疆",
-      "pending": "鎺掗殜涓?,
-      "processing": "鐢熸垚涓?
+      "completed": "已完成",
+      "failed": "失敗",
+      "idle": "閒置",
+      "pending": "排隊中",
+      "processing": "生成中"
     },
-    "title": "AI 绺界祼"
+    "title": "AI 總結"
   },
-  "alert": "鎻愮ず",
-  "alias": "鍒ュ悕",
+  "alert": "提示",
+  "alias": "別名",
   "article": {
     "delete": {
-      "confirm": "纰哄畾鍒櫎閫欑瘒鏂囩珷鍡庯紵",
-      "title": "鍒櫎鏂囩珷"
+      "confirm": "確定刪除這篇文章嗎？",
+      "title": "刪除文章"
     },
     "search": {
-      "placeholder": "璜嬭几鍏ラ棞閸靛瓧",
-      "title": "鎼滃皨",
-      "title$keyword": "鎼滃皨锛歿{keyword}}"
+      "placeholder": "請輸入關鍵字",
+      "title": "搜尋",
+      "title$keyword": "搜尋：{{keyword}}"
     },
-    "title": "鏂囩珷",
+    "title": "文章",
     "top": {
-      "confirm": "纰哄畾缃爞閫欑瘒鏂囩珷鍡庯紵",
-      "success": "缃爞鎴愬姛",
-      "title": "缃爞"
+      "confirm": "確定置頂這篇文章嗎？",
+      "success": "置頂成功",
+      "title": "置頂"
     },
-    "total_short$count_one": "{{count}} 绡?,
-    "total_short$count_other": "{{count}} 绡?,
-    "total$count_one": "鍏辨湁 {{count}} 绡囨枃绔?,
-    "total$count_other": "鍏辨湁 {{count}} 绡囨枃绔?,
+    "total_short$count_one": "{{count}} 篇",
+    "total_short$count_other": "{{count}} 篇",
+    "total$count_one": "共有 {{count}} 篇文章",
+    "total$count_other": "共有 {{count}} 篇文章",
     "untop": {
-      "confirm": "纰哄畾鍙栨秷缃爞閫欑瘒鏂囩珷鍡庯紵",
-      "success": "鍙栨秷缃爞鎴愬姛",
-      "title": "鍙栨秷缃爞"
+      "confirm": "確定取消置頂這篇文章嗎？",
+      "success": "取消置頂成功",
+      "title": "取消置頂"
     }
   },
   "avatar": {
-    "url": "闋儚 URL"
+    "url": "頭像 URL"
   },
-  "cancel": "鍙栨秷",
-  "clear": "娓呴櫎",
-  "close": "闂滈枆",
+  "cancel": "取消",
+  "clear": "清除",
+  "close": "關閉",
   "download": {
-    "button": "涓嬭級",
-    "default_filename": "妾旀涓嬭級",
-    "password_placeholder": "璜嬭几鍏ユ彁鍙栫⒓",
-    "password_error": "瀵嗙⒓閷锛岃珛閲嶈│",
-    "unlock": "瑙ｉ帠"
+    "button": "下載",
+    "default_filename": "檔案下載",
+    "password_placeholder": "請輸入提取碼",
+    "password_error": "密碼錯誤，請重試",
+    "unlock": "解鎖"
   },
-  "optional": "鍙伕",
+  "optional": "可選",
   "comment": {
-    "empty": "鐣欒█鍏у涓嶈兘鐐虹┖",
+    "empty": "留言內容不能為空",
     "placeholder": {
-      "title": "瑾粸浠€楹煎惂"
+      "title": "說點什麼吧"
     },
-    "submit": "鐧艰〃鐣欒█",
-    "success": "鐣欒█鎴愬姛",
-    "title": "鐣欒█",
-    "guest_name_required": "鏆辩ū涓嶈兘鐐虹┖",
-    "guest_name_placeholder": "鏆辩ū锛堝繀濉級",
-    "guest_email_placeholder": "閮电锛堝彲閬革級",
-    "guest_website_placeholder": "缍茬珯锛堝彲閬革級",
-    "guest": "瑷",
-    "delete_confirm": "纰哄畾瑕佸埅闄ら€欏墖鐣欒█鍡庯紵",
+    "submit": "發表留言",
+    "success": "留言成功",
+    "title": "留言",
+    "guest_name_required": "暱稱不能為空",
+    "guest_name_placeholder": "暱稱（必填）",
+    "guest_email_placeholder": "郵箱（可選）",
+    "guest_website_placeholder": "網站（可選）",
+    "guest": "訪客",
+    "delete_confirm": "確定要刪除這則留言嗎？",
     "status": {
-      "all": "鍏ㄩ儴",
-      "pending": "寰呭鏍?,
-      "approved": "宸查€氶亷"
+      "all": "全部",
+      "pending": "待審核",
+      "approved": "已通過"
     },
     "action": {
-      "approve": "閫氶亷",
-      "unapprove": "鍙栨秷閫氶亷",
-      "delete": "鍒櫎"
+      "approve": "通過",
+      "unapprove": "取消通過",
+      "delete": "刪除"
     },
     "admin": {
-      "title": "鐣欒█绠＄悊",
-      "total": "绺界暀瑷€鏁?,
-      "loading": "杓夊叆涓?..",
-      "load_failed": "杓夊叆澶辨晽",
-      "empty": "鏆劇鐣欒█",
-      "empty_desc": "閭勬矑鏈変换浣曚汉鐧艰〃鐣欒█",
-      "prev": "涓婁竴闋?,
-      "next": "涓嬩竴闋?,
-      "page_info": "绗?{{page}} 闋?/ 鍏?{{total}} 闋?
+      "title": "留言管理",
+      "total": "總留言數",
+      "loading": "載入中...",
+      "load_failed": "載入失敗",
+      "empty": "暫無留言",
+      "empty_desc": "還沒有任何人發表留言",
+      "prev": "上一頁",
+      "next": "下一頁",
+      "page_info": "第 {{page}} 頁 / 共 {{total}} 頁"
     }
   },
-  "comparison": "姣旇純",
-  "confirm": "纰鸿獚",
+  "comparison": "比較",
+  "confirm": "確認",
   "content": {
-    "empty": "鍏у涓嶈兘鐐虹┖"
+    "empty": "內容不能為空"
   },
   "count": {
-    "pv": "鐎忚鏁?,
-    "uv": "瑷鏁?
+    "pv": "瀏覽數",
+    "uv": "訪客數"
   },
   "create": {
-    "success": "鍓靛缓鎴愬姛",
-    "title": "鍓靛缓"
+    "success": "創建成功",
+    "title": "創建"
   },
-  "created_at": "鐧煎竷鏅傞枔",
+  "created_at": "發布時間",
   "delete": {
     "comment": {
-      "confirm": "纰哄畾瑕佸埅闄ら€欏墖鐣欒█鍡庯紵",
-      "title": "鍒櫎鐣欒█"
+      "confirm": "確定要刪除這則留言嗎？",
+      "title": "刪除留言"
     },
-    "confirm": "纰哄畾瑕佸埅闄ゅ棊锛?,
-    "failed$message": "鍒櫎澶辨晽锛歿{message}}",
-    "success": "鍒櫎鎴愬姛",
-    "title": "鍒櫎"
+    "confirm": "確定要刪除嗎？",
+    "failed$message": "刪除失敗：{{message}}",
+    "success": "刪除成功",
+    "title": "刪除"
   },
-  "description": "鎻忚堪",
-  "draft": "鑽夌",
-  "draft_bin": "鑽夌绠?,
-  "edit": "绶ㄨ集",
+  "description": "描述",
+  "draft": "草稿",
+  "draft_bin": "草稿箱",
+  "edit": "編輯",
   "markdown_editor": {
     "placeholder": {
-      "bold": "绮楅珨鏂囧瓧",
-      "code": "绋嬪紡纰?,
-      "code_block": "绋嬪紡纰煎崁濉?,
-      "heading": "妯欓",
-      "image_alt": "鍦栫墖鎻忚堪",
+      "bold": "粗體文字",
+      "code": "程式碼",
+      "code_block": "程式碼區塊",
+      "heading": "標題",
+      "image_alt": "圖片描述",
       "image_url": "https://example.com/image.png",
-      "italic": "鏂滈珨鏂囧瓧",
-      "link_text": "閫ｇ祼鏂囧瓧",
+      "italic": "斜體文字",
+      "link_text": "連結文字",
       "link_url": "https://example.com",
-      "list_item": "鍒楄〃闋呯洰",
-      "quote": "寮曠敤鍏у"
+      "list_item": "列表項目",
+      "quote": "引用內容"
     },
     "toolbar": {
-      "bold": "绮楅珨",
-      "code_block": "绋嬪紡纰煎崁濉?,
-      "heading": "妯欓",
-      "horizontal_rule": "鍒嗛殧绶?,
-      "image": "鍦栫墖閫ｇ祼",
-      "inline_code": "琛屽収绋嬪紡纰?,
-      "italic": "鏂滈珨",
-      "label": "Markdown 宸ュ叿鍒?,
-      "link": "閫ｇ祼",
-      "ordered_list": "鏈夊簭鍒楄〃",
-      "quote": "寮曠敤",
-      "unordered_list": "鐒″簭鍒楄〃",
-      "upload_image": "涓婂偝鍦栫墖",
-      "insert_video": "鎻掑叆褰辩墖",
-      "insert_download": "鎻掑叆涓嬭級",
-      "indent": "棣栬绺帓",
-      "novel": "鏍煎紡鍖栧皬瑾?
+      "bold": "粗體",
+      "code_block": "程式碼區塊",
+      "heading": "標題",
+      "horizontal_rule": "分隔線",
+      "image": "圖片連結",
+      "inline_code": "行內程式碼",
+      "italic": "斜體",
+      "label": "Markdown 工具列",
+      "link": "連結",
+      "ordered_list": "有序列表",
+      "quote": "引用",
+      "unordered_list": "無序列表",
+      "upload_image": "上傳圖片",
+      "insert_video": "插入影片",
+      "insert_download": "插入下載",
+      "indent": "首行縮排",
+      "novel": "格式化小說"
     },
     "video": {
-      "title": "鎻掑叆褰辩墖",
-      "description": "鏀彺 B绔欍€乊ouTube銆乂imeo 浠ュ強 MP4/WebM 褰辩墖閫ｇ祼",
-      "placeholder": "璜嬭布涓婂奖鐗囬€ｇ祼锛屼緥濡?https://www.bilibili.com/video/BV1xx411c7mD",
-      "invalid_url": "鐒℃晥鐨勫奖鐗囬€ｇ祼锛岃珛妾㈡煡寰岄噸瑭?
+      "title": "插入影片",
+      "description": "支援 B站、YouTube、Vimeo 以及 MP4/WebM 影片連結",
+      "placeholder": "請貼上影片連結，例如 https://www.bilibili.com/video/BV1xx411c7mD",
+      "invalid_url": "無效的影片連結，請檢查後重試"
     },
     "download": {
-      "title": "鎻掑叆涓嬭級閫ｇ祼",
-      "description": "鎻掑叆涓€鍊嬪付妯ｅ紡鐨勪笅杓夋寜閳曪紝鍙ō瀹氬瘑纰间繚璀?,
-      "url_label": "涓嬭級閫ｇ祼",
-      "url_placeholder": "璜嬭几鍏ユ獢妗堜笅杓夐€ｇ祼锛屼緥濡?https://example.com/file.zip",
-      "url_required": "璜嬭几鍏ヤ笅杓夐€ｇ祼",
-      "filename_label": "妾旀鍚嶇ū",
-      "filename_placeholder": "椤ず鐨勬獢妗堝悕锛岀暀绌哄墖寰為€ｇ祼鑷嫊鍙栧緱",
-      "password_label": "鎻愬彇瀵嗙⒓",
-      "password_placeholder": "瑷畾瀵嗙⒓寰岄渶瑕佽几鍏ュ瘑纰兼墠鑳戒笅杓夛紝鐣欑┖鍓囦笉闇€瑕佸瘑纰?
+      "title": "插入下載連結",
+      "description": "插入一個帶樣式的下載按鈕，可設定密碼保護",
+      "url_label": "下載連結",
+      "url_placeholder": "請輸入檔案下載連結，例如 https://example.com/file.zip",
+      "url_required": "請輸入下載連結",
+      "filename_label": "檔案名稱",
+      "filename_placeholder": "顯示的檔案名，留空則從連結自動取得",
+      "password_label": "提取密碼",
+      "password_placeholder": "設定密碼後需要輸入密碼才能下載，留空則不需要密碼"
     }
   },
   "error": {
-    "api_url": "Pages 鐠板璁婃暩涓?API_URL 鎳夌偤 Worker 鍦板潃锛岃珛妾㈡煡 Pages 鐠板璁婃暩涓?API_URL 鏄惁姝ｇ⒑",
-    "api_url_slash": "Pages 鐠板璁婃暩涓?API_URL 鎳夌偤 Worker 鍦板潃锛岃珛妾㈡煡 Pages 鐠板璁婃暩涓?API_URL 鏄惁姝ｇ⒑锛屼笖 API_URL 鏈熬涓嶈兘鏈?/",
-    "github_callback": "GitHub OAuth 鍥炶鍦板潃鎳夌偤 `https://<Worker 鍦板潃>/api/user/github/callback`锛岃珛妾㈡煡 GitHub OAuth 鍥炶鍦板潃鏄惁姝ｇ⒑",
-    "not_found": "闋侀潰鏈壘鍒?,
-    "permission_denied": "娆婇檺涓嶈冻",
-    "title": "閷"
+    "api_url": "Pages 環境變數中 API_URL 應為 Worker 地址，請檢查 Pages 環境變數中 API_URL 是否正確",
+    "api_url_slash": "Pages 環境變數中 API_URL 應為 Worker 地址，請檢查 Pages 環境變數中 API_URL 是否正確，且 API_URL 末尾不能有 /",
+    "github_callback": "GitHub OAuth 回調地址應為 `https://<Worker 地址>/api/user/github/callback`，請檢查 GitHub OAuth 回調地址是否正確",
+    "not_found": "頁面未找到",
+    "permission_denied": "權限不足",
+    "title": "錯誤"
   },
   "feed_card": {
-    "published$time": "{{time}} 鐧煎竷",
-    "updated$time": "{{time}} 鏇存柊"
+    "published$time": "{{time}} 發布",
+    "updated$time": "{{time}} 更新"
   },
   "footer": {
-    "rss": "RSS 瑷傞柋閫ｇ祼"
+    "rss": "RSS 訂閱連結"
   },
   "friends": {
-    "apply": "鐢宠珛鍙嬫儏閫ｇ祼",
-    "create": "鍓靛缓鍙嬫儏閫ｇ祼",
-    "left": "鏆檪闆㈤枊",
-    "my_apply": "鎴戠殑鐢宠珛",
+    "apply": "申請友情連結",
+    "create": "創建友情連結",
+    "left": "暫時離開",
+    "my_apply": "我的申請",
     "review": {
-      "accepted": "鎺ュ彈",
-      "rejected": "鎷掔禃",
-      "waiting": "寰呭鏍?
+      "accepted": "接受",
+      "rejected": "拒絕",
+      "waiting": "待審核"
     },
-    "title": "鏈嬪弸鍊?
+    "title": "朋友們"
   },
-  "github_login": "Github 鐧诲叆",
-  "hashtags": "妯欑堡",
-  "home": "棣栭爜",
+  "github_login": "Github 登入",
+  "hashtags": "標籤",
+  "home": "首頁",
   "index": {
-    "back": "杩斿洖棣栭爜",
+    "back": "返回首頁",
     "empty": {
-      "title": "鐩寗鐐虹┖"
+      "title": "目錄為空"
     },
-    "title": "鐩寗"
+    "title": "目錄"
   },
-  "listed": "鍒楀嚭鍦ㄦ枃绔犱腑",
-  "load_more": "杓夊叆鏇村",
+  "listed": "列出在文章中",
+  "load_more": "載入更多",
   "login": {
     "error": {
-      "empty": "璜嬭几鍏ョ敤鎴跺悕鍜屽瘑纰?,
-      "failed": "鐧诲叆澶辨晽",
-      "invalid": "鐢ㄦ埗鍚嶆垨瀵嗙⒓閷",
-      "network": "缍茶矾閷锛岃珛閲嶈│"
+      "empty": "請輸入用戶名和密碼",
+      "failed": "登入失敗",
+      "invalid": "用戶名或密碼錯誤",
+      "network": "網路錯誤，請重試"
     },
-    "loading": "鐧诲叆涓?..",
-    "no_methods": "娌掓湁鍙敤鐨勭櫥鍏ユ柟寮?,
-    "oauth_only": "璜嬬櫥鍏ュ緦绻肩簩",
-    "or": "鎴?,
+    "loading": "登入中...",
+    "no_methods": "沒有可用的登入方式",
+    "oauth_only": "請登入後繼續",
+    "or": "或",
     "password": {
-      "placeholder": "璜嬭几鍏ュ瘑纰?
+      "placeholder": "請輸入密碼"
     },
-    "required": "璜嬬櫥鍏ュ緦绻肩簩",
-    "title": "鐧诲叆",
+    "required": "請登入後繼續",
+    "title": "登入",
     "username": {
-      "placeholder": "璜嬭几鍏ョ敤鎴跺悕"
+      "placeholder": "請輸入用戶名"
     }
   },
-  "logout": "鐧诲嚭",
-  "main_content": "姝ｆ枃",
+  "logout": "登出",
+  "main_content": "正文",
   "moments": {
-    "edit": "绶ㄨ集鍕曟厠",
-    "publish": "鐧煎竷鍕曟厠",
-    "title": "鍕曟厠",
-    "total$count_one": "{{count}} 姊濆嫊鎱?,
-    "total$count_other": "{{count}} 姊濆嫊鎱?
+    "edit": "編輯動態",
+    "publish": "發布動態",
+    "title": "動態",
+    "total$count_one": "{{count}} 條動態",
+    "total$count_other": "{{count}} 條動態"
   },
-  "next": "涓嬩竴闋?,
-  "no_more": "娌掓湁鏇村浜?,
-  "preview": "闋愯",
-  "previous": "涓婁竴闋?,
+  "next": "下一頁",
+  "no_more": "沒有更多了",
+  "preview": "預覽",
+  "previous": "上一頁",
   "publish": {
-    "failed$message": "鐧煎竷澶辨晽: {{message}}",
-    "success": "鐧煎竷鎴愬姛",
-    "title": "鐧煎竷"
+    "failed$message": "發布失敗: {{message}}",
+    "success": "發布成功",
+    "title": "發布"
   },
   "queue_status": {
-    "binding": "浣囧垪缍佸畾",
-    "configured": "宸查厤缃?,
-    "empty_description": "鐩墠娌掓湁鎺掗殜涓垨鏈€杩戣檿鐞嗛亷鐨?AI 鎽樿浠诲嫏銆?,
-    "empty_title": "鏆劇浣囧垪娲诲嫊",
-    "delete": "鍒櫎",
-    "delete_confirm_description": "纰哄畾鍒櫎 Feed #{{id}} 鐨勪絿鍒椾换鍕欒閷勫棊锛?,
-    "delete_confirm_title": "鍒櫎浣囧垪浠诲嫏瑷橀寗",
-    "delete_success": "浣囧垪浠诲嫏瑷橀寗宸插埅闄?,
-    "deleting": "鍒櫎涓?,
+    "binding": "佇列綁定",
+    "configured": "已配置",
+    "empty_description": "目前沒有排隊中或最近處理過的 AI 摘要任務。",
+    "empty_title": "暫無佇列活動",
+    "delete": "刪除",
+    "delete_confirm_description": "確定刪除 Feed #{{id}} 的佇列任務記錄嗎？",
+    "delete_confirm_title": "刪除佇列任務記錄",
+    "delete_success": "佇列任務記錄已刪除",
+    "deleting": "刪除中",
     "feed_id": "Feed #{{id}}",
-    "generated_at": "鏈€杩戞洿鏂版檪闁擄細{{date}}",
-    "load_failed": "浣囧垪鐙€鎱嬭級鍏ュけ鏁?,
-    "loading": "姝ｅ湪杓夊叆浣囧垪浠诲嫏鐙€鎱?..",
-    "not_configured": "鏈厤缃?,
+    "generated_at": "最近更新時間：{{date}}",
+    "load_failed": "佇列狀態載入失敗",
+    "loading": "正在載入佇列任務狀態...",
+    "not_configured": "未配置",
     "status": {
-      "completed": "宸插畬鎴?,
-      "failed": "澶辨晽",
-      "idle": "闁掔疆",
-      "pending": "鎺掗殜涓?,
-      "processing": "铏曠悊涓?
+      "completed": "已完成",
+      "failed": "失敗",
+      "idle": "閒置",
+      "pending": "排隊中",
+      "processing": "處理中"
     },
     "summary": {
-      "completed": "宸插畬鎴愪换鍕?,
-      "failed": "澶辨晽浠诲嫏",
-      "pending": "鎺掗殜浠诲嫏",
-      "processing": "铏曠悊涓换鍕?
+      "completed": "已完成任務",
+      "failed": "失敗任務",
+      "pending": "排隊任務",
+      "processing": "處理中任務"
     },
-    "retry": "閲嶈│",
-    "retry_success": "浣囧垪浠诲嫏宸查噸鏂板叆鍒?,
-    "retrying": "閲嶈│涓?,
-    "title": "浣囧垪鐙€鎱?,
-    "untitled": "鏈懡鍚?Feed",
-    "updated_at": "鏇存柊鏅傞枔锛歿{date}}"
+    "retry": "重試",
+    "retry_success": "佇列任務已重新入列",
+    "retrying": "重試中",
+    "title": "佇列狀態",
+    "untitled": "未命名 Feed",
+    "updated_at": "更新時間：{{date}}"
   },
-  "reload": "閲嶈│",
-  "reset": "閲嶈ō",
-  "save": "淇濆瓨",
-  "saving": "淇濆瓨涓?,
+  "reload": "重試",
+  "reset": "重設",
+  "save": "保存",
+  "saving": "保存中",
   "settings": {
     "cache": {
       "enabled": {
-        "title": "鍟熺敤绶╁瓨",
-        "desc": "鐐哄叕闁嬪収瀹瑰洖鎳夊暉鐢ㄧ珐瀛樸€傞爯瑷棞闁夛紝鍥犵偤鍦ㄩ儴鍒嗛儴缃茬挵澧冧笅瀹冨弽鑰屽彲鑳藉鍔犲欢閬层€?
+        "title": "啟用緩存",
+        "desc": "為公開內容回應啟用緩存。預設關閉，因為在部分部署環境下它反而可能增加延遲。"
       },
       "clear": {
         "confirm": {
-          "desc": "绶╁瓨鐢ㄦ柤娓涘皯瑷晱璩囨枡搴牷鐜囷紝璜嬪儏鍦ㄧ珐瀛橀尟瑾ゆ檪鍢楄│娓呯┖绶╁瓨銆?,
-          "title": "纰鸿獚娓呯┖绶╁瓨鍡庯紵"
+          "desc": "緩存用於減少訪問資料庫頻率，請僅在緩存錯誤時嘗試清空緩存。",
+          "title": "確認清空緩存嗎？"
         },
-        "desc": "娓呴櫎鎵€鏈夌珐瀛樻枃浠?,
-        "title": "娓呴櫎绶╁瓨"
+        "desc": "清除所有緩存文件",
+        "title": "清除緩存"
       },
-      "clear_failed$message": "娓呴櫎绶╁瓨澶辨晽: {{message}}"
+      "clear_failed$message": "清除緩存失敗: {{message}}"
     },
     "comment": {
       "enable": {
-        "desc": "闁嬪暉/闂滈枆鏂囩珷搴曢儴鐣欒█鍏ュ彛鑸囩暀瑷€鍗€",
-        "title": "鍟熺敤鐣欒█"
+        "desc": "開啟/關閉文章底部留言入口與留言區",
+        "title": "啟用留言"
       }
     },
     "counter": {
       "enable": {
-        "desc": "鍟熺敤绲辫▓鏂囩珷 PV 鑸?UV 鍔熻兘",
-        "title": "鍟熺敤瑷晱閲忕当瑷?
+        "desc": "啟用統計文章 PV 與 UV 功能",
+        "title": "啟用訪問量統計"
       }
     },
     "favicon": {
-      "desc": "瑷畾椤ず鏂肩€忚鍣ㄧ殑鍦板潃娆勭殑鍦栨锛團avicon锛?,
-      "title": "缍茬珯鍦栨",
+      "desc": "設定顯示於瀏覽器的地址欄的圖標（Favicon）",
+      "title": "網站圖標",
       "update": {
-        "failed$message": "缍茬珯鍦栨鏇存柊澶辨晽锛寋{message}}",
-        "success": "缍茬珯鍦栨鏇存柊鎴愬姛"
+        "failed$message": "網站圖標更新失敗，{{message}}",
+        "success": "網站圖標更新成功"
       }
     },
     "footer": {
-      "desc": "瑷畾椤ず鏂肩恫绔欏簳閮ㄧ殑鍏у锛圚TML锛?,
-      "title": "缍茬珯搴曢儴鍏у"
+      "desc": "設定顯示於網站底部的內容（HTML）",
+      "title": "網站底部內容"
     },
     "webhook": {
       "title": "Webhook",
       "url": {
-        "title": "Webhook 浣嶅潃",
-        "desc": "瑷畾瑭曡珫鑸囧弸閺堥€氱煡浣跨敤鐨?webhook 浣嶅潃銆傞€欒！鍚屾ǎ鏀彺妯℃澘璁婃暩锛岄仼鍚堝湪 GET 鍫存櫙鎷兼帴 query string銆?
+        "title": "Webhook 位址",
+        "desc": "設定評論與友鏈通知使用的 webhook 位址。這裡同樣支援模板變數，適合在 GET 場景拼接 query string。"
       },
       "method": {
         "title": "Webhook Method",
-        "desc": "瑷畾 webhook 璜嬫眰浣跨敤鐨?HTTP Method锛屼緥濡?GET銆丳OST銆丳UT 鎴?PATCH"
+        "desc": "設定 webhook 請求使用的 HTTP Method，例如 GET、POST、PUT 或 PATCH"
       },
       "content_type": {
         "title": "Webhook Content-Type",
-        "desc": "瑷畾 webhook 璜嬫眰閫佸嚭鏅備娇鐢ㄧ殑 Content-Type锛屼緥濡?application/json 鎴?text/plain"
+        "desc": "設定 webhook 請求送出時使用的 Content-Type，例如 application/json 或 text/plain"
       },
       "headers": {
-        "title": "Webhook 璜嬫眰妯欓牠",
-        "desc": "浠?JSON 妯℃澘鑷▊ webhook 璜嬫眰妯欓牠銆傚彲鐢ㄨ畩鏁歌垏璜嬫眰楂旀ā鏉夸竴鑷淬€?,
-        "label": "Webhook 璜嬫眰妯欓牠 JSON"
+        "title": "Webhook 請求標頭",
+        "desc": "以 JSON 模板自訂 webhook 請求標頭。可用變數與請求體模板一致。",
+        "label": "Webhook 請求標頭 JSON"
       },
       "body_template": {
-        "title": "Webhook 璜嬫眰楂旀ā鏉?,
-        "desc": "鑷▊ webhook 閫佸嚭鐨勮珛姹傞珨銆傚彲鐢ㄨ畩鏁革細{{event}}銆亄{message}}銆亄{title}}銆亄{url}}銆亄{username}}銆亄{content}}銆亄{description}}銆?,
-        "label": "Webhook 璜嬫眰楂旀ā鏉?
+        "title": "Webhook 請求體模板",
+        "desc": "自訂 webhook 送出的請求體。可用變數：{{event}}、{{message}}、{{title}}、{{url}}、{{username}}、{{content}}、{{description}}。",
+        "label": "Webhook 請求體模板"
       },
       "test": {
-        "title": "鐧奸€佹脯瑭?Webhook",
-        "desc": "浣跨敤鐩墠闋侀潰涓殑 webhook 瑷畾鐧奸€佷竴娆℃脯瑭﹁珛姹傘€傚皻鏈劜瀛樼殑淇敼涔熸渻鐩存帴鐢熸晥銆?,
-        "button": "鐧奸€佹脯瑭?,
-        "sending": "鐧奸€佷腑...",
-        "placeholder": "鍙伕鐨勬脯瑭﹁▕鎭収瀹广€傜暀绌烘檪鏈冧娇鐢ㄩ爯瑷脯瑭﹁矤杓夈€?,
-        "success": "Webhook 娓│鐧奸€佹垚鍔?,
-        "failed": "Webhook 娓│鐧奸€佸け鏁?
+        "title": "發送測試 Webhook",
+        "desc": "使用目前頁面中的 webhook 設定發送一次測試請求。尚未儲存的修改也會直接生效。",
+        "button": "發送測試",
+        "sending": "發送中...",
+        "placeholder": "可選的測試訊息內容。留空時會使用預設測試負載。",
+        "success": "Webhook 測試發送成功",
+        "failed": "Webhook 測試發送失敗"
       }
     },
     "maintenance": {
-      "title": "缍"
+      "title": "維護"
     },
     "friend": {
       "page": {
-        "title": "椤ず鏈嬪弸鍊戦爜闈?,
-        "desc": "鍦ㄥ皫鑸瑒椤ず鏈嬪弸鍊戝叆鍙ｏ紝闂滈枆寰岃í鍟?/friends 浠嶅彲鐩存帴閫插叆"
+        "title": "顯示朋友們頁面",
+        "desc": "在導航欄顯示朋友們入口，關閉後訪問 /friends 仍可直接進入"
       },
       "apply": {
-        "desc": "鍏佽ū鍏朵粬鐢ㄦ埗鐢宠珛鍙嬫儏閫ｇ祼锛堥渶瀵╂牳锛?,
-        "title": "鍙嬫儏閫ｇ祼鐢宠珛"
+        "desc": "允許其他用戶申請友情連結（需審核）",
+        "title": "友情連結申請"
       },
       "health": {
-        "desc": "鍟熺敤鏈嬪弸鍊戦€ｇ祼鍙í鍟忔€ф鏌?,
-        "title": "鍙嬫儏閫ｇ祼鍋ュ悍鐩ｆ脯",
+        "desc": "啟用朋友們連結可訪問性檢查",
+        "title": "友情連結健康監測",
         "ua": {
-          "desc": "瑷畾鍙嬫儏閫ｇ祼鍙í鍟忔€ф鏌ユ檪浣跨敤鐨?User-Agent, 闋愯ō 'Rin-Check/1.0'",
-          "title": "鍙嬫儏閫ｇ祼鍋ュ悍鐩ｆ脯 User-Agent"
+          "desc": "設定友情連結可訪問性檢查時使用的 User-Agent, 預設 'Rin-Check/1.0'",
+          "title": "友情連結健康監測 User-Agent"
         }
       },
-      "title": "鍙嬫儏閫ｇ祼瑷畾"
+      "title": "友情連結設定"
     },
     "ai_summary": {
-      "title": "AI 绺界祼瑷畾",
+      "title": "AI 總結設定",
       "enable": {
-        "title": "鍟熺敤 AI 绺界祼",
-        "desc": "鐧间綀鏂囩珷鏅傝嚜鍕曠敘鐢?AI 绺界祼"
+        "title": "啟用 AI 總結",
+        "desc": "發佈文章時自動產生 AI 總結"
       },
       "provider": {
-        "title": "AI 渚涙噳鍟?,
-        "desc": "閬告搰鎴栬几鍏?AI 鏈嶅嫏渚涙噳鍟?
+        "title": "AI 供應商",
+        "desc": "選擇或輸入 AI 服務供應商"
       },
       "model": {
-        "title": "妯″瀷",
-        "desc": "閬告搰鎴栬几鍏ユā鍨嬪悕绋?
+        "title": "模型",
+        "desc": "選擇或輸入模型名稱"
       },
       "api_key": {
         "title": "API Key",
-        "desc": "杓稿叆鎮ㄧ殑 API 閲戦懓",
-        "set": "宸茶ō瀹?,
-        "placeholder_set": "杓稿叆鏂伴噾閼颁互鏇存柊"
+        "desc": "輸入您的 API 金鑰",
+        "set": "已設定",
+        "placeholder_set": "輸入新金鑰以更新"
       },
       "api_url": {
         "title": "API URL",
-        "desc": "鑷▊ API 鍦板潃锛圤penAI 鐩稿鏍煎紡锛?
+        "desc": "自訂 API 地址（OpenAI 相容格式）"
       },
       "save": {
-        "title": "鍎插瓨瑷畾",
-        "desc": "鍎插瓨 AI 瑷畾鍒拌硣鏂欏韩",
-        "button": "鍎插瓨瑷畾"
+        "title": "儲存設定",
+        "desc": "儲存 AI 設定到資料庫",
+        "button": "儲存設定"
       },
-      "save_success": "鍎插瓨鎴愬姛",
-      "unsaved_changes": "鎮ㄦ湁鏈劜瀛樼殑璁婃洿",
+      "save_success": "儲存成功",
+      "unsaved_changes": "您有未儲存的變更",
       "test": {
-        "title": "娓│妯″瀷",
-        "desc": "娓│ AI 妯″瀷鏄惁鍙敤",
-        "button": "娓│閫ｆ帴",
-        "success": "娓│鎴愬姛",
-        "failed": "娓│澶辨晽",
-        "error": "娓│鍑洪尟",
-        "testing": "姝ｅ湪娓│...",
-        "http_error$status": "HTTP 閷 (鐙€鎱嬬⒓: {{status}})"
+        "title": "測試模型",
+        "desc": "測試 AI 模型是否可用",
+        "button": "測試連接",
+        "success": "測試成功",
+        "failed": "測試失敗",
+        "error": "測試出錯",
+        "testing": "正在測試...",
+        "http_error$status": "HTTP 錯誤 (狀態碼: {{status}})"
       }
     },
-    "get_config_failed$message": "鐛插彇閰嶇疆澶辨晽锛寋{message}}",
-    "import_failed$message": "鍖叆澶辨晽锛寋{message}}",
-    "import_result": "鍖叆缁撴灉",
-    "import_skipped": "璺抽亷鍖叆",
-    "import_skipped_item$title$reason": "銆妠{title}}銆? {{reason}}",
-    "import_success$success$skipped": "鍖叆鎴愬姛锛寋{success}} 绡囨枃绔犲尟鍏ユ垚鍔燂紝{{skipped}} 绡囨枃绔犺烦閬?,
+    "get_config_failed$message": "獲取配置失敗，{{message}}",
+    "import_failed$message": "匯入失敗，{{message}}",
+    "import_result": "匯入结果",
+    "import_skipped": "跳過匯入",
+    "import_skipped_item$title$reason": "《{{title}}》- {{reason}}",
+    "import_success$success$skipped": "匯入成功，{{success}} 篇文章匯入成功，{{skipped}} 篇文章跳過",
     "login": {
       "enable": {
-        "desc": "闁嬪暉/闂滈枆鍙充笂瑙掔櫥鍏ユ寜閳曪紝闂滈枆寰屽彲閫氶亷銆岄洐鎿娿€嶅簳閮ㄦ枃瀛?鈥溌?2026 Powered by鈥?銆屼笁娆°€嶈Ц鐧肩櫥鍏ュ叆鍙?,
-        "title": "鍟熺敤鍙充笂瑙掔櫥鍏ユ寜閳?
+        "desc": "開啟/關閉右上角登入按鈕，關閉後可通過「雙擊」底部文字 “© 2026 Powered by” 「三次」觸發登入入口",
+        "title": "啟用右上角登入按鈕"
       }
     },
     "other": {
-      "title": "鍏朵粬瑷畾"
+      "title": "其他設定"
     },
     "personalization": {
-      "title": "鍊嬩汉鍖?
+      "title": "個人化"
     },
     "site": {
-      "title": "缍茬珯瑷婃伅",
+      "title": "網站訊息",
       "name": {
-        "title": "缍茬珯鍚嶇ū",
-        "desc": "瑷畾椤ず鍦ㄧ恫绔欐椤屽拰灏庤鍒楃殑缍茬珯鍚嶇ū",
-        "label": "缍茬珯鍚嶇ū"
+        "title": "網站名稱",
+        "desc": "設定顯示在網站標題和導覽列的網站名稱",
+        "label": "網站名稱"
       },
       "description": {
-        "title": "缍茬珯鎻忚堪",
-        "desc": "瑷畾椤ず鍦ㄥ皫瑕藉垪鐨勭啊鐭弿杩?,
-        "label": "缍茬珯鎻忚堪"
+        "title": "網站描述",
+        "desc": "設定顯示在導覽列的簡短描述",
+        "label": "網站描述"
       },
       "avatar": {
-        "title": "缍茬珯闋儚",
-        "desc": "瑷畾椤ず鍦ㄥ皫瑕藉垪鐨勯牠鍍忥紝鏀彺濉 URL銆佷笂鍌冲湒鐗囨垨鎷栨嫿涓婂偝",
-        "label": "闋儚 URL"
+        "title": "網站頭像",
+        "desc": "設定顯示在導覽列的頭像，支援填寫 URL、上傳圖片或拖拽上傳",
+        "label": "頭像 URL"
       },
       "page_size": {
-        "title": "鍒嗛爜澶у皬",
-        "desc": "瑷畾鏂囩珷鍒楄〃姣忛爜椤ず鐨勬暩閲?,
-        "label": "姣忛爜鏂囩珷鏁搁噺"
+        "title": "分頁大小",
+        "desc": "設定文章列表每頁顯示的數量",
+        "label": "每頁文章數量"
       }
     },
     "header_layout": {
-      "title": "Header 鐗堥潰妯ｅ紡",
-      "desc": "閬告搰妗岄潰绔恫绔欓爞閮ㄧ殑鎺掑垪鏂瑰紡锛屼甫鍦ㄤ笅鏂归爯瑕芥晥鏋?,
+      "title": "Header 版面樣式",
+      "desc": "選擇桌面端網站頂部的排列方式，並在下方預覽效果",
       "options": {
-        "classic": "缍撳吀缃腑",
-        "compact": "妤电啊绱旀枃瀛?
+        "classic": "經典置中",
+        "compact": "極簡純文字"
       },
       "preview": {
-        "classic": "鍝佺墝銆佺疆涓皫瑕借垏鎿嶄綔鍗€缍寔鐩墠閫欏骞宠　閰嶇疆銆?,
-        "compact": "骞句箮绉婚櫎鎵€鏈夎椋撅紝鍙繚鐣欐渶蹇呰鐨勮硣瑷婅垏鎿嶄綔銆?
+        "classic": "品牌、置中導覽與操作區維持目前這套平衡配置。",
+        "compact": "幾乎移除所有裝飾，只保留最必要的資訊與操作。"
       }
     },
     "header_behavior": {
-      "title": "Header 椤ず鏂瑰紡",
-      "desc": "鎺у埗闋侀潰鎹插嫊鏅?Header 鏄惁鍥哄畾椤ず鍦ㄩ爞閮?,
+      "title": "Header 顯示方式",
+      "desc": "控制頁面捲動時 Header 是否固定顯示在頂部",
       "options": {
-        "fixed": "鍥哄畾",
-        "static": "涓嶅浐瀹?,
-        "reveal": "涓婃粦鏅傞’绀?
+        "fixed": "固定",
+        "static": "不固定",
+        "reveal": "上滑時顯示"
       }
     },
     "feed_card": {
-      "title": "鏂囩珷鍗＄墖妯ｅ紡",
-      "desc": "閬告搰鏂囩珷鍒楄〃銆佹悳灏嬬祼鏋滆垏妯欑堡闋佷腑鍗＄墖鐨勮瑕洪ⅷ鏍?,
+      "title": "文章卡片樣式",
+      "desc": "選擇文章列表、搜尋結果與標籤頁中卡片的視覺風格",
       "options": {
-        "default": "闋愯ō",
-        "editorial": "闆滆獙棰?
+        "default": "預設",
+        "editorial": "雜誌風"
       },
       "preview": {
-        "default": "鐩墠閫欏绶婃箠鍗＄墖锛岃〃闈咕娣紝瑁濋＞鏈€灏戙€?,
-        "editorial": "鏇存湁灞曠ず鎰熺殑鍗＄墖锛屽付鏈夋贰娣′富椤屾煋鑹层€佹洿寮峰堡娆★紝浠ュ強椤炰技鐣唺鐨?framing銆?
+        "default": "目前這套緊湊卡片，表面乾淨，裝飾最少。",
+        "editorial": "更有展示感的卡片，帶有淡淡主題染色、更強層次，以及類似畫冊的 framing。"
       }
     },
     "feed_layout": {
-      "title": "鏂囩珷鍒楄〃鐗堥潰",
-      "desc": "閬告搰鏂囩珷鍒楄〃銆佹悳灏嬬祼鏋滆垏妯欑堡闋佷腑鍗＄墖鐨勬帓鍒楁柟寮?,
-      "preview_note": "鍍呬緵闋愯銆傚劜瀛樿ō瀹氬緦鎵嶆渻濂楃敤鍒扮珯榛炪€?,
+      "title": "文章列表版面",
+      "desc": "選擇文章列表、搜尋結果與標籤頁中卡片的排列方式",
+      "preview_note": "僅供預覽。儲存設定後才會套用到站點。",
       "options": {
-        "list": "鍠瑒",
-        "masonry": "鐎戝竷娴?
+        "list": "單欄",
+        "masonry": "瀑布流"
       },
       "preview": {
-        "list": "绌╁畾鐨勫柈娆勯柋璁€绡€濂忥紝姣忓垪鍙斁涓€寮靛崱鐗囥€?,
-        "masonry": "渚濆崱鐗囬珮搴﹁嚜鍕曟嫾鎺ョ殑澶氭瑒鐗堥潰锛岄仼鍚堥暦鐭笉涓€鐨勫収瀹广€?
+        "list": "穩定的單欄閱讀節奏，每列只放一張卡片。",
+        "masonry": "依卡片高度自動拼接的多欄版面，適合長短不一的內容。"
       }
     },
     "theme_color": {
-      "title": "涓婚鑹?,
-      "desc": "閬告搰鎸夐垥銆佸挤瑾胯垏浜掑嫊鍏冪礌浣跨敤鐨勪富鑹?,
-      "custom": "鑷▊",
+      "title": "主題色",
+      "desc": "選擇按鈕、強調與互動元素使用的主色",
+      "custom": "自訂",
       "options": {
-        "rose": "鐜磪",
-        "violet": "绱壊",
-        "blue": "钘嶈壊",
-        "teal": "闈掔稜",
-        "orange": "姗欒壊"
+        "rose": "玫紅",
+        "violet": "紫色",
+        "blue": "藍色",
+        "teal": "青綠",
+        "orange": "橙色"
       }
     },
     "rss": {
-      "desc": "鍟熺敤缍茬珯搴曢儴 RSS 瑷傞柋閫ｇ祼",
-      "title": "RSS 瑷傞柋閫ｇ祼"
+      "desc": "啟用網站底部 RSS 訂閱連結",
+      "title": "RSS 訂閱連結"
     },
-    "title": "瑷畾",
-    "update_failed$message": "鏇存柊澶辨晽: {{message}}",
+    "title": "設定",
+    "update_failed$message": "更新失敗: {{message}}",
     "wordpress": {
-      "desc": "涓婂偝 WordPress 鍖嚭鐨?XML 鏂囦欢",
-      "title": "寰?WordPress 鍖叆"
+      "desc": "上傳 WordPress 匯出的 XML 文件",
+      "title": "從 WordPress 匯入"
     }
   },
-  "sitename": "缍茬珯鍚嶇ū",
-  "sort_order": "鎺掑簭",
-  "status": "鐙€鎱?,
-  "summary": "绨′粙",
-  "tags": "妯欑堡",
-  "timeline": "鏅傞枔杌?,
-  "title": "妯欓",
-  "title_empty": "妯欓涓嶈兘鐐虹┖",
+  "sitename": "網站名稱",
+  "sort_order": "排序",
+  "status": "狀態",
+  "summary": "簡介",
+  "tags": "標籤",
+  "timeline": "時間軸",
+  "title": "標題",
+  "title_empty": "標題不能為空",
   "top": {
-    "title": "缃爞"
+    "title": "置頂"
   },
-  "unlisted": "鏈垪鍑?,
+  "unlisted": "未列出",
   "untop": {
-    "title": "鍙栨秷缃爞"
+    "title": "取消置頂"
   },
   "update": {
-    "failed$message": "鏇存柊澶辨晽: {{message}}",
-    "success": "鏇存柊鎴愬姛",
-    "title": "鏇存柊"
+    "failed$message": "更新失敗: {{message}}",
+    "success": "更新成功",
+    "title": "更新"
   },
-  "update$sth": "鏇存柊 {{sth}}",
+  "update$sth": "更新 {{sth}}",
   "upload": {
-    "failed": "涓婂偝澶辨晽",
-    "failed$size": "涓婂偝澶辨晽锛屾枃浠跺ぇ灏忎笉鑳借秴閬?{{size}} MB",
+    "failed": "上傳失敗",
+    "failed$size": "上傳失敗，文件大小不能超過 {{size}} MB",
     "image": {
-      "clear": "娓呯┖鍦栫墖",
-      "drag_drop": "鎷栨嫿鍦栫墖鍒伴€欒！锛屾垨榛炴搳閬告搰鍦栫墖",
-      "drag_hint": "涔熷彲浠ョ洿鎺ュ～瀵湒鐗?URL",
-      "drop_now": "鏀鹃枊浠ヤ笂鍌冲湒鐗?,
-      "invalid_type": "璜嬩笂鍌冲湒鐗囨枃浠?,
-      "preview_alt": "鍦栫墖闋愯",
-      "url_placeholder": "濉鍦栫墖 URL锛屾垨涓婂偝涓€寮靛湒鐗?
+      "clear": "清空圖片",
+      "drag_drop": "拖拽圖片到這裡，或點擊選擇圖片",
+      "drag_hint": "也可以直接填寫圖片 URL",
+      "drop_now": "放開以上傳圖片",
+      "invalid_type": "請上傳圖片文件",
+      "preview_alt": "圖片預覽",
+      "url_placeholder": "填寫圖片 URL，或上傳一張圖片"
     },
-    "title": "涓婂偝"
+    "title": "上傳"
   },
-  "uploading": "涓婂偝涓?,
-  "url": "缍茬珯 URL",
+  "uploading": "上傳中",
+  "url": "網站 URL",
   "visible": {
-    "self_only": "鍍呰嚜宸卞彲瑕?
+    "self_only": "僅自己可見"
   },
-  "writing": "瀵綔",
-  "year$year": "{{year}} 骞?,
+  "writing": "寫作",
+  "year$year": "{{year}} 年",
   "profile": {
-    "title": "鍊嬩汉璩囨枡",
-    "avatar": "闋儚",
-    "avatar_hint": "鏀彺濉闋儚 URL銆佷笂鍌冲湒鐗囨垨鎷栨嫿涓婂偝锛堟渶澶?2MB锛?,
-    "username": "鏆辩ū",
-    "username_placeholder": "璜嬭几鍏ユ毐绋?,
-    "save": "鍎插瓨",
-    "saving": "鍎插瓨涓?..",
-    "success": "鍎插瓨鎴愬姛",
+    "title": "個人資料",
+    "avatar": "頭像",
+    "avatar_hint": "支援填寫頭像 URL、上傳圖片或拖拽上傳（最大 2MB）",
+    "username": "暱稱",
+    "username_placeholder": "請輸入暱稱",
+    "save": "儲存",
+    "saving": "儲存中...",
+    "success": "儲存成功",
     "error": {
-      "file_too_large": "鏂囦欢澶у皬涓嶈兘瓒呴亷 2MB",
-      "invalid_file_type": "璜嬩笂鍌冲湒鐗囨枃浠?,
-      "empty_username": "鏆辩ū涓嶈兘鐐虹┖",
-      "update_failed": "鏇存柊澶辨晽",
-      "network": "缍茶矾閷锛岃珛閲嶈│"
+      "file_too_large": "文件大小不能超過 2MB",
+      "invalid_file_type": "請上傳圖片文件",
+      "empty_username": "暱稱不能為空",
+      "update_failed": "更新失敗",
+      "network": "網路錯誤，請重試"
     }
   },
   "health": {
-    "generated_at": "鏈€杩戞鏌ユ檪闁擄細{{date}}",
+    "generated_at": "最近檢查時間：{{date}}",
     "items": {
       "common": {
-        "no_action": "鐒￠渶铏曠悊銆?
+        "no_action": "無需處理。"
       },
       "auth_runtime": {
-        "title": "瑾嶈瓑閬嬭鐠板",
+        "title": "認證運行環境",
         "success": {
-          "impact": "瑾嶈瓑 Cookie 鑸囨瑠鏉栨牎椹楀彲浠ユ甯搁亱浣溿€?,
-          "summary": "JWT 瀵嗛懓宸查厤缃€?,
-          "suggestion": "濡傛灉闇€瑕佽畵鎵€鏈夌従鏈夋渻瑭卞け鏁堬紝璜嬭鎱庤吉鎻涜┎瀵嗛懓銆?
+          "impact": "認證 Cookie 與權杖校驗可以正常運作。",
+          "summary": "JWT 密鑰已配置。",
+          "suggestion": "如果需要讓所有現有會話失效，請謹慎輪換該密鑰。"
         },
         "danger": {
-          "impact": "鐧诲叆鑸囧緦鍙版渻瑭辨牎椹楀彲鑳藉畬鍏ㄥけ鏁堛€?,
-          "summary": "缂哄皯 JWT_SECRET銆?,
-          "suggestion": "鍦ㄤ娇鐢ㄤ换浣曢渶瑕佽獚璀夌殑璺敱鍓嶏紝璜嬪厛鐐?Worker Secret 閰嶇疆 JWT_SECRET銆?
+          "impact": "登入與後台會話校驗可能完全失效。",
+          "summary": "缺少 JWT_SECRET。",
+          "suggestion": "在使用任何需要認證的路由前，請先為 Worker Secret 配置 JWT_SECRET。"
         }
       },
       "login_methods": {
-        "title": "鐧诲叆鍏ュ彛",
+        "title": "登入入口",
         "disabled": {
-          "impact": "鍏枊鐧诲叆琚仠鐢紝寰屽彴 UI 鐒℃硶閫忛亷姝ｅ父鐧诲叆娴佺▼閫插叆銆?,
-          "summary": "login.enabled 宸查棞闁夈€?,
-          "suggestion": "濡傛灉姝ゅ渚嬮渶瑕佷簰鍕曞紡寰屽彴瀛樺彇锛岃珛鍦ㄨō瀹氫腑鍟熺敤鐧诲叆銆?
+          "impact": "公開登入被停用，後台 UI 無法透過正常登入流程進入。",
+          "summary": "login.enabled 已關閉。",
+          "suggestion": "如果此實例需要互動式後台存取，請在設定中啟用登入。"
         },
         "missing": {
-          "impact": "浣跨敤鑰呭彲浠ョ湅鍒扮櫥鍏ュ叆鍙ｏ紝浣嗘矑鏈変换浣曞彲鐢ㄧ殑鐧诲叆鏂瑰紡銆?,
-          "summary": "GitHub OAuth 鍜屽瘑纰肩櫥鍏ラ兘鏈厤缃€?,
-          "suggestion": "璜嬮厤缃?RIN_GITHUB_CLIENT_ID/RIN_GITHUB_CLIENT_SECRET 鎴?ADMIN_USERNAME/ADMIN_PASSWORD銆?
+          "impact": "使用者可以看到登入入口，但沒有任何可用的登入方式。",
+          "summary": "GitHub OAuth 和密碼登入都未配置。",
+          "suggestion": "請配置 RIN_GITHUB_CLIENT_ID/RIN_GITHUB_CLIENT_SECRET 或 ADMIN_USERNAME/ADMIN_PASSWORD。"
         },
         "default_password": {
-          "impact": "绠＄悊鍝″赋铏熶粛鍦ㄤ娇鐢ㄩ爯瑷娇鐢ㄨ€呭悕绋辫垏瀵嗙⒓锛屽爆鏂煎毚閲嶅畨鍏ㄩⅷ闅€?,
-          "summary": "ADMIN_USERNAME/ADMIN_PASSWORD 浠嶇劧鏄?admin / admin123銆?,
-          "suggestion": "鍦ㄥ叕闁嬬恫绔欎箣鍓嶈珛绔嬪嵆淇敼闋愯ō浣跨敤鑰呭悕绋辨垨瀵嗙⒓銆?
+          "impact": "管理員帳號仍在使用預設使用者名稱與密碼，屬於嚴重安全風險。",
+          "summary": "ADMIN_USERNAME/ADMIN_PASSWORD 仍然是 admin / admin123。",
+          "suggestion": "在公開網站之前請立即修改預設使用者名稱或密碼。"
         },
         "oauth_missing": {
-          "impact": "鐩墠鍙兘浣跨敤鏈湴瀵嗙⒓甯宠櫉鐧诲叆锛屽叾浠栦娇鐢ㄨ€呯劇娉曢€忛亷 OAuth 鐧诲叆涓︾暀瑷€銆?,
-          "summary": "GitHub OAuth 鏈厤缃€?,
-          "suggestion": "濡傛灉甯屾湜鍏朵粬浣跨敤鑰呯櫥鍏ワ紝璜嬮厤缃?RIN_GITHUB_CLIENT_ID/RIN_GITHUB_CLIENT_SECRET銆?
+          "impact": "目前只能使用本地密碼帳號登入，其他使用者無法透過 OAuth 登入並留言。",
+          "summary": "GitHub OAuth 未配置。",
+          "suggestion": "如果希望其他使用者登入，請配置 RIN_GITHUB_CLIENT_ID/RIN_GITHUB_CLIENT_SECRET。"
         },
         "ready": {
-          "impact": "寰屽彴鐧诲叆鍙敤銆?,
-          "summary": "OAuth 鐧诲叆宸查厤缃紝涓旂洰鍓嶅瘑纰肩櫥鍏ユ湭浣跨敤闋愯ō鎲戣瓑銆?,
-          "suggestion": "鐒￠渶铏曠悊銆?
+          "impact": "後台登入可用。",
+          "summary": "OAuth 登入已配置，且目前密碼登入未使用預設憑證。",
+          "suggestion": "無需處理。"
         },
         "details": {
-          "github_configured": "GitHub OAuth锛氬凡閰嶇疆",
-          "github_missing": "GitHub OAuth锛氭湭閰嶇疆",
-          "password_configured": "瀵嗙⒓鐧诲叆锛氬凡閰嶇疆",
-          "password_missing": "瀵嗙⒓鐧诲叆锛氭湭閰嶇疆",
-          "password_default": "瀵嗙⒓鐧诲叆锛氫娇鐢ㄩ爯瑷啈璀?
+          "github_configured": "GitHub OAuth：已配置",
+          "github_missing": "GitHub OAuth：未配置",
+          "password_configured": "密碼登入：已配置",
+          "password_missing": "密碼登入：未配置",
+          "password_default": "密碼登入：使用預設憑證"
         }
       },
       "storage": {
-        "title": "鐗╀欢鍎插瓨",
+        "title": "物件儲存",
         "ready": {
-          "impact": "涓婂偝銆佺恫绔欏湒绀鸿檿鐞嗚垏 Feed 蹇彇鐢㈢墿閮藉彲浠ヤ娇鐢ㄧ墿浠跺劜瀛樸€?,
-          "summary": "鍎插瓨鎲戣瓑宸查厤缃€?,
-          "summary_missing_access_host": "鍎插瓨鏈韩鍙敤锛屼絾缂哄皯 S3_ACCESS_HOST锛屽叕闁?URL 鏈冮€€鍥炲埌 endpoint銆?,
-          "suggestion_missing_access_host": "濡傛灉浣犻渶瑕佺┅瀹氱殑鍏枊璩囨簮 URL 鎴栬嚜瑷傝硣婧愮恫鍩燂紝璜嬭ō瀹?S3_ACCESS_HOST銆?
+          "impact": "上傳、網站圖示處理與 Feed 快取產物都可以使用物件儲存。",
+          "summary": "儲存憑證已配置。",
+          "summary_missing_access_host": "儲存本身可用，但缺少 S3_ACCESS_HOST，公開 URL 會退回到 endpoint。",
+          "suggestion_missing_access_host": "如果你需要穩定的公開資源 URL 或自訂資源網域，請設定 S3_ACCESS_HOST。"
         },
         "missing": {
-          "impact": "濯掗珨涓婂偝銆佺恫绔欏湒绀虹敓鎴愯垏闋愮敓鎴愮殑 Feed 蹇彇鍙兘澶辨晽鎴栦笉鍙敤銆?,
-          "summary_none": "鐗╀欢鍎插瓨灏氭湭閰嶇疆銆?,
-          "summary_partial": "鐗╀欢鍎插瓨鍍呴儴鍒嗛厤缃畬鎴愩€傜己灏戯細{{keys}}銆?,
-          "suggestion": "鍦ㄤ緷璩翠笂鍌虫垨閬犵蹇彇鐢㈢墿鍓嶏紝璜嬪厛瑁滈綂瀹屾暣鐨?S3/R2 鎲戣瓑銆?
+          "impact": "媒體上傳、網站圖示生成與預生成的 Feed 快取可能失敗或不可用。",
+          "summary_none": "物件儲存尚未配置。",
+          "summary_partial": "物件儲存僅部分配置完成。缺少：{{keys}}。",
+          "suggestion": "在依賴上傳或遠端快取產物前，請先補齊完整的 S3/R2 憑證。"
         },
         "details": {
           "key": "{{key}}"
         }
       },
       "ai_summary": {
-        "title": "AI 鎽樿",
+        "title": "AI 摘要",
         "disabled": {
-          "impact": "鏂囩珷鐧煎竷鏅備笉鏈冪敓鎴?AI 鎽樿銆?,
-          "summary": "AI 鎽樿宸查棞闁夈€?,
-          "suggestion": "濡傛灉浣犲笇鏈涚櫦甯冩檪鑷嫊鐢熸垚鎽樿锛岃珛鍦ㄨō瀹氫腑鍟熺敤銆?
+          "impact": "文章發布時不會生成 AI 摘要。",
+          "summary": "AI 摘要已關閉。",
+          "suggestion": "如果你希望發布時自動生成摘要，請在設定中啟用。"
         },
         "no_model": {
-          "impact": "鐧煎竷鎴栨洿鏂板収瀹规檪锛屾憳瑕佺敓鎴愬彲鑳藉け鏁椼€?,
-          "summary": "AI 鎽樿宸插暉鐢紝浣嗘湭閰嶇疆妯″瀷銆?,
-          "suggestion": "鍟熺敤 AI 鎽樿鍓嶏紝璜嬪厛鍦ㄨō瀹氫腑閬告搰妯″瀷銆?
+          "impact": "發布或更新內容時，摘要生成可能失敗。",
+          "summary": "AI 摘要已啟用，但未配置模型。",
+          "suggestion": "啟用 AI 摘要前，請先在設定中選擇模型。"
         },
         "worker_ai": {
           "ready": {
-            "impact": "鍙互閫忛亷 Workers AI 鐢熸垚 AI 鎽樿銆?,
-            "summary": "Workers AI 宸茬偤妯″瀷 {{model}} 閰嶇疆瀹屾垚銆?
+            "impact": "可以透過 Workers AI 生成 AI 摘要。",
+            "summary": "Workers AI 已為模型 {{model}} 配置完成。"
           },
           "missing": {
-            "impact": "鐧煎竷鍏у鏅傦紝AI 鎽樿璜嬫眰鏈冨け鏁椼€?,
-            "summary": "AI 鎽樿浣跨敤浜?worker-ai锛屼絾缂哄皯 Workers AI binding銆?,
-            "suggestion": "鍦ㄤ娇鐢?worker-ai 鎻愪緵鏂瑰墠锛岃珛鍏堝湪 wrangler 瑷畾涓姞鍏?AI binding銆?
+            "impact": "發布內容時，AI 摘要請求會失敗。",
+            "summary": "AI 摘要使用了 worker-ai，但缺少 Workers AI binding。",
+            "suggestion": "在使用 worker-ai 提供方前，請先在 wrangler 設定中加入 AI binding。"
           }
         },
         "external": {
           "ready": {
-            "impact": "鍙互閫忛亷宸查厤缃殑澶栭儴鎻愪緵鏂圭敓鎴?AI 鎽樿銆?,
-            "summary": "{{provider}} 宸茬偤 AI 鎽樿閰嶇疆瀹屾垚銆?,
-            "suggestion": "濡傛灉浣犳兂椹楄瓑閬犵妯″瀷鍥炴噳锛屽彲浠ュ湪瑷畾涓娇鐢ㄦ脯瑭﹀姛鑳姐€?
+            "impact": "可以透過已配置的外部提供方生成 AI 摘要。",
+            "summary": "{{provider}} 已為 AI 摘要配置完成。",
+            "suggestion": "如果你想驗證遠端模型回應，可以在設定中使用測試功能。"
           },
           "missing": {
-            "impact": "鐧煎竷鍏у鏅傦紝AI 鎽樿璜嬫眰鏈冨け鏁椼€?,
-            "summary_key": "缂哄皯 AI 鎻愪緵鏂归噾閼般€?,
-            "summary_url": "缂哄皯 AI 鎻愪緵鏂?URL銆?,
-            "suggestion": "鍦ㄥ暉鐢?AI 鎽樿鍓嶏紝璜嬪厛鍦ㄨō瀹氫腑閰嶇疆鎻愪緵鏂规啈璀夈€?
+            "impact": "發布內容時，AI 摘要請求會失敗。",
+            "summary_key": "缺少 AI 提供方金鑰。",
+            "summary_url": "缺少 AI 提供方 URL。",
+            "suggestion": "在啟用 AI 摘要前，請先在設定中配置提供方憑證。"
           },
           "details": {
-            "provider": "鎻愪緵鏂癸細{{provider}}",
-            "model": "妯″瀷锛歿{model}}"
+            "provider": "提供方：{{provider}}",
+            "model": "模型：{{model}}"
           }
         }
       },
       "webhook": {
-        "title": "Webhook 閫氱煡",
+        "title": "Webhook 通知",
         "ready": {
-          "impact": "瑭曡珫鑸囧弸閺堢敵璜嬮€氱煡鍙互鐧奸€佸埌宸查厤缃殑 webhook銆?,
-          "summary": "Webhook URL 宸查厤缃€?,
-          "suggestion_optional": "鍙伕锛氬鏋滀綘閭勫笇鏈涘暉鐢ㄦ帓绋嬪弸閺堝仴搴锋鏌ワ紝鍙互闁嬪暉 friend_crontab銆?
+          "impact": "評論與友鏈申請通知可以發送到已配置的 webhook。",
+          "summary": "Webhook URL 已配置。",
+          "suggestion_optional": "可選：如果你還希望啟用排程友鏈健康檢查，可以開啟 friend_crontab。"
         },
         "missing": {
-          "impact": "瑭曡珫鑸囧弸閺堜簨浠朵笉鏈冩帹閫佸埌澶栭儴鑱婂ぉ宸ュ叿銆?,
-          "summary": "Webhook URL 鏈厤缃€?,
-          "suggestion": "濡傛灉浣犱緷璩村閮ㄩ€氱煡锛岃珛鍦ㄤ己鏈嶅櫒瑷畾鎴栫挵澧冭畩鏁镐腑瑷畾 WEBHOOK_URL銆?
+          "impact": "評論與友鏈事件不會推送到外部聊天工具。",
+          "summary": "Webhook URL 未配置。",
+          "suggestion": "如果你依賴外部通知，請在伺服器設定或環境變數中設定 WEBHOOK_URL。"
         }
       },
       "rss": {
-        "title": "RSS 鑸?Feed 绔粸",
+        "title": "RSS 與 Feed 端點",
         "enabled": {
-          "impact": "Feed 绔粸宸插暉鐢紱濡傛灉娌掓湁鍎插瓨鏀彺锛屾渻閫€鍥炲埌鎸夐渶鐢熸垚銆?,
-          "summary_cached": "RSS 宸插暉鐢紝涓旂墿浠跺劜瀛樺彲鐢ㄦ柤蹇彇鐢熸垚鐨?Feed 鐢㈢墿銆?,
-          "summary_on_demand": "RSS 宸插暉鐢紝浣嗙敱鏂肩墿浠跺劜瀛樹笉瀹屾暣锛孎eed 鐢㈢墿灏囨寜闇€鐢熸垚銆?,
-          "suggestion": "濡傛灉浣犲笇鏈涢仩绔揩鍙?Feed 鐢㈢墿锛岃珛閰嶇疆鐗╀欢鍎插瓨銆?
+          "impact": "Feed 端點已啟用；如果沒有儲存支援，會退回到按需生成。",
+          "summary_cached": "RSS 已啟用，且物件儲存可用於快取生成的 Feed 產物。",
+          "summary_on_demand": "RSS 已啟用，但由於物件儲存不完整，Feed 產物將按需生成。",
+          "suggestion": "如果你希望遠端快取 Feed 產物，請配置物件儲存。"
         },
         "disabled": {
-          "impact": "瑷涓嶆渻鍦ㄧ恫绔欓爜灏剧湅鍒?RSS/Atom 閫ｇ祼銆?,
-          "summary": "瀹㈡埗绔ō瀹氫腑宸查棞闁?RSS銆?,
-          "suggestion": "濡傛灉浣犲笇鏈涙毚闇?Feed 鐧肩従閫ｇ祼鍜?Feed 绔粸锛岃珛鍦ㄨō瀹氫腑鍟熺敤 RSS銆?
+          "impact": "訪客不會在網站頁尾看到 RSS/Atom 連結。",
+          "summary": "客戶端設定中已關閉 RSS。",
+          "suggestion": "如果你希望暴露 Feed 發現連結和 Feed 端點，請在設定中啟用 RSS。"
         }
       },
       "site_identity": {
-        "title": "缍茬珯璀樺垾",
+        "title": "網站識別",
         "ready": {
-          "impact": "瑷鍙互鍦ㄤ粙闈腑鐪嬪埌宸查厤缃殑缍茬珯鍚嶇ū銆?,
-          "summary": "缍茬珯璀樺垾宸茬偤 {{name}} 閰嶇疆瀹屾垚銆?,
-          "summary_missing_avatar": "缍茬珯鍚嶇ū宸查厤缃偤 {{name}}锛屼絾缂哄皯闋儚銆?,
-          "suggestion_missing_avatar": "濡傛灉浣犲笇鏈涚嵅寰楁洿瀹屾暣鐨勯爜棣栥€佸垎浜垏 Feed 灞曠ず鏁堟灉锛岃珛瑁滃厖缍茬珯闋儚銆?
+          "impact": "訪客可以在介面中看到已配置的網站名稱。",
+          "summary": "網站識別已為 {{name}} 配置完成。",
+          "summary_missing_avatar": "網站名稱已配置為 {{name}}，但缺少頭像。",
+          "suggestion_missing_avatar": "如果你希望獲得更完整的頁首、分享與 Feed 展示效果，請補充網站頭像。"
         },
         "missing": {
-          "impact": "缍茬珯鏈冮€€鍥炲埌闋愯ō鐢㈠搧鍚嶏紝鏁撮珨鐪嬭捣渚嗗儚鏈畬鎴愮殑瀵︿緥銆?,
-          "summary": "缍茬珯鍚嶇ū鏈厤缃€?,
-          "suggestion": "璜嬪湪瑷畾涓厤缃?site.name锛屾垨鍦ㄧ挵澧冭畩鏁镐腑瑷畾 NAME銆?
+          "impact": "網站會退回到預設產品名，整體看起來像未完成的實例。",
+          "summary": "網站名稱未配置。",
+          "suggestion": "請在設定中配置 site.name，或在環境變數中設定 NAME。"
         }
       }
     },
-    "load_failed": "鍋ュ悍妾㈡煡杓夊叆澶辨晽",
-    "loading": "姝ｅ湪妾㈡煡閬嬭鐠板鑸囬厤缃?..",
+    "load_failed": "健康檢查載入失敗",
+    "loading": "正在檢查運行環境與配置...",
     "status": {
-      "danger": "闇€瑕佽檿鐞?,
-      "success": "宸插氨绶?,
-      "warning": "闇€瑕侀棞娉?
+      "danger": "需要處理",
+      "success": "已就緒",
+      "warning": "需要關注"
     },
     "summary": {
-      "danger": "鍤撮噸鍟忛",
-      "success": "宸插氨绶掗爡鐩?,
-      "warning": "寰呮鏌ラ爡鐩?
+      "danger": "嚴重問題",
+      "success": "已就緒項目",
+      "warning": "待檢查項目"
     },
-    "title": "鍋ュ悍妾㈡煡"
+    "title": "健康檢查"
   },
-  "sort_latest": "鏈€鏂?,
-  "sort_popular": "鐔遍杸",
-  "total_tags": "鍏?{{count}} 鍊嬫绫?,
-  "anonymous": "鍖垮悕"
+  "sort_latest": "最新",
+  "sort_popular": "熱門",
+  "total_tags": "共 {{count}} 個標籤",
+  "anonymous": "匿名"
 }
