@@ -34,7 +34,6 @@ async function purgeCdnForFeed(env: any, host: string, id: number, alias: string
     if (alias) {
         paths.push(buildApiUrl(host, `/feed/${alias}`));
     }
-    paths.push(buildApiUrl(host, '/feed'));
     await purgeCache(env, paths);
 }
 
