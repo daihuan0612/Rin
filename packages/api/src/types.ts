@@ -38,6 +38,7 @@ export interface Feed {
   pv: number;
   uv: number;
   top?: number;
+  show_toc?: number;
 }
 
 export interface FeedListResponse {
@@ -76,6 +77,7 @@ export interface CreateFeedRequest {
   listed: boolean;
   createdAt?: string;
   tags: string[];
+  show_toc?: boolean;
 }
 
 export interface UpdateFeedRequest {
@@ -88,6 +90,7 @@ export interface UpdateFeedRequest {
   createdAt?: string;
   tags?: string[];
   top?: number;
+  show_toc?: boolean;
 }
 
 export interface AdjacentFeed {

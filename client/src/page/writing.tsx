@@ -23,6 +23,7 @@ async function publish({
   tags,
   draft,
   createdAt,
+  show_toc,
   onCompleted,
   showAlert
 }: {
@@ -34,6 +35,7 @@ async function publish({
   draft: boolean;
   alias?: string;
   createdAt?: Date;
+  show_toc?: boolean;
   onCompleted?: () => void;
   showAlert: ShowAlertType;
 }) {
@@ -47,6 +49,7 @@ async function publish({
       tags,
       listed,
       draft,
+      show_toc,
       createdAt: createdAt?.toISOString(),
     }
   );
@@ -74,6 +77,7 @@ async function update({
   listed,
   draft,
   createdAt,
+  show_toc,
   onCompleted,
   showAlert
 }: {
@@ -86,6 +90,7 @@ async function update({
   tags?: string[];
   draft?: boolean;
   createdAt?: Date;
+  show_toc?: boolean;
   onCompleted?: () => void;
   showAlert: ShowAlertType;
 }) {
@@ -100,6 +105,7 @@ async function update({
       tags,
       listed,
       draft,
+      show_toc,
       createdAt: createdAt?.toISOString(),
     }
   );
@@ -127,6 +133,7 @@ export function WritingPage({ id }: { id?: number }) {
   const [alias, setAlias] = cache.useCache("alias", "");
   const [draft, setDraft] = useState(false);
   const [listed, setListed] = useState(true);
+  const [showToc, setShowToc] = useState(false);
   const [content, setContent] = cache.useCache("content", "");
   const [createdAt, setCreatedAt] = useState<Date | undefined>(new Date());
   const [publishing, setPublishing] = useState(false)
@@ -149,6 +156,7 @@ export function WritingPage({ id }: { id?: number }) {
         tags: tagsplit,
         draft,
         listed,
+        show_toc: showToc,
         createdAt,
         onCompleted: () => {
           setPublishing(false)
@@ -173,6 +181,7 @@ export function WritingPage({ id }: { id?: number }) {
         draft,
         alias,
         listed,
+        show_toc: showToc,
         createdAt,
         onCompleted: () => {
           setPublishing(false)
@@ -196,6 +205,7 @@ export function WritingPage({ id }: { id?: number }) {
             if (summary == "") setSummary((data as any).summary || "");
             setListed((data as any).listed === 1);
             setDraft((data as any).draft === 1);
+            setShowToc((data as any).show_toc === 1);
             setCreatedAt(new Date(data.createdAt));
           }
         });
@@ -287,7 +297,7 @@ export function WritingPage({ id }: { id?: number }) {
             />
           </div>
 
-          <div className="mt-5 grid gap-2 sm:gap-3 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(18rem,2fr)]">
+          <div className="mt-5 grid gap-2 sm:gap-3 xl:grid-cols-3">
             <FlatMetaRow
               className="cursor-pointer rounded-none border-0 bg-transparent px-0 py-2 sm:rounded-2xl sm:border sm:bg-secondary sm:px-4 sm:py-3"
               onClick={() => setDraft(!draft)}
@@ -312,7 +322,19 @@ export function WritingPage({ id }: { id?: number }) {
                 placeholder={t('listed')}
               />
             </FlatMetaRow>
-            <FlatMetaRow className="gap-3 rounded-none border-0 bg-transparent px-0 py-2 sm:rounded-2xl sm:border sm:bg-secondary sm:px-4 sm:py-3 xl:col-span-1">
+            <FlatMetaRow
+              className="cursor-pointer rounded-none border-0 bg-transparent px-0 py-2 sm:rounded-2xl sm:border sm:bg-secondary sm:px-4 sm:py-3"
+              onClick={() => setShowToc(!showToc)}
+            >
+              <p>{t('show_toc')}</p>
+              <Checkbox
+                id="show_toc"
+                value={showToc}
+                setValue={setShowToc}
+                placeholder={t('show_toc')}
+              />
+            </FlatMetaRow>
+            <FlatMetaRow className="gap-3 rounded-none border-0 bg-transparent px-0 py-2 sm:rounded-2xl sm:border sm:bg-secondary sm:px-4 sm:py-3 xl:col-span-3">
               <p className="mr-2 whitespace-nowrap">
                 {t('created_at')}
               </p>

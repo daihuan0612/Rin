@@ -140,7 +140,7 @@ export function FeedService(): Hono<{
         const admin = c.get('admin');
         const uid = c.get('uid');
         const body = await profileAsync(c, 'feed_create_parse', () => c.req.json());
-        const { title, alias, listed, content, summary, draft, tags, createdAt } = body;
+        const { title, alias, listed, content, summary, draft, tags, createdAt, show_toc } = body;
 
         if (!admin) {
             return c.text('Permission denied', 403);
@@ -178,6 +178,7 @@ export function FeedService(): Hono<{
             alias,
             listed: listed ? 1 : 0,
             draft: draft ? 1 : 0,
+            show_toc: show_toc ? 1 : 0,
             createdAt: date,
             updatedAt: date
         }).returning({ insertedId: feeds.id }));
@@ -384,7 +385,7 @@ export function FeedService(): Hono<{
         const uid = c.get('uid');
         const id = c.req.param('id');
         const body = await profileAsync(c, 'feed_update_parse', () => c.req.json());
-        const { title, listed, content, summary, alias, draft, top, tags, createdAt } = body;
+        const { title, listed, content, summary, alias, draft, top, tags, createdAt, show_toc } = body;
 
         const id_num = parseInt(id);
         const feed = await profileAsync(c, 'feed_update_lookup', () => db.query.feeds.findFirst({ where: eq(feeds.id, id_num) }));
@@ -413,6 +414,7 @@ export function FeedService(): Hono<{
             top,
             listed: listed ? 1 : 0,
             draft: draft === undefined ? undefined : draft ? 1 : 0,
+            show_toc: show_toc === undefined ? undefined : show_toc ? 1 : 0,
             createdAt: createdAt ? new Date(createdAt) : undefined,
             updatedAt: updateTime
         }).where(eq(feeds.id, id_num)));
