@@ -8,18 +8,16 @@ export const classicLayoutDefinition: HeaderLayoutDefinition = {
   kind: "top",
   renderDesktop({ children, profile, siteConfig }) {
     return (
-      <div className="relative hidden w-full items-center justify-between md:flex">
+      <div className="hidden w-full md:grid grid-cols-[1fr_auto_1fr] items-center">
         <BrandLink siteConfig={siteConfig} className="mr-8 hidden flex-row items-center md:flex" />
-        <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 flex justify-center">
-          <div className="wauto flex justify-center">
-            <div className="scrollbar-none min-w-0 overflow-x-auto rounded-full bg-w px-2 shadow-xl shadow-light t-primary">
-              <div className="flex min-w-max flex-row items-center whitespace-nowrap">
-                <NavBar menu={false} itemClassName="whitespace-nowrap px-3.5 py-3.5 md:p-3.5 text-[15px]" />
-              </div>
+        <div className="flex justify-center">
+          <div className="scrollbar-none overflow-x-auto rounded-full bg-w px-2 shadow-xl shadow-light t-primary">
+            <div className="flex min-w-max flex-row items-center whitespace-nowrap">
+              <NavBar menu={false} itemClassName="whitespace-nowrap px-3.5 py-3.5 md:p-3.5 text-[15px]" />
             </div>
           </div>
         </div>
-        <div className="ml-8 hidden flex-row items-center space-x-2 md:flex">
+        <div className="ml-8 hidden flex-row items-center justify-end space-x-2 md:flex">
           {children ? <div className="flex items-center text-sm t-primary">{children}</div> : null}
           <HeaderActions profile={profile} className="flex flex-row items-center space-x-2" />
         </div>
