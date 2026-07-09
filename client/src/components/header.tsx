@@ -1,6 +1,5 @@
 import { useContext, useEffect, useRef, useState } from "react";
 import { ProfileContext } from "../state/profile";
-import { Padding } from "./padding";
 import { useSiteConfig } from "../hooks/useSiteConfig";
 import { getHeaderLayoutDefinition } from "./site-header/layout-registry";
 import { normalizeHeaderBehavior, normalizeHeaderLayout } from "./site-header/layout-options";
@@ -60,7 +59,6 @@ export function Header({ children }: { children?: React.ReactNode }) {
   }, [headerBehavior, headerLayout]);
 
   const useTopHeader = layoutDefinition.kind === "top";
-  const headerPaddingClassName = headerLayout === "compact" ? "mx-0 mt-0" : "mx-4 mt-4";
   const containerClassName =
     !useTopHeader || headerBehavior === "static"
       ? "relative z-40"
@@ -82,12 +80,10 @@ export function Header({ children }: { children?: React.ReactNode }) {
               {layoutDefinition.renderDesktop({ children, profile, siteConfig, behavior: headerBehavior, isAtTop })}
             </div>
           ) : (
-            <Padding className={headerPaddingClassName}>
-              <div className="w-full">
-                {layoutDefinition.renderMobile({ children, profile, siteConfig, behavior: headerBehavior, isAtTop })}
-                {layoutDefinition.renderDesktop({ children, profile, siteConfig, behavior: headerBehavior, isAtTop })}
-              </div>
-            </Padding>
+            <div className="w-full">
+              {layoutDefinition.renderMobile({ children, profile, siteConfig, behavior: headerBehavior, isAtTop })}
+              {layoutDefinition.renderDesktop({ children, profile, siteConfig, behavior: headerBehavior, isAtTop })}
+            </div>
           )}
         </div>
       </div>
