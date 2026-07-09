@@ -28,7 +28,7 @@ function VideoPlayer({ children, ...props }: any) {
         controls
         preload="metadata"
         playsInline
-        muted={!ready}
+        muted={!ready && !played}
         onPlay={() => setPlayed(true)}
         onLoadedMetadata={() => {
           const video = videoRef.current;
