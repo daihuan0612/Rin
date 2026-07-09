@@ -116,6 +116,10 @@ export function FeedService(): Hono<{
             await profileAsync(c, 'feed_list_cache_set', () => cache.set(cacheKey, data));
         }
 
+        if (!admin) {
+            c.header('cache-control', 'public, max-age=300, s-maxage=300');
+        }
+
         return c.json(data);
     });
 
@@ -123,12 +127,13 @@ export function FeedService(): Hono<{
     app.get('/timeline', async (c) => {
         const db = c.get('db');
         const where = and(eq(feeds.draft, 0), eq(feeds.listed, 1));
-
-        return c.json(await profileAsync(c, 'feed_timeline_db', () => db.query.feeds.findMany({
+        const data = await profileAsync(c, 'feed_timeline_db', () => db.query.feeds.findMany({
             where: where,
             columns: { id: true, title: true, createdAt: true },
             orderBy: [desc(feeds.createdAt), desc(feeds.updatedAt)],
-        })));
+        }));
+        c.header('cache-control', 'public, max-age=600, s-maxage=600');
+        return c.json(data);
     });
 
     // POST /feed - Create feed
@@ -280,7 +285,13 @@ export function FeedService(): Hono<{
             await profileAsync(c, 'feed_detail_visit_insert', () => db.insert(visits).values({ feedId: feed.id, ip: ip }));
         }
 
-        return c.json({ ...other, hashtags: hashtags_flatten, pv, uv });
+        const result = { ...other, hashtags: hashtags_flatten, pv, uv };
+
+        if (!admin && !feed.draft) {
+            c.header('cache-control', 'public, max-age=60, s-maxage=60');
+        }
+
+        return c.json(result);
     });
 
     // GET /feed/adjacent/:id
@@ -372,6 +383,7 @@ export function FeedService(): Hono<{
         };
 
         const [previousFeed, nextFeed] = await Promise.all([getPreviousFeed(), getNextFeed()]);
+        c.header('cache-control', 'public, max-age=600, s-maxage=600');
         return c.json({ previousFeed, nextFeed });
     });
 

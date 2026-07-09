@@ -118,6 +118,9 @@ export function CommentService(): Hono {
             };
         });
         
+        if (!admin) {
+            c.header('cache-control', 'public, max-age=120, s-maxage=120');
+        }
         return c.json(result);
     });
 
