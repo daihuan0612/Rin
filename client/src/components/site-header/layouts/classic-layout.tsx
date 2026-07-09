@@ -10,10 +10,12 @@ export const classicLayoutDefinition: HeaderLayoutDefinition = {
     return (
       <div className="relative hidden w-full items-center justify-between md:flex">
         <BrandLink siteConfig={siteConfig} className="mr-8 hidden flex-row items-center md:flex" />
-        <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 flex items-center">
-          <div className="scrollbar-none min-w-0 max-w-[90vw] overflow-x-auto rounded-full bg-w px-2 shadow-xl shadow-light t-primary">
-            <div className="flex min-w-max flex-row items-center whitespace-nowrap">
-              <NavBar menu={false} itemClassName="whitespace-nowrap px-4 py-4 md:p-4 text-[15px]" />
+        <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 flex justify-center">
+          <div className="wauto flex justify-center">
+            <div className="scrollbar-none min-w-0 overflow-x-auto rounded-full bg-w px-2 shadow-xl shadow-light t-primary">
+              <div className="flex min-w-max flex-row items-center whitespace-nowrap">
+                <NavBar menu={false} itemClassName="whitespace-nowrap px-3.5 py-3.5 md:p-3.5 text-[15px]" />
+              </div>
             </div>
           </div>
         </div>
