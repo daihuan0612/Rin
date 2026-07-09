@@ -11,8 +11,9 @@ function VideoPlayer({ children, ...props }: any) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   return (
     <div className="my-4 w-full overflow-hidden rounded-xl flex justify-center bg-black/5 relative cursor-pointer" onClick={() => {
+      if (played) return;
       const video = videoRef.current;
-      if (video && video.paused) {
+      if (video) {
         setPlayed(true);
         video.muted = false;
         video.play().catch(() => {});
