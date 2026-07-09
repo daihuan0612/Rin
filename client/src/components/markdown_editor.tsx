@@ -354,21 +354,88 @@ export function MarkdownEditor({ content, setContent, placeholder = "> Write you
     // Strip invisible Unicode characters (zero-width spaces, etc.)
     const cleaned = fullText.replace(/[\u200B-\u200D\uFEFF\u00AD\u2060\u200E\u200F\u2028\u2029]/g, "");
     const lines = cleaned.split("\n");
-    const chapterRegex = /^\s*第\S+[回章节部卷]\s*/;
     const indent = "\u3000\u3000";
+
+    // Special chapter titles (no "第" prefix)
+    const specialTitles = [
+      '楔子', '序章', '序言', '前言', '引子', '引言',
+      '尾声', '后记', '番外', '结局', '终章', '尾声',
+      '第一章', '第二章', '第三章', '第四章', '第五章',
+      '第六章', '第七章', '第八章', '第九章', '第十章',
+    ];
+
+    // Chapter number patterns: Chinese numerals + Arabic numerals
+    const numPattern = '[零一二三四五六七八九十百千万亿\\d]+';
+
+    // Chapter type suffixes
+    const chapterTypes = ['章', '回', '节', '卷', '部', '集', '话', '篇', '册'];
+
+    // Build regex for "第X章/回/节/..." pattern
+    const chapterPattern = new RegExp(
+      `^[\\s【\\[（(《]*第${numPattern}[${chapterTypes.join('')}]\\s*[】\\]）)》]?`,
+      'i'
+    );
+
+    // Build regex for volume/part pattern (卷X, 第X卷)
+    const volumePattern = new RegExp(
+      `^[\\s【\\[（(《]*(第${numPattern}卷|[上中下]部|第${numPattern}部)\\s*[】\\]）)》]?`,
+      'i'
+    );
+
+    // Special title pattern: standalone special titles (with optional brackets)
+    const specialTitlePattern = new RegExp(
+      `^[\\s【\\[（(《]*(${specialTitles.join('|')})\\s*[】\\]）)》]?$`,
+      'i'
+    );
+
+    function isChapterTitle(line: string): boolean {
+      const trimmed = line.trim();
+      if (!trimmed) return false;
+      // Strip markdown heading markers first
+      const cleanLine = trimmed.replace(/^#+\s*/, '');
+      if (chapterPattern.test(cleanLine)) return true;
+      if (volumePattern.test(cleanLine)) return true;
+      if (specialTitlePattern.test(cleanLine)) return true;
+      return false;
+    }
+
+    function cleanTitle(line: string): string {
+      let trimmed = line.trim();
+      // Strip markdown heading markers
+      trimmed = trimmed.replace(/^#+\s*/, '');
+      // Strip surrounding brackets/书名号
+      trimmed = trimmed.replace(/^[【\[（(《]+/, '').replace(/[】\]）)》]+$/, '');
+      return trimmed.trim();
+    }
+
     const result = lines.map((line) => {
       const trimmed = line.trim();
       if (!trimmed) return line;
+
       // Fix headings without space after # (e.g. #第一集 -> # 第一集)
       const fixedLine = line.replace(/^(#+)(\S)/, "$1 $2");
-      const fixedTrimmed = fixedLine.trim();
-      if (chapterRegex.test(fixedTrimmed)) {
-        const clean = fixedTrimmed.replace(/^#+\s*/, "");
-        return clean.startsWith("#") ? `## ${clean}` : `## ${clean}`;
+
+      if (isChapterTitle(fixedLine)) {
+        const title = cleanTitle(fixedLine);
+        return `## ${title}`;
       }
-      if (fixedLine.startsWith(indent) || fixedLine.startsWith("#") || fixedLine.startsWith(">") || fixedLine.startsWith("```") || fixedLine.startsWith("- ") || fixedLine.startsWith("* ") || fixedLine.match(/^\d+\.\s/)) return fixedLine;
+
+      // Skip lines that already have special formatting
+      if (
+        fixedLine.startsWith(indent) ||
+        fixedLine.startsWith("#") ||
+        fixedLine.startsWith(">") ||
+        fixedLine.startsWith("```") ||
+        fixedLine.startsWith("- ") ||
+        fixedLine.startsWith("* ") ||
+        fixedLine.match(/^\d+\.\s/)
+      ) {
+        return fixedLine;
+      }
+
       return indent + fixedLine;
     });
+
     const newText = result.join("\n");
     model.setValue(newText);
     setContent(newText);
