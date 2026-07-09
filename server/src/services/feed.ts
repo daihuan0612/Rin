@@ -10,6 +10,7 @@ import { syncFeedAISummaryQueueState } from "./feed-ai-summary";
 import { bindTagToPost } from "./tag";
 import { clearFeedCache } from "./clear-feed-cache";
 export { clearFeedCache } from "./clear-feed-cache";
+import { purgeCache } from "../utils/purge-cache";
 
 // Lazy-loaded modules for WordPress import
 let XMLParser: any;
@@ -22,6 +23,19 @@ function parseFeedId(value: string): number | null {
 
     const id = Number(value);
     return Number.isSafeInteger(id) ? id : null;
+}
+
+function buildApiUrl(host: string, path: string) {
+    return `https://${host}/api${path}`;
+}
+
+async function purgeCdnForFeed(env: any, host: string, id: number, alias: string | null) {
+    const paths = [buildApiUrl(host, `/feed/${id}`)];
+    if (alias) {
+        paths.push(buildApiUrl(host, `/feed/${alias}`));
+    }
+    paths.push(buildApiUrl(host, '/feed'));
+    await purgeCache(env, paths);
 }
 
 async function initWPModules() {
@@ -195,6 +209,7 @@ export function FeedService(): Hono<{
             resetSummary: true,
         }));
         await profileAsync(c, 'feed_create_cache_invalidate', () => cache.deletePrefix('feeds_'));
+        await profileAsync(c, 'feed_create_cdn_purge', () => purgeCdnForFeed(env, c.req.header('host') || '', result[0].insertedId, alias || null));
 
         if (result.length === 0) {
             return c.text('Failed to insert', 500);
@@ -444,6 +459,7 @@ export function FeedService(): Hono<{
         }
 
         await profileAsync(c, 'feed_update_cache_invalidate', () => clearFeedCache(cache, id_num, feed.alias, alias || null));
+        await profileAsync(c, 'feed_update_cdn_purge', () => purgeCdnForFeed(env, c.req.header('host') || '', id_num, alias || null));
         return c.text('Updated');
     });
 
@@ -451,6 +467,7 @@ export function FeedService(): Hono<{
     app.post('/top/:id', async (c) => {
         const db = c.get('db');
         const cache = c.get('cache');
+        const env = c.get('env');
         const admin = c.get('admin');
         const uid = c.get('uid');
         const id = c.req.param('id');
@@ -470,6 +487,7 @@ export function FeedService(): Hono<{
 
         await profileAsync(c, 'feed_top_db', () => db.update(feeds).set({ top }).where(eq(feeds.id, feed.id)));
         await profileAsync(c, 'feed_top_cache_invalidate', () => clearFeedCache(cache, feed.id, feed.alias, feed.alias));
+        await profileAsync(c, 'feed_top_cdn_purge', () => purgeCdnForFeed(env, c.req.header('host') || '', feed.id, feed.alias));
         return c.text('Updated');
     });
 
@@ -477,6 +495,7 @@ export function FeedService(): Hono<{
     app.delete('/:id', async (c) => {
         const db = c.get('db');
         const cache = c.get('cache');
+        const env = c.get('env');
         const admin = c.get('admin');
         const uid = c.get('uid');
         const id = c.req.param('id');
@@ -494,6 +513,7 @@ export function FeedService(): Hono<{
 
         await profileAsync(c, 'feed_delete_db', () => db.delete(feeds).where(eq(feeds.id, id_num)));
         await profileAsync(c, 'feed_delete_cache_invalidate', () => clearFeedCache(cache, id_num, feed.alias, null));
+        await profileAsync(c, 'feed_delete_cdn_purge', () => purgeCdnForFeed(env, c.req.header('host') || '', id_num, feed.alias));
         return c.text('Deleted');
     });
     return app;
