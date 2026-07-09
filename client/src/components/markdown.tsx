@@ -5,7 +5,9 @@ import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
 
 function VideoPlayer({ children, ...props }: any) {
   const [played, setPlayed] = useState(false);
+  const [poster, setPoster] = useState<string | null>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
   return (
     <div className="my-4 w-full overflow-hidden rounded-xl flex justify-center bg-black/5 relative cursor-pointer" onClick={() => {
       const video = videoRef.current;
@@ -14,6 +16,9 @@ function VideoPlayer({ children, ...props }: any) {
         video.play().catch(() => {});
       }
     }}>
+      {poster && !played && (
+        <img src={poster} alt="" className="absolute inset-0 w-full h-full object-contain rounded-xl pointer-events-none" />
+      )}
       <video
         {...props}
         ref={videoRef}
@@ -21,17 +26,32 @@ function VideoPlayer({ children, ...props }: any) {
         controls
         preload="metadata"
         playsInline
+        muted
         onPlay={() => setPlayed(true)}
+        onLoadedMetadata={() => {
+          const video = videoRef.current;
+          const canvas = canvasRef.current;
+          if (video && canvas && video.videoWidth > 0 && video.videoHeight > 0) {
+            video.currentTime = 0.1;
+          }
+        }}
+        onSeeked={() => {
+          const video = videoRef.current;
+          const canvas = canvasRef.current;
+          if (video && canvas && !poster) {
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            const ctx = canvas.getContext('2d');
+            if (ctx) {
+              ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+              setPoster(canvas.toDataURL('image/jpeg', 0.85));
+            }
+          }
+        }}
       >
         {children}
       </video>
-      {!played && (
-        <div className="absolute inset-0 flex items-center justify-center pointer-events-none bg-black/20 rounded-xl">
-          <svg className="w-16 h-16 text-white drop-shadow-lg" viewBox="0 0 24 24" fill="currentColor">
-            <path d="M8 5v14l11-7z"/>
-          </svg>
-        </div>
-      )}
+      <canvas ref={canvasRef} className="hidden" />
     </div>
   );
 }
