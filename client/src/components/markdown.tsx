@@ -6,6 +6,7 @@ import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
 function VideoPlayer({ children, ...props }: any) {
   const [played, setPlayed] = useState(false);
   const [poster, setPoster] = useState<string | null>(null);
+  const [ready, setReady] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   return (
@@ -13,6 +14,7 @@ function VideoPlayer({ children, ...props }: any) {
       const video = videoRef.current;
       if (video && video.paused) {
         setPlayed(true);
+        video.muted = false;
         video.play().catch(() => {});
       }
     }}>
@@ -26,7 +28,7 @@ function VideoPlayer({ children, ...props }: any) {
         controls
         preload="metadata"
         playsInline
-        muted
+        muted={!ready}
         onPlay={() => setPlayed(true)}
         onLoadedMetadata={() => {
           const video = videoRef.current;
@@ -45,6 +47,9 @@ function VideoPlayer({ children, ...props }: any) {
             if (ctx) {
               ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
               setPoster(canvas.toDataURL('image/jpeg', 0.85));
+              video.currentTime = 0;
+              video.muted = false;
+              setReady(true);
             }
           }
         }}
