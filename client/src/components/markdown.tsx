@@ -1,7 +1,40 @@
 import "katex/dist/katex.min.css";
-import React, { cloneElement, isValidElement, useEffect, useMemo, useRef } from "react";
+import React, { cloneElement, isValidElement, useEffect, useMemo, useRef, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
+
+function VideoPlayer({ children, ...props }: any) {
+  const [played, setPlayed] = useState(false);
+  const videoRef = useRef<HTMLVideoElement>(null);
+  return (
+    <div className="my-4 w-full overflow-hidden rounded-xl flex justify-center bg-black/5 relative cursor-pointer" onClick={() => {
+      const video = videoRef.current;
+      if (video && video.paused) {
+        setPlayed(true);
+        video.play().catch(() => {});
+      }
+    }}>
+      <video
+        {...props}
+        ref={videoRef}
+        className="max-h-[70vh] w-auto h-auto block"
+        controls
+        preload="metadata"
+        playsInline
+        onPlay={() => setPlayed(true)}
+      >
+        {children}
+      </video>
+      {!played && (
+        <div className="absolute inset-0 flex items-center justify-center pointer-events-none bg-black/20 rounded-xl">
+          <svg className="w-16 h-16 text-white drop-shadow-lg" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M8 5v14l11-7z"/>
+          </svg>
+        </div>
+      )}
+    </div>
+  );
+}
 import {
   base16AteliersulphurpoolLight,
   vscDarkPlus,
@@ -430,16 +463,7 @@ export function Markdown({ content }: { content: string }) {
         },
         video({ children, ...props }) {
           return (
-            <div className="my-4 w-full overflow-hidden rounded-xl flex justify-center bg-black/5">
-              <video
-                {...props}
-                className="max-h-[70vh] w-auto h-auto block"
-                controls
-                preload="metadata"
-              >
-                {children}
-              </video>
-            </div>
+            <VideoPlayer {...props}>{children}</VideoPlayer>
           );
         },
         div({ children, node: _node, ...props }) {
