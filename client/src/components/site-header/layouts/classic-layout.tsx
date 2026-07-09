@@ -8,20 +8,18 @@ export const classicLayoutDefinition: HeaderLayoutDefinition = {
   kind: "top",
   renderDesktop({ children, profile, siteConfig }) {
     return (
-      <div className="hidden w-full flex-col items-center md:flex">
-        <div className="relative mt-4 wauto items-center justify-between md:flex">
-          <BrandLink siteConfig={siteConfig} className="mr-8 hidden flex-row items-center md:flex" />
-          <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 flex items-center">
-            <div className="scrollbar-none min-w-0 max-w-[90vw] overflow-x-auto rounded-full bg-w px-2 shadow-xl shadow-light t-primary">
-              <div className="flex min-w-max flex-row items-center whitespace-nowrap">
-                <NavBar menu={false} itemClassName="whitespace-nowrap px-3 py-3 md:p-3 text-[15px]" />
-              </div>
+      <div className="relative hidden w-full items-center justify-between md:flex">
+        <BrandLink siteConfig={siteConfig} className="mr-8 hidden flex-row items-center md:flex" />
+        <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 flex items-center">
+          <div className="scrollbar-none min-w-0 max-w-[90vw] overflow-x-auto rounded-full bg-w px-2 shadow-xl shadow-light t-primary">
+            <div className="flex min-w-max flex-row items-center whitespace-nowrap">
+              <NavBar menu={false} itemClassName="whitespace-nowrap px-3 py-3 md:p-3 text-[15px]" />
             </div>
           </div>
-          <div className="ml-8 hidden flex-row items-center space-x-2 md:flex">
-            {children ? <div className="flex items-center text-sm t-primary">{children}</div> : null}
-            <HeaderActions profile={profile} className="flex flex-row items-center space-x-2" />
-          </div>
+        </div>
+        <div className="ml-8 hidden flex-row items-center space-x-2 md:flex">
+          {children ? <div className="flex items-center text-sm t-primary">{children}</div> : null}
+          <HeaderActions profile={profile} className="flex flex-row items-center space-x-2" />
         </div>
       </div>
     );
