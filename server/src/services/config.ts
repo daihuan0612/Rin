@@ -304,7 +304,7 @@ export function ConfigService(): Hono {
             status: 200,
             headers: {
                 'content-type': 'application/javascript; charset=utf-8',
-                'cache-control': 'public, max-age=0, must-revalidate',
+                'cache-control': 'public, max-age=300, s-maxage=300',
             },
         });
     });
@@ -330,7 +330,9 @@ export function ConfigService(): Hono {
             return c.json(await buildServerConfigResponse(serverConfig, env));
         }
         
-        return c.json(await buildClientConfigResponse(clientConfig, serverConfig, env));
+        const data = await buildClientConfigResponse(clientConfig, serverConfig, env);
+        c.header('cache-control', 'public, max-age=300, s-maxage=300');
+        return c.json(data);
     });
 
     // POST /config
