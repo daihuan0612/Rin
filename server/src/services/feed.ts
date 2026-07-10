@@ -632,7 +632,7 @@ export function WordPressService(): Hono<{
             const draft = item?.['wp:status'] !== 'publish';
             const contentHtml = item?.['content:encoded'];
             const content = html2md(contentHtml);
-            const summary = content.length > 100 ? content.slice(0, 100) : content;
+            const summary = stripMarkdown(content.length > 100 ? content.slice(0, 100) : content);
             let tags = item?.['category'];
 
             if (tags && Array.isArray(tags)) {
