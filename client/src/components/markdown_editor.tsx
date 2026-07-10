@@ -468,6 +468,7 @@ export function MarkdownEditor({ content, setContent, placeholder = "> Write you
     { key: "novel", icon: "ri-book-2-line", label: t("markdown_editor.toolbar.novel"), onClick: formatNovel },
     { key: "bold", icon: "ri-bold", label: t("markdown_editor.toolbar.bold"), onClick: () => wrapSelection("**", "**", t("markdown_editor.placeholder.bold")) },
     { key: "italic", icon: "ri-italic", label: t("markdown_editor.toolbar.italic"), onClick: () => wrapSelection("*", "*", t("markdown_editor.placeholder.italic")) },
+    { key: "center", icon: "ri-align-center", label: t("markdown_editor.toolbar.center"), onClick: () => wrapSelection("<center>", "</center>", t("markdown_editor.placeholder.center")) },
     { key: "link", icon: "ri-link", label: t("markdown_editor.toolbar.link"), onClick: insertLink },
     { key: "image", icon: "ri-image-line", label: t("markdown_editor.toolbar.image"), onClick: insertMarkdownImage },
     { key: "video", icon: "ri-video-line", label: t("markdown_editor.toolbar.insert_video"), onClick: openVideoDialog },
