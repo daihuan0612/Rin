@@ -144,6 +144,7 @@
   "markdown_editor": {
     "placeholder": {
       "bold": "太字テキスト",
+      "center": "中央揃えテキスト",
       "code": "コード",
       "code_block": "コードブロック",
       "heading": "見出し",
@@ -157,6 +158,7 @@
     },
     "toolbar": {
       "bold": "太字",
+      "center": "中央揃え",
       "code_block": "コードブロック",
       "heading": "見出し",
       "horizontal_rule": "区切り線",
