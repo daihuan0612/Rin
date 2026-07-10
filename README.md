@@ -1,176 +1,98 @@
-![Cover](./docs/docs/public/rin-logo.png)
+# Rin - 个人博客平台
 
-English | [简体中文](./README_zh_CN.md)
+基于 [openRin/Rin](https://github.com/openRin/Rin) 的定制分支，在原版基础上增强编辑器和管理功能，适配个人使用。
 
-![GitHub commit activity](https://img.shields.io/github/commit-activity/w/openRin/Rin?style=for-the-badge)
-![GitHub branch check runs](https://img.shields.io/github/check-runs/openRin/Rin/main?style=for-the-badge)
-![GitHub top language](https://img.shields.io/github/languages/top/openRin/Rin?style=for-the-badge)
-![GitHub License](https://img.shields.io/github/license/openRin/Rin?style=for-the-badge)
-![GitHub Actions Workflow Status](https://img.shields.io/github/actions/workflow/status/openRin/Rin/deploy.yml?style=for-the-badge)
+## 与原版的差异
 
-[![Discord](https://img.shields.io/badge/Discord-openRin-red?style=for-the-badge&color=%236e7acc)](https://discord.gg/JWbSTHvAPN)
-[![Telegram](https://img.shields.io/badge/Telegram-openRin-red?style=for-the-badge&color=%233390EC)](https://t.me/openRin)
+### 新增功能
 
-## Introduction
+#### 编辑器增强
+- **视频插入** — 支持 B站、YouTube、Vimeo 以及 MP4/WebM 直链视频嵌入
+- **下载卡片** — 插入带密码保护的文件下载链接，可自定义文件名
+- **小说格式化** — 一键识别章节标题、自动首行缩进，专为长文创作优化
+- **首行缩进** — 快速添加/移除中文段落首行缩进
+- **居中按钮** — 选中文本一键居中（`<center>` 标签）
 
-Rin is a modern, serverless blog platform built entirely on Cloudflare's developer platform: Pages for hosting, Workers for serverless functions, D1 for SQLite database, and R2 for object storage. Deploy your personal blog with just a domain name pointed to Cloudflare—no server management required.
+#### 管理后台增强
+- **图片管理页面** — 新增 `/admin/images`，网格展示所有已上传图片，支持单选/全选/批量删除、URL 复制、预览弹窗
+- **评论管理页面** — 新增 `/admin/comments`，按状态筛选（全部/待审核/已通过），支持审核评论、删除、分页
 
-## Live Demo
+#### 功能开关与配置
+- **友链页面开关** — 导航栏"朋友们"入口受 `friend_page_enable` 配置控制，可在设置页关闭
+- **友链申请开关** — 支持关闭友链申请入口
+- **文章目录开关** — 写作页面新增"显示目录"复选框，每篇文章可独立控制是否显示目录
 
-https://xeu.life
+#### 其他
+- **去除标题重复限制** — 文章标题不再有唯一性约束，同标题可重复使用；只检查内容是否重复
 
-## Features
+### 未改动
 
-- **Authentication & Management**: GitHub OAuth login. The first registered user becomes an administrator, while subsequent users join as regular members.
-- **Content Creation**: Write and edit articles with a rich, intuitive editor.
-- **Real-time Autosave**: Local drafts are saved automatically in real-time, with isolation between different articles.
-- **Privacy Control**: Mark articles as "Visible only to me" for private drafts or personal notes, synchronized across devices.
-- **Image Management**: Drag-and-drop or paste images to upload directly to S3-compatible storage (e.g., Cloudflare R2), with automatic link generation.
-- **Custom Slugs**: Assign friendly URLs like `https://yourblog.com/about` using custom article aliases.
-- **Unlisted Posts**: Option to keep articles out of the public homepage listing.
-- **Blogroll**: Add links to friends' blogs. The backend automatically checks link availability every 20 minutes.
-- **Comment System**: Reply to comments or moderate them with delete functionality.
-- **Webhook Notifications**: Receive real-time alerts for new comments via configurable webhooks.
-- **Featured Images**: Automatically detect the first image in an article and use it as the cover image in listings.
-- **Tag Parsing**: Input tags like `#Blog #Cloudflare` and have them automatically parsed and displayed.
-- **Type Safety**: End-to-end type safety with shared TypeScript types between client and server via `@rin/api` package.
-- ...and more! Explore all features at https://xeu.life.
+路由、认证（密码登录/GitHub OAuth）、动态、标签、搜索、RSS、图片存储、AI 摘要、Webhook、缓存、站点个性化（主题色、布局、行为模式）等核心功能保持与原版一致。
 
-## Documentation
+## 功能特性
 
-### Quick Start
+- **用户认证与管理**：支持密码登录 / GitHub OAuth。首个注册用户自动成为管理员。
+- **内容创作**：Monaco 编辑器 + Markdown，支持实时自动保存。
+- **隐私控制**：文章可标记为"仅自己可见"，跨设备同步。
+- **图片管理**：拖放或粘贴上传至 S3 兼容存储（R2），自动生成链接。
+- **自定义别名**：`https://yourblog.com/about` 风格的自定义 URL。
+- **友情链接**：添加友链，后端每 20 分钟自动检查可用性。
+- **评论系统**：支持回复与删除管理。
+- **Webhook 通知**：新评论实时推送到外部工具。
+- **特色图片**：自动取文章首张图片作为列表封面。
+- **标签解析**：`#标签` 自动解析展示。
+- **类型安全**：通过 `@rin/api` 共享前后端类型。
+- **AI 摘要**：可选接入 AI 自动生成文章摘要。
+
+## 快速开始
 
 ```bash
-# 1. Clone the repository
-git clone https://github.com/openRin/Rin.git && cd Rin
+# 克隆本仓库
+git clone https://github.com/daihuan0612/Rin.git && cd Rin
 
-# 2. Install dependencies
+# 安装依赖
 bun install
 
-# 3. Configure environment variables
+# 配置环境变量
 cp .env.example .env.local
-# Edit .env.local with your own configuration
+# 编辑 .env.local 填入你的配置
 
-# 4. Start the development server
+# 启动开发服务器
 bun run dev
 ```
 
-Visit http://localhost:5173 to start hacking!
+访问 http://localhost:5173 开始使用。
 
-### Testing
-
-Run the test suite to ensure everything works:
+### 测试
 
 ```bash
-# Run all tests (client + server)
+# 运行所有测试
 bun run test
 
-# Run server tests only
+# 仅服务器测试
 bun run test:server
 
-# Run tests with coverage
+# 测试覆盖率
 bun run test:coverage
 ```
 
-### One-Command Deployment
+### 部署
 
-Deploy both frontend and backend to Cloudflare with a single command:
+部署流程与原版 [openRin/Rin](https://github.com/openRin/Rin) 相同：
 
 ```bash
-# Deploy everything (frontend + backend)
+# 全部部署
 bun run deploy
 
-# Deploy only backend
+# 仅后端
 bun run deploy:server
 
-# Deploy only frontend
+# 仅前端
 bun run deploy:client
 ```
 
-**Required environment variables:**
-
-- `CLOUDFLARE_API_TOKEN` - Your Cloudflare API token
-- `CLOUDFLARE_ACCOUNT_ID` - Your Cloudflare account ID
-
-**Optional environment variables:**
-
-- `WORKER_NAME` - Backend worker name (default: `rin-server`)
-- `PAGES_NAME` - Frontend pages name (default: `rin-client`)
-- `DB_NAME` - D1 database name (default: `rin`)
-- `R2_BUCKET_NAME` - R2 bucket name. If set, deploy derives the matching `S3_*` values automatically. If unset, no bucket is auto-selected.
-
-The deployment script will automatically:
-
-- Create D1 database if it doesn't exist
-- Derive `S3_*` storage settings from `R2_BUCKET_NAME` only when it is explicitly set
-- Deploy backend to Workers
-- Build and deploy frontend to Pages
-- Run database migrations
-
-### GitHub Actions Workflows
-
-The repository includes several automated workflows:
-
-- **`ci.yml`** - Runs type checking and formatting validation on every push/PR
-- **`test.yml`** - Runs comprehensive tests (server + client) with coverage reporting
-- **`build.yml`** - Builds the project and triggers deployment
-- **`deploy.yml`** - Deploys to Cloudflare Pages and Workers
-
-**Required secrets (Repository Settings → Secrets and variables → Actions):**
-
-- `CLOUDFLARE_API_TOKEN` - Your Cloudflare API token with Workers and Pages permissions
-- `CLOUDFLARE_ACCOUNT_ID` - Your Cloudflare account ID
-
-**Optional configuration (Repository Settings → Secrets and variables → Variables):**
-
-- `WORKER_NAME`, `PAGES_NAME`, `DB_NAME` - Resource names
-- `NAME`, `DESCRIPTION`, `AVATAR` - Site configuration
-- `R2_BUCKET_NAME` - Specific R2 bucket to use
-
-Full documentation is available at https://docs.openrin.org.
-
-## Community & Support
-
-- Join our https://discord.gg/JWbSTHvAPN for discussions and help.
-- Follow updates on https://t.me/openRin.
-- Found a bug or have a feature request? Please open an issue on GitHub.
-
-## Star History
-
-<a href="https://star-history.com/#openRin/Rin&Date">
- <picture>
-   <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/svg?repos=openRin/Rin&type=Date&theme=dark" />
-   <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/svg?repos=openRin/Rin&type=Date" />
-   <img alt="Star History Chart" src="https://api.star-history.com/svg?repos=openRin/Rin&type=Date" />
- </picture>
-</a>
-
-## Contributing
-
-We welcome contributions of all kinds—code, documentation, design, and ideas. Please check out our [contributing guidelines](https://docs.openrin.org/en/guide/contribution.html) and join us in building Rin together!
-
 ## License
 
-```
 MIT License
 
 Copyright (c) 2024 Xeu
-
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
-```
