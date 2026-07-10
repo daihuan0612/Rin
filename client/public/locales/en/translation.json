@@ -144,6 +144,7 @@
   "markdown_editor": {
     "placeholder": {
       "bold": "bold text",
+      "center": "centered text",
       "code": "code",
       "code_block": "code block",
       "heading": "Heading",
@@ -157,6 +158,7 @@
     },
     "toolbar": {
       "bold": "Bold",
+      "center": "Center",
       "code_block": "Code block",
       "heading": "Heading",
       "horizontal_rule": "Horizontal rule",
