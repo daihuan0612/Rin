@@ -169,6 +169,7 @@
   "markdown_editor": {
     "placeholder": {
       "bold": "加粗文字",
+      "center": "居中文字",
       "code": "代码",
       "code_block": "代码块",
       "heading": "标题",
@@ -182,6 +183,7 @@
     },
     "toolbar": {
       "bold": "加粗",
+      "center": "居中",
       "code_block": "代码块",
       "heading": "标题",
       "horizontal_rule": "分割线",
