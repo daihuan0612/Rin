@@ -172,7 +172,7 @@ export function FeedService(): Hono<{
         }
 
         const exist = await profileAsync(c, 'feed_create_existing', () => db.query.feeds.findFirst({
-            where: or(eq(feeds.title, title), eq(feeds.content, content))
+            where: eq(feeds.content, content)
         }));
 
         if (exist) {
