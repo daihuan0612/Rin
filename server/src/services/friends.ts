@@ -34,7 +34,7 @@ export function FriendService(): Hono {
         const apply_list = uid ? await profileAsync(c, 'friend_apply_lookup', () => db.query.friends.findFirst({ where: eq(friends.uid, uid) })) : null;
         
         if (!admin) {
-            c.header('cache-control', 'public, max-age=3600, s-maxage=3600');
+            c.header('cache-control', 'public, max-age=0, must-revalidate, s-maxage=3600');
         }
         return c.json({ friend_list, apply_list });
     });
