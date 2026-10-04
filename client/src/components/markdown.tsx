@@ -581,7 +581,7 @@ export function stripParagraphIndent(text: string): string {
             if (inFence) return line;
             if (/^\s*([-*+]|\d+\.|>|#{1,6}|\||<)/.test(line)) return line;
             if (/^[ \t]{4,}/.test(line)) return line;
-            return line.replace(/^[ \t\u3000]+/, "");
+            return line.replace(/^[\s\u3000]+/, ""); // ⚠️ 必须用 \s：NBSP(\u00a0)/BOM 这类不可见空格也要吃掉
         })
         .join("\n");
 }
