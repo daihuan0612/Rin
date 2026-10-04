@@ -438,23 +438,33 @@ export function Markdown({ content }: { content: string }) {
           );
         },
         p({ children, node, ...props }) {
-                  // 🆕 2026-10-05：正文首行缩进**直接写进文本**（与卡片预览同一套路），不再依赖 CSS ——
-                  //    ① CSS 方案要看容器 class 是否命中（react-markdown 版本 / 缓存 / 结构一变就整体失效，已踩两次）；
-                  //    ② `text-indent` 会把图片段落整体右推、顶出容器。
-                  //    规则：段落以**文字**开头 ⇒ 前置两个全角空格；以**图片等元素**开头 ⇒ 不加（图不缩进）。
+                  // 🆕 2026-10-05（真机截图核对后重写）：首行缩进写进文本，而且**每个视觉行首都补**。
+                  //    原因：remarkBreaks 把换行变成 <br>，图片/文字常挤在同一个 <p> 里 ⇒
+                  //    只补"段落第一个行首"时，图片后面的那一段（作者明明也缩进了）看起来就没缩进 ✗。
+                  //    规则：字符串且处于行首 ⇒ 前置两个全角空格；<br> 之后算新行首；
+                  //          行首是图片等元素 ⇒ 不补空格（图片不许被推出去）。
                   const arr = Array.isArray(children) ? children : [children];
-                  const first = arr.find((c) => (typeof c === "string" ? c.trim().length > 0 : Boolean(c)));
-                  const startsWithText = typeof first === "string";
+                  const out: React.ReactNode[] = [];
+                  let atLineStart = true;
+                  arr.forEach((child) => {
+                    if (typeof child === "string") {
+                      if (atLineStart && child.trim().length > 0) {
+                        out.push("\u3000\u3000");
+                        atLineStart = false;
+                      }
+                      out.push(child);
+                      return;
+                    }
+                    const isBreak = React.isValidElement(child) && (child as { type?: unknown }).type === "br";
+                    out.push(child);
+                    atLineStart = isBreak;
+                  });
                   return (
                     <p className="mt-2 py-1" {...props}>
-                      {startsWithText ? "\u3000\u3000" : null}
-                      {children}
+                      {out}
                     </p>
                   );
                 },
-        hr({ children, ...props }) {
-          return <hr className="my-4" {...props} />;
-        },
         table: ({ node, ...props }) => <table className="table" {...props} />,
         th: ({ node, ...props }) => (
           <th className="px-4 py-2 border bg-gray-600" {...props} />
