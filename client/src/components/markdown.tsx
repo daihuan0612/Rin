@@ -195,8 +195,8 @@ export function Markdown({ content }: { content: string }) {
 
 
   const Content = useMemo(() => (
+    <div className="toc-content dark:text-neutral-300">
     <ReactMarkdown
-      className="toc-content dark:text-neutral-300"
       remarkPlugins={[gfm, remarkMermaid, remarkMath, remarkAlert, remarkBreaks]}
       children={normalizedContent}
       rehypePlugins={[rehypeKatex, rehypeRaw]}
@@ -516,7 +516,8 @@ export function Markdown({ content }: { content: string }) {
           return <div {...props}>{children}</div>;
         },
       }}
-    />), [content])
+    />
+    </div>), [content])
 
 
 
