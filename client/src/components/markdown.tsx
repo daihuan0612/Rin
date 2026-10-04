@@ -438,12 +438,20 @@ export function Markdown({ content }: { content: string }) {
           );
         },
         p({ children, node, ...props }) {
-          return (
-            <p className="mt-2 py-1" {...props}>
-              {children}
-            </p>
-          );
-        },
+                  // 🆕 2026-10-05：正文首行缩进**直接写进文本**（与卡片预览同一套路），不再依赖 CSS ——
+                  //    ① CSS 方案要看容器 class 是否命中（react-markdown 版本 / 缓存 / 结构一变就整体失效，已踩两次）；
+                  //    ② `text-indent` 会把图片段落整体右推、顶出容器。
+                  //    规则：段落以**文字**开头 ⇒ 前置两个全角空格；以**图片等元素**开头 ⇒ 不加（图不缩进）。
+                  const arr = Array.isArray(children) ? children : [children];
+                  const first = arr.find((c) => (typeof c === "string" ? c.trim().length > 0 : Boolean(c)));
+                  const startsWithText = typeof first === "string";
+                  return (
+                    <p className="mt-2 py-1" {...props}>
+                      {startsWithText ? "\u3000\u3000" : null}
+                      {children}
+                    </p>
+                  );
+                },
         hr({ children, ...props }) {
           return <hr className="my-4" {...props} />;
         },
