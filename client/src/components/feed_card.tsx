@@ -128,7 +128,18 @@ export function FeedCard({ id, title, avatar, draft, listed, top, summary, hasht
                     {listed === 0 && <span>{t("unlisted")}</span>}
                     {top === 1 && <span className="text-theme">{t('article.top.title')}</span>}
                 </p>
-                <p className={`whitespace-pre-line ${styles.summary} ${activeVariant === "editorial" ? "mt-4 max-w-3xl" : ""}`}>{summary}</p>
+                <p className={`whitespace-pre-line ${styles.summary} ${activeVariant === "editorial" ? "mt-4 max-w-3xl" : ""}`}>
+                    {/* 🆕 2026-10-05：按段落补"首行缩进 2 字"的全角空格。
+                        ⚠️ 不能用 CSS `text-indent` —— 这里是 `whitespace-pre-line` 的一整块，
+                        `text-indent` 只缩进**整块的视觉第一行**，后面几段照样顶格 ✗。 */}
+                    {/* 连续空行压成一个换行：用户反馈"正文只换行一次，预览却换行两次" */}
+                    {summary
+                        .replace(/\r\n/g, "\n")
+                        .replace(/\n{2,}/g, "\n")
+                        .split("\n")
+                        .map((line) => (line.trim().length > 0 ? "\u3000\u3000" + line.trim() : line))
+                        .join("\n")}
+                </p>
                 {safeHashtags.length > 0 &&
                     <div className={`flex flex-row flex-wrap justify-start gap-2 ${activeVariant === "editorial" ? "mt-4" : "mt-2 gap-x-2"}`}>
                         {safeHashtags.map(({ name }, index) => (

@@ -181,6 +181,16 @@ export function Markdown({ content }: { content: string }) {
   useEffect(() => {
     slides.current = undefined;
   }, [content]);
+  /**
+   * 🆕 2026-10-05：**统一行尾**——`\r\n` / `\n\r` / 单独 `\r` 都只算**一个**换行。
+   * 背景（用户："我正文明明只回车了一次，到预览就换行了两次"）：某些编辑器/粘贴会在行尾混进 `\r`，
+   * 于是同一个换行被数成两个（`whitespace-pre-line` 与 markdown 都会各算一次）⇒ 预览多出一个空行。
+   * ⚠️ 它必须**同时**用于 `children` 和下面 img 的 `offset` 计算，否则图片定位会错位。
+   */
+  const normalizedContent = useMemo(
+    () => stripParagraphIndent(content.replace(/\r\n|\n\r|\r/g, "\n")),
+    [content],
+  );
 
 
 
@@ -188,12 +198,12 @@ export function Markdown({ content }: { content: string }) {
     <ReactMarkdown
       className="toc-content dark:text-neutral-300"
       remarkPlugins={[gfm, remarkMermaid, remarkMath, remarkAlert, remarkBreaks]}
-      children={content}
+      children={normalizedContent}
       rehypePlugins={[rehypeKatex, rehypeRaw]}
       components={{
         img({ node, src, ...props }) {
           const offset = node!.position!.start.offset!;
-          const previousContent = content.slice(0, offset);
+          const previousContent = normalizedContent.slice(0, offset);
           const newlinesBefore = countNewlinesBeforeNode(
             previousContent,
             offset
@@ -237,7 +247,7 @@ export function Markdown({ content }: { content: string }) {
           const { children, className, node, ...rest } = props;
           const match = /language-(\w+)/.exec(className || "");
 
-          const curContent = content.slice(node?.position?.start.offset || 0);
+          const curContent = normalizedContent.slice(node?.position?.start.offset || 0);
           const isCodeBlock = curContent.trimStart().startsWith("```");
 
           const codeBlockStyle = {
@@ -550,4 +560,28 @@ export function Markdown({ content }: { content: string }) {
       />
     </>
   );
+}
+
+/**
+ * 🆕 2026-10-05：**吃掉段落行首手打的缩进**（半角空格 / 全角空格 / Tab），
+ * 让"首行缩进"只由 CSS `.toc-content > p { text-indent: 2em }` 一处决定。
+ * 背景：用户旧文里手打了两个全角空格 ⇒ 与 CSS 叠加会变成**双份缩进**（明显比平时深）✗。
+ * ⚠️ **结构行一律不动**：代码围栏（``` / ~~~，含围栏内全部内容）、列表项、有序列表、引用、
+ *    标题、表格、HTML、以及缩进 ≥4 空格的行（可能是缩进代码块）—— 动它们会破坏嵌套结构。
+ */
+export function stripParagraphIndent(text: string): string {
+    let inFence = false;
+    return text
+        .split("\n")
+        .map((line) => {
+            if (/^\s*(```|~~~)/.test(line)) {
+                inFence = !inFence;
+                return line;
+            }
+            if (inFence) return line;
+            if (/^\s*([-*+]|\d+\.|>|#{1,6}|\||<)/.test(line)) return line;
+            if (/^[ \t]{4,}/.test(line)) return line;
+            return line.replace(/^[ \t\u3000]+/, "");
+        })
+        .join("\n");
 }

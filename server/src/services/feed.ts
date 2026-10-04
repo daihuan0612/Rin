@@ -5,7 +5,7 @@ import { profileAsync } from "../core/server-timing";
 import { feeds, visits, visitStats } from "../db/schema";
 import { HyperLogLog } from "../utils/hyperloglog";
 import { extractImageWithMetadata } from "../utils/image";
-import { stripMarkdown } from "../utils/markdown";
+import { makeSummary, stripMarkdown } from "../utils/markdown";
 import { syncFeedAISummaryQueueState } from "./feed-ai-summary";
 import { bindTagToPost } from "./tag";
 import { clearFeedCache } from "./clear-feed-cache";
@@ -110,7 +110,7 @@ export function FeedService(): Hono<{
             const avatar = extractImageWithMetadata(content);
             const plainText = stripMarkdown(content);
             return {
-                summary: summary.length > 0 ? summary : plainText.length > 100 ? plainText.slice(0, 100) : plainText,
+                summary: summary.length > 0 ? summary : makeSummary(plainText, 100),
                 hashtags: hashtags.map(({ hashtag }: any) => hashtag),
                 avatar,
                 ...other
@@ -340,7 +340,7 @@ export function FeedService(): Hono<{
                 const plainText = stripMarkdown(feed.content);
                 const summary = feed.summary.length > 0
                     ? feed.summary
-                    : plainText.length > 50 ? plainText.slice(0, 50) : plainText;
+                    : makeSummary(plainText, 50);
                 const cacheKey = `${feed.id}_${feedDirection}_${id_num}`;
                 const cacheData = {
                     id: feed.id,
@@ -567,7 +567,7 @@ export function SearchService(): Hono<{
         })))).map(({ content, hashtags, summary, ...other }: any) => {
             const plainText = stripMarkdown(content);
             return {
-                summary: summary.length > 0 ? summary : plainText.length > 100 ? plainText.slice(0, 100) : plainText,
+                summary: summary.length > 0 ? summary : makeSummary(plainText, 100),
                 hashtags: hashtags.map(({ hashtag }: any) => hashtag),
                 ...other
             };
@@ -632,7 +632,7 @@ export function WordPressService(): Hono<{
             const draft = item?.['wp:status'] !== 'publish';
             const contentHtml = item?.['content:encoded'];
             const content = html2md(contentHtml);
-            const summary = stripMarkdown(content.length > 100 ? content.slice(0, 100) : content);
+            const summary = makeSummary(content, 100);
             let tags = item?.['category'];
 
             if (tags && Array.isArray(tags)) {
