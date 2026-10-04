@@ -370,6 +370,20 @@ describe('CacheImpl - 数据库持久化测试', () => {
         expect(await newClientConfig.get('site.name')).toBe('Test Site');
     });
 
+    it('应该原样保留看起来像 JSON 标量的字符串值', async () => {
+        // 数据库模式的 load() 会对 value 做 JSON.parse：字符串若原样存成 123456，
+        // 读回来就变成数字 123456，只有字符串的消费者会直接丢掉这个值。
+        await cacheImpl.set('numeric', '123456');
+        await cacheImpl.set('boolean_like', 'true');
+        await cacheImpl.set('long_numeric', '12345678901234567890');
+
+        const newCache = new CacheImpl(db as any, mockEnv, 'cache', 'database');
+
+        expect(await newCache.get('numeric')).toBe('123456');
+        expect(await newCache.get('boolean_like')).toBe('true');
+        expect(await newCache.get('long_numeric')).toBe('12345678901234567890');
+    });
+
     it('应该支持多个 cache 类型', async () => {
         const cache1 = new CacheImpl(db as any, mockEnv, 'type1', 'database');
         const cache2 = new CacheImpl(db as any, mockEnv, 'type2', 'database');
