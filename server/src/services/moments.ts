@@ -47,7 +47,7 @@ export function MomentsService(): Hono {
         
         const data = { size: size[0].count, data: moments_list, hasNext };
         await profileAsync(c, 'moments_list_cache_set', () => cache.set(cacheKey, data));
-        c.header('cache-control', 'public, max-age=300, s-maxage=300');
+        c.header('cache-control', 'public, max-age=0, must-revalidate, s-maxage=300');
         return c.json(data);
     });
 

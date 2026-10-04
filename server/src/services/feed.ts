@@ -130,7 +130,7 @@ export function FeedService(): Hono<{
         }
 
         if (!admin) {
-            c.header('cache-control', 'public, max-age=300, s-maxage=300');
+            c.header('cache-control', 'public, max-age=0, must-revalidate, s-maxage=300');
         }
 
         return c.json(data);
@@ -145,7 +145,7 @@ export function FeedService(): Hono<{
             columns: { id: true, title: true, createdAt: true },
             orderBy: [desc(feeds.createdAt), desc(feeds.updatedAt)],
         }));
-        c.header('cache-control', 'public, max-age=600, s-maxage=600');
+        c.header('cache-control', 'public, max-age=0, must-revalidate, s-maxage=600');
         return c.json(data);
     });
 
@@ -302,7 +302,7 @@ export function FeedService(): Hono<{
         const result = { ...other, hashtags: hashtags_flatten, pv, uv };
 
         if (!admin && !feed.draft) {
-            c.header('cache-control', 'public, max-age=60, s-maxage=60');
+            c.header('cache-control', 'public, max-age=0, must-revalidate, s-maxage=60');
         }
 
         return c.json(result);
@@ -397,7 +397,7 @@ export function FeedService(): Hono<{
         };
 
         const [previousFeed, nextFeed] = await Promise.all([getPreviousFeed(), getNextFeed()]);
-        c.header('cache-control', 'public, max-age=600, s-maxage=600');
+        c.header('cache-control', 'public, max-age=0, must-revalidate, s-maxage=600');
         return c.json({ previousFeed, nextFeed });
     });
 

@@ -191,6 +191,9 @@ jobs:
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          # Worker 需要在发布文章时调用 CF 的 purge_cache，缺了这两项 purge 会被静默跳过
+          CLOUDFLARE_PURGE_TOKEN: ${{ secrets.CLOUDFLARE_PURGE_TOKEN || '' }}
+          CLOUDFLARE_ZONE_ID: ${{ secrets.CLOUDFLARE_ZONE_ID || '' }}
           WORKER_NAME: ${{ steps.config.outputs.worker_name }}
           DB_NAME: ${{ steps.config.outputs.db_name }}
           NAME: ${{ steps.config.outputs.name }}

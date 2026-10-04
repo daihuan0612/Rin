@@ -23,7 +23,7 @@ export function TagService(): Hono {
             feeds: tag.feeds.length
         }));
         
-        c.header('cache-control', 'public, max-age=3600, s-maxage=3600');
+        c.header('cache-control', 'public, max-age=0, must-revalidate, s-maxage=3600');
         return c.json(result);
     });
 
@@ -70,7 +70,7 @@ export function TagService(): Hono {
         }
         
         if (!admin) {
-            c.header('cache-control', 'public, max-age=300, s-maxage=300');
+            c.header('cache-control', 'public, max-age=0, must-revalidate, s-maxage=300');
         }
         return c.json({ ...tag, feeds: tagFeeds });
     });
