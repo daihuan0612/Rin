@@ -72,6 +72,14 @@ ul {
     text-indent: 0;
 }
 
+/* 🆕 2026-10-05 真机（用户："你的缩进，把我的图都顶出容器了"）：
+   **图片段落绝不许缩进** —— 图是 inline-block，`text-indent` 会把整张图右推 2em、溢出容器 ✗。
+   用 `:has(img)` 覆盖所有包法：`<p><img>` / `<p><span class="block"><img></span>` / `<p><a><img></a>`。 */
+.toc-content > p:has(img),
+.toc-content > section > p:has(img) {
+    text-indent: 0;
+}
+
 .markdown-alert {
   @apply !border-l-2 border-2 rounded-lg !py-4 my-4 !px-4 !leading-snug space-y-0;
 }
