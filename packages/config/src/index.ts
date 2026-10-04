@@ -53,6 +53,13 @@ export const AI_CONFIG_KEYS = [
 
 export const SENSITIVE_SERVER_CONFIG_FIELDS = [`${AI_CONFIG_PREFIX}api_key`] as const;
 
+/**
+ * Placeholder used to mask secrets in config responses.
+ * The server masks with it and the client must clear it before saving,
+ * so both sides share one constant and can never drift apart.
+ */
+export const MASKED_SECRET_VALUE = "••••••••";
+
 export const DEFAULT_AI_CONFIG: AIConfig = {
   enabled: false,
   provider: "openai",

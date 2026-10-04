@@ -1,10 +1,15 @@
-import { ConfigWrapper } from "@rin/config";
+import { ConfigWrapper, MASKED_SECRET_VALUE } from "@rin/config";
 import type { TFunction } from "i18next";
 import { client, endpoint } from "../app/runtime";
 import { defaultClientConfig, defaultServerConfig } from "../state/config";
 import { headersWithAuth } from "../utils/auth";
 
-const MASKED_SECRET = "••••••••";
+const AI_CONFIG_STRING_KEYS = [
+  "ai_summary.api_key",
+  "ai_summary.api_url",
+  "ai_summary.model",
+  "ai_summary.provider",
+] as const;
 
 export type ImportMessage = { title: string; reason: string };
 export type SettingsDraft = {
@@ -45,8 +50,37 @@ export async function loadSettingsConfigState() {
   return normalizeSettingsState(response.data);
 }
 
+/**
+ * Trim AI config strings before saving. The API-key field is trimmed when testing
+ * the model, so it must be trimmed when storing too — otherwise a pasted key with a
+ * trailing space/newline is stored as-is and every later test fails with it.
+ */
+export function trimAIConfigStrings(draft: SettingsDraft): SettingsDraft {
+  const serverConfig = { ...draft.serverConfig };
+
+  for (const key of AI_CONFIG_STRING_KEYS) {
+    const value = serverConfig[key];
+    if (typeof value === "string") {
+      serverConfig[key] = value.trim();
+    }
+  }
+
+  return {
+    clientConfig: draft.clientConfig,
+    serverConfig,
+  };
+}
+
 export async function saveSettingsConfigState(draft: SettingsDraft) {
-  const response = await client.config.updateAll(draft);
+  const response = await client.config.updateAll(trimAIConfigStrings(draft));
+
+  // A failed save must surface as an error: `normalizeSettingsState(undefined)`
+  // would silently replace the draft with empty config, so the settings page would
+  // look "saved but reset" instead of reporting the failure.
+  if (response.error || !response.data) {
+    throw new Error(response.error?.value || `HTTP ${response.error?.status ?? "unknown"}`);
+  }
+
   return normalizeSettingsState(response.data);
 }
 
@@ -55,7 +89,7 @@ export function normalizeSettingsState(
 ): SettingsLoadState {
   const clientConfig = { ...(data?.clientConfig ?? {}) };
   const serverConfig = { ...(data?.serverConfig ?? {}) };
-  const hasStoredAiApiKey = serverConfig["ai_summary.api_key"] === MASKED_SECRET;
+  const hasStoredAiApiKey = serverConfig["ai_summary.api_key"] === MASKED_SECRET_VALUE;
 
   if (hasStoredAiApiKey) {
     serverConfig["ai_summary.api_key"] = "";
@@ -126,7 +160,7 @@ export async function loadAIConfigState() {
     enabled: data?.["ai_summary.enabled"] === "true",
     provider: data?.["ai_summary.provider"] ?? "openai",
     model: data?.["ai_summary.model"] ?? "gpt-4o-mini",
-    apiKeySet: data?.["ai_summary.api_key"] === "••••••••",
+    apiKeySet: data?.["ai_summary.api_key"] === MASKED_SECRET_VALUE,
     apiUrl: data?.["ai_summary.api_url"] ?? "",
   };
 }

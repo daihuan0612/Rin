@@ -10,6 +10,7 @@ describe("ConfigService", () => {
     let sqlite: Database;
     let env: Env;
     let app: Hono<{ Bindings: Env; Variables: Variables }>;
+    let serverConfig: any;
     const originalFetch = globalThis.fetch;
 
     beforeEach(async () => {
@@ -18,6 +19,7 @@ describe("ConfigService", () => {
         sqlite = ctx.sqlite;
         env = ctx.env;
         app = ctx.app;
+        serverConfig = ctx.serverConfig;
 
         // Create test user
         await createTestUser();
@@ -612,6 +614,72 @@ describe("ConfigService", () => {
 
             // Should either succeed or fail gracefully (not 401)
             expect(res.status).not.toBe(401);
+        });
+
+        it("should reuse the saved API key (trimmed) when the client sends none", async () => {
+            const requests: Array<{ url: string; init?: RequestInit }> = [];
+            globalThis.fetch = mock(async (url: string | URL | Request, init?: RequestInit) => {
+                requests.push({ url: String(url), init });
+                return new Response(
+                    JSON.stringify({ choices: [{ message: { content: "hi" } }] }),
+                    { status: 200, headers: { "Content-Type": "application/json" } },
+                );
+            }) as typeof fetch;
+
+            const saveRes = await app.request("/server", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: "Bearer mock_token_1",
+                },
+                body: JSON.stringify({
+                    "ai_summary.enabled": "true",
+                    "ai_summary.provider": "openai",
+                    "ai_summary.model": "gpt-4o-mini",
+                    "ai_summary.api_url": "https://api.openai.com/v1",
+                    // pasted with a trailing newline: must not be stored verbatim
+                    "ai_summary.api_key": " sk-test-123\n",
+                }),
+            });
+            expect(saveRes.status).toBe(200);
+            expect(await serverConfig.get("ai_summary.api_key")).toBe("sk-test-123");
+
+            const res = await app.request("/test-ai", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: "Bearer mock_token_1",
+                },
+                body: JSON.stringify({ provider: "openai", model: "gpt-4o-mini" }),
+            });
+
+            expect(res.status).toBe(200);
+            const data = await res.json() as { success: boolean };
+            expect(data.success).toBe(true);
+            expect(requests).toHaveLength(1);
+            expect((requests[0].init?.headers as Record<string, string>).Authorization).toBe("Bearer sk-test-123");
+        });
+
+        it("should keep the stored API key when the masked placeholder is submitted", async () => {
+            await app.request("/server", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: "Bearer mock_token_1",
+                },
+                body: JSON.stringify({ "ai_summary.api_key": "sk-real-key" }),
+            });
+
+            await app.request("/server", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: "Bearer mock_token_1",
+                },
+                body: JSON.stringify({ "ai_summary.api_key": "••••••••" }),
+            });
+
+            expect(await serverConfig.get("ai_summary.api_key")).toBe("sk-real-key");
         });
 
         it("should return a readable error when Workers AI binding is missing", async () => {

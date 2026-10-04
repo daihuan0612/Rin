@@ -12,6 +12,32 @@ type CacheConfigReader = {
     getOrDefault<T>(key: string, defaultValue: T): Promise<T>;
 };
 
+function deserializeCacheValue(value: string) {
+    try {
+        return JSON.parse(value);
+    } catch {
+        return value;
+    }
+}
+
+/**
+ * Strings are stored verbatim, so they must survive `deserializeCacheValue` unchanged.
+ * A string that `JSON.parse` would not hand back identically — an all-digit API key such
+ * as "123456" is the common case — is therefore quoted instead of stored raw, otherwise
+ * it is read back as a number and string-only consumers silently lose it.
+ */
+function serializeCacheValue(value: any) {
+    if (typeof value === 'string') {
+        try {
+            return JSON.parse(value) !== value ? JSON.stringify(value) : value;
+        } catch {
+            return value;
+        }
+    }
+
+    return JSON.stringify(value);
+}
+
 function normalizeCacheEnabled(value: unknown) {
     if (typeof value === "boolean") {
         return value;
@@ -56,11 +82,7 @@ class DatabaseStorageProvider implements StorageProvider {
         try {
             const rows = await this.db.select().from(cache).where(eq(cache.type, this.type));
             for (const row of rows) {
-                try {
-                    this.cacheMap.set(row.key, JSON.parse(row.value));
-                } catch (e) {
-                    this.cacheMap.set(row.key, row.value);
-                }
+                this.cacheMap.set(row.key, deserializeCacheValue(row.value));
             }
             console.log(`Cache loaded ${rows.length} entries from database`);
         } catch (e: any) {
@@ -91,7 +113,7 @@ class DatabaseStorageProvider implements StorageProvider {
                 continue;
             }
 
-            const valueStr = typeof value === 'string' ? value : JSON.stringify(value);
+            const valueStr = serializeCacheValue(value);
 
             if (existingKeys.has(key)) {
                 await this.db.update(cache)
