@@ -21,7 +21,13 @@ export function bootstrapApp() {
       backend: {
         loadPath: "/locales/{{lng}}/{{ns}}.json",
       },
-      fallbackLng: "en",
+      // 本站只有简体中文和英文（client/public/locales 里只留这两个）
+      supportedLngs: ["zh-CN", "en"],
+      // 只按完整语言码加载：否则 i18next 会把 zh-CN 简化成 zh 去找 /locales/zh/（不存在），
+      // 中文界面会整片塌成翻译 key
+      load: "currentOnly",
+      // 浏览器是 zh / zh-TW / zh-HK 时都落到中文，不要掉到英文去
+      fallbackLng: "zh-CN",
       interpolation: {
         escapeValue: false,
       },
