@@ -5,6 +5,7 @@ import { profileAsync } from "../core/server-timing";
 import { feeds, visits, visitStats } from "../db/schema";
 import { HyperLogLog } from "../utils/hyperloglog";
 import { extractImageWithMetadata } from "../utils/image";
+import { maskGlassPlain, renderGlass } from "../utils/glass";
 import { makeSummary, stripMarkdown } from "../utils/markdown";
 import { syncFeedAISummaryQueueState } from "./feed-ai-summary";
 import { bindTagToPost } from "./tag";
@@ -108,9 +109,10 @@ export function FeedService(): Hono<{
             limit: limit_num + 1,
         }))).map(({ content, hashtags, summary, ...other }: any) => {
             const avatar = extractImageWithMetadata(content);
-            const plainText = stripMarkdown(content);
+            const plainText = stripMarkdown(maskGlassPlain(content));
+            const maskedSummary = maskGlassPlain(summary);
             return {
-                summary: summary.length > 0 ? summary : makeSummary(plainText, 100),
+                summary: maskedSummary.length > 0 ? maskedSummary : makeSummary(plainText, 100),
                 hashtags: hashtags.map(({ hashtag }: any) => hashtag),
                 avatar,
                 ...other
@@ -299,7 +301,10 @@ export function FeedService(): Hono<{
             await profileAsync(c, 'feed_detail_visit_insert', () => db.insert(visits).values({ feedId: feed.id, ip: ip }));
         }
 
-        const result = { ...other, hashtags: hashtags_flatten, pv, uv };
+        // `[glass]` 隐藏段：作者看原文，其他人看颗粒。
+        // ⚠️ 必须写在 `cache.getOrSet`（上面取 feed 那里）之外：缓存里存的是数据库原始行、
+        // 所有人共用，只有这里组装给响应的 content 才能按 admin 区分。
+        const result = { ...other, content: renderGlass(other.content, admin), hashtags: hashtags_flatten, pv, uv };
 
         if (!admin && !feed.draft) {
             c.header('cache-control', 'public, max-age=0, must-revalidate, s-maxage=60');
@@ -337,9 +342,10 @@ export function FeedService(): Hono<{
         function formatAndCacheData(feed: any, feedDirection: "previous_feed" | "next_feed") {
             if (feed) {
                 const hashtags_flatten = feed.hashtags.map((f: any) => f.hashtag);
-                const plainText = stripMarkdown(feed.content);
-                const summary = feed.summary.length > 0
-                    ? feed.summary
+                const plainText = stripMarkdown(maskGlassPlain(feed.content));
+                const maskedSummary = maskGlassPlain(feed.summary);
+                const summary = maskedSummary.length > 0
+                    ? maskedSummary
                     : makeSummary(plainText, 50);
                 const cacheKey = `${feed.id}_${feedDirection}_${id_num}`;
                 const cacheData = {
@@ -565,9 +571,10 @@ export function SearchService(): Hono<{
             },
             orderBy: [desc(feeds.createdAt), desc(feeds.updatedAt)],
         })))).map(({ content, hashtags, summary, ...other }: any) => {
-            const plainText = stripMarkdown(content);
+            const plainText = stripMarkdown(maskGlassPlain(content));
+            const maskedSummary = maskGlassPlain(summary);
             return {
-                summary: summary.length > 0 ? summary : makeSummary(plainText, 100),
+                summary: maskedSummary.length > 0 ? maskedSummary : makeSummary(plainText, 100),
                 hashtags: hashtags.map(({ hashtag }: any) => hashtag),
                 ...other
             };

@@ -38,3 +38,8 @@ dist-ssr
 
 # Bun
 .bun/*
+# 本地截图 / 本地笔记（不进仓库）
+_shots/
+接手文档*.md
+review-*.md
+

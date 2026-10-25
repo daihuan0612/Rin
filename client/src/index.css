@@ -210,3 +210,117 @@ a.toc-link {
 .is-active-link::before {
   @apply bg-theme;
 }
+
+/* ===== `[glass]` 隐藏段（Liquid Glass 质感） =====
+ * 服务端已经在返回 JSON 之前把隐藏段换成颗粒（server/src/utils/glass.ts），
+ * 这里只负责质感：游客/爬虫看到一块半透明毛玻璃（看得出这里有字、读不出来），
+ * 作者看到原文（`.self`，正文零提示，等同普通正文）。
+ *
+ * 关键手法：
+ *   - `color: transparent` 让颗粒字符本身不可见，只留 `text-shadow` 的模糊字形轮廓
+ *     （= "雾里有字"），这样**玻璃边框不会被 filter 糊掉**（不能对整个 span 用 filter:blur）；
+ *   - `box-decoration-break: clone` 让换行后每一行都是一块独立胶囊；
+ *   - 高光/内阴影/细白边三件套 = 苹果那层"液面反光"。
+ *
+ * ⚠️ 深色模式用 `[data-color-mode="dark"]`（client/tailwind.config.ts 的 darkMode 是 selector 模式，
+ *    项目里没有 `.dark` 这个类，写 `.dark .glass` 不生效）。
+ */
+.glass {
+  position: relative;
+  display: inline;
+  padding: 0.12em 0.5em;
+  border-radius: 0.75em;
+  -webkit-box-decoration-break: clone;
+  box-decoration-break: clone;
+
+  /* 颗粒字符之间没有断行机会（不是 CJK），必须允许任意位置换行，否则长段会冲出正文栏 */
+  overflow-wrap: anywhere;
+  word-break: break-word;
+
+  /* 颗粒不可见，只留大半径雾团（模糊半径必须远大于字宽，否则残留方格轮廓，像噪点） */
+  color: transparent;
+  text-shadow: 0 0 6px rgba(104, 114, 140, 0.4), 0 0 14px rgba(104, 114, 140, 0.3);
+  letter-spacing: 0.02em;
+  font-family: ui-monospace, "Noto Sans Mono CJK SC", monospace;
+
+  background: linear-gradient(
+    160deg,
+    rgba(255, 255, 255, 0.78) 0%,
+    rgba(228, 236, 252, 0.42) 48%,
+    rgba(255, 255, 255, 0.66) 100%
+  );
+  -webkit-backdrop-filter: blur(18px) saturate(180%);
+  backdrop-filter: blur(18px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.95);
+  box-shadow: inset 0 1px 1px rgba(255, 255, 255, 1), inset 0 0 18px rgba(255, 255, 255, 0.7),
+    0 1px 0 rgba(255, 255, 255, 0.8), 0 2px 6px rgba(96, 112, 150, 0.1),
+    0 10px 22px -8px rgba(96, 112, 150, 0.22);
+  user-select: none;
+}
+
+/* 液面反光 + 极细噪点（苹果那层高光） */
+.glass::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  opacity: 0.55;
+  background: linear-gradient(115deg, rgba(255, 255, 255, 0.85) 0%, rgba(255, 255, 255, 0) 32%),
+    radial-gradient(130% 120% at 18% -10%, rgba(255, 255, 255, 0.65), rgba(255, 255, 255, 0) 62%),
+    url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/></filter><rect width='100%' height='100%' filter='url(%23n)' opacity='0.18'/></svg>");
+  background-blend-mode: screen, screen, overlay;
+}
+
+[data-color-mode="dark"] .glass {
+  color: transparent;
+  text-shadow: 0 0 6px rgba(210, 218, 242, 0.36), 0 0 14px rgba(210, 218, 242, 0.26);
+  background: linear-gradient(
+    160deg,
+    rgba(255, 255, 255, 0.18) 0%,
+    rgba(255, 255, 255, 0.06) 44%,
+    rgba(255, 255, 255, 0.12) 100%
+  );
+  border-color: rgba(255, 255, 255, 0.26);
+  box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.35), inset 0 0 18px rgba(255, 255, 255, 0.1),
+    0 2px 10px rgba(0, 0, 0, 0.4);
+}
+
+[data-color-mode="dark"] .glass::after {
+  opacity: 0.32;
+}
+
+/* 作者视角：原文，全部还原成正常文字（无障碍阅读，正文里没有任何提示） */
+.glass.self {
+  padding: 0;
+  color: inherit;
+  font: inherit;
+  letter-spacing: normal;
+  background: none;
+  border: none;
+  box-shadow: none;
+  filter: none;
+  text-shadow: none;
+  user-select: auto;
+  -webkit-box-decoration-break: slice;
+  box-decoration-break: slice;
+}
+
+.glass.self::after {
+  content: none;
+}
+
+/* ===== 编辑器里的隐藏段提示（只在写作页的 Monaco 里，正文页面不出现） =====
+ * 划到哪儿就在哪儿把 `[glass]…[/glass]` 整段框起来：淡底 + 一圈细描边。
+ * 没打码的地方完全正常 —— 不用看顶部统计也能知道"这一段我打过码"。
+ */
+.glass-marker {
+  background: rgba(112, 138, 184, 0.18);
+  box-shadow: inset 0 0 0 1.5px rgba(72, 106, 166, 0.85);
+  border-radius: 3px;
+}
+
+[data-color-mode="dark"] .glass-marker {
+  background: rgba(150, 175, 220, 0.2);
+  box-shadow: inset 0 0 0 1.5px rgba(160, 188, 235, 0.8);
+}

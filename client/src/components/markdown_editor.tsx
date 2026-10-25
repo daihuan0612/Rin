@@ -1,4 +1,5 @@
-import Editor from '@monaco-editor/react';
+import Editor, { loader } from '@monaco-editor/react';
+import * as monaco from 'monaco-editor';
 import { editor, Range, Selection } from 'monaco-editor';
 import React, { useRef, useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
@@ -11,6 +12,11 @@ import { useColorMode } from "../utils/darkModeUtils";
 import { buildMarkdownImage, uploadImageFile } from "../utils/image-upload";
 import { parseVideoUrl } from "../utils/video-embed";
 import { Markdown } from "./markdown";
+
+// 用本地已安装的 monaco-editor，不让 @monaco-editor/react 去 cdn.jsdelivr.net 下载。
+// 原来那套默认行为在连不上 jsdelivr 的网络里会让编辑区永远停在 "Loading..."（本机就是这样），
+// 而这个文件本来就 `import ... from 'monaco-editor'`，整包早就在 bundle 里了 —— 换成本地这份不增加体积。
+loader.config({ monaco });
 
 
 interface MarkdownEditorProps {
@@ -66,6 +72,15 @@ function MarkdownToolButton({
       <span className="sr-only">{label}</span>
     </button>
   );
+}
+
+/**
+ * `[glass]…[/glass]` 在**预览窗**里显示成正常文字（作者视角，正文零提示）。
+ * 编辑区（Monaco）仍然显示 `[glass]` 标记 —— 那就是"这一段我打过码"的提示。
+ * 真正的打码在服务端做（server/src/utils/glass.ts），这里只管预览好看。
+ */
+function renderGlassPreview(text: string): string {
+  return text.replace(/\[glass\]([\s\S]*?)\[\/glass\]/g, '<span class="glass self">$1</span>');
 }
 
 export function MarkdownEditor({ content, setContent, placeholder = "> Write your content here...", height = "400px" }: MarkdownEditorProps) {
@@ -469,6 +484,7 @@ export function MarkdownEditor({ content, setContent, placeholder = "> Write you
     { key: "bold", icon: "ri-bold", label: t("markdown_editor.toolbar.bold"), onClick: () => wrapSelection("**", "**", t("markdown_editor.placeholder.bold")) },
     { key: "italic", icon: "ri-italic", label: t("markdown_editor.toolbar.italic"), onClick: () => wrapSelection("*", "*", t("markdown_editor.placeholder.italic")) },
     { key: "center", icon: "ri-align-center", label: t("markdown_editor.toolbar.center"), onClick: () => wrapSelection("<center>", "</center>", t("markdown_editor.placeholder.center")) },
+    { key: "glass", icon: "ri-eye-off-line", label: t("markdown_editor.toolbar.glass"), onClick: () => wrapSelection("[glass]", "[/glass]", t("markdown_editor.placeholder.glass")) },
     { key: "link", icon: "ri-link", label: t("markdown_editor.toolbar.link"), onClick: insertLink },
     { key: "image", icon: "ri-image-line", label: t("markdown_editor.toolbar.image"), onClick: insertMarkdownImage },
     { key: "video", icon: "ri-video-line", label: t("markdown_editor.toolbar.insert_video"), onClick: openVideoDialog },
@@ -545,6 +561,36 @@ export function MarkdownEditor({ content, setContent, placeholder = "> Write you
     );
   }
 
+  /* ---------------- `[glass]` 隐藏段提示 ----------------
+   * 只有这一件事：把编辑器里每一段 `[glass]…[/glass]` 框起来（`.glass-marker`），
+   * 划到那儿一眼就知道"这段我打过码"；没打码的地方完全正常。
+   * （正文页面里作者看到的是纯原文，没有任何提示。）
+   */
+  const glassDecorationIds = useRef<string[]>([]);
+
+  const syncGlassDecorations = () => {
+    const instance = editorRef.current;
+    const model = instance?.getModel();
+    if (!instance || !model) return;
+
+    const text = model.getValue();
+    const decorations: editor.IModelDeltaDecoration[] = [];
+    const re = /\[glass\][\s\S]*?\[\/glass\]/g;
+    let match: RegExpExecArray | null;
+    while ((match = re.exec(text)) !== null) {
+      const start = model.getPositionAt(match.index);
+      const end = model.getPositionAt(match.index + match[0].length);
+      decorations.push({
+        range: new Range(start.lineNumber, start.column, end.lineNumber, end.column),
+        options: {
+          inlineClassName: "glass-marker",
+          hoverMessage: { value: t("markdown_editor.toolbar.glass_jump") },
+        },
+      });
+    }
+    glassDecorationIds.current = instance.deltaDecorations(glassDecorationIds.current, decorations);
+  };
+
   /* ---------------- Monaco Mount & IME Optimization ---------------- */
 
   const handleEditorMount = (editor: editor.IStandaloneCodeEditor) => {
@@ -568,6 +614,9 @@ export function MarkdownEditor({ content, setContent, placeholder = "> Write you
     editor.onDidBlurEditorText(() => {
       setContent(editor.getValue());
     });
+
+    // 挂载时内容来自 defaultValue，content 不会变 ⇒ 这里补一次，把已有隐藏段先高亮出来
+    syncGlassDecorations();
   };
 
   /* ---------------- synchronization ---------------- */
@@ -585,6 +634,10 @@ export function MarkdownEditor({ content, setContent, placeholder = "> Write you
     if (editorValue !== content) {
       editor.setValue(content);
     }
+
+    // 必须在 setValue 之后重打一遍：setValue 会清空全部装饰（两段隐藏段的框就没了）。
+    // 别拆成两个 effect —— 那样装饰先打、随后被 setValue 抹掉，表现就是"框有时在有时不在"。
+    syncGlassDecorations();
   }, [content]);
 
   /* ---------------- UI ---------------- */
@@ -657,6 +710,8 @@ export function MarkdownEditor({ content, setContent, placeholder = "> Write you
 
                 fontSize: 14,
                 lineNumbers: "off",
+                // 右上角的代码缩略图在这么窄的编辑区里只会挡字，关掉
+                minimap: { enabled: false },
 
                 accessibilitySupport: "off",
                 unicodeHighlight: { ambiguousCharacters: false },
@@ -675,7 +730,7 @@ export function MarkdownEditor({ content, setContent, placeholder = "> Write you
           className={"min-h-0 overflow-y-auto rounded-none border-0 bg-w px-4 py-4 border-t sm:border-none " + (preview === 'edit' ? "hidden" : "")}
           style={{ height: height }}
         >
-          <Markdown content={content ? content : placeholder} />
+          <Markdown content={content ? renderGlassPreview(content) : placeholder} />
         </div>
       </div>
       <AlertUI />

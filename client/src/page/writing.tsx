@@ -14,6 +14,22 @@ import {siteName} from "../utils/constants";
 import mermaid from 'mermaid';
 import { MarkdownEditor } from '../components/markdown_editor';
 
+/**
+ * 打开旧文章时，接口给作者的是渲染好的 `<span class="glass self">原文</span>`；
+ * 编辑器必须把它还原回 `[glass]…[/glass]` 标记 ——
+ * ① 标记本身就是"这一段我打过码"的提示；
+ * ② 不还原的话，一保存就会把这段 HTML 写回数据库，标记永久丢失。
+ */
+function restoreGlassMarkers(content: string): string {
+  const unescapeHtml = (s: string) =>
+    s.replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&amp;/g, "&");
+  return content.replace(
+    /<span class="glass self">([\s\S]*?)<\/span>/g,
+    (_m, inner: string) => `[glass]${unescapeHtml(inner)}[/glass]`,
+  );
+}
+
+
 async function publish({
   title,
   alias,
@@ -201,7 +217,7 @@ export function WritingPage({ id }: { id?: number }) {
             if (tags == "" && Array.isArray(data.hashtags))
               setTags(data.hashtags.map(({ name }: {name: string}) => `#${name}`).join(" "));
             if (alias == "" && (data as any).alias) setAlias((data as any).alias);
-            if (content == "") setContent(data.content);
+            if (content == "") setContent(restoreGlassMarkers(data.content));
             if (summary == "") setSummary((data as any).summary || "");
             setListed((data as any).listed === 1);
             setDraft((data as any).draft === 1);

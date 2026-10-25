@@ -3,6 +3,7 @@ import { feeds } from "../db/schema";
 import type { CacheImpl, DB } from "../core/hono-types";
 import { createTaskQueue, createFeedAISummaryTask, type FeedAISummaryStatus } from "../queue";
 import { generateAISummaryResult } from "../utils/ai";
+import { maskGlassPlain } from "../utils/glass";
 import { getAIConfig } from "../utils/db-config";
 
 type ConfigReader = {
@@ -158,7 +159,8 @@ export async function processFeedAISummaryTask(
     .set(buildStatusUpdate("processing"))
     .where(eq(feeds.id, feed.id));
 
-  const result = await generateAISummaryResult(env, serverConfig, feed.content);
+  // `[glass]` 隐藏段：AI 摘要吃的是全文，生成前先打码，别让它把隐藏内容概括出来
+  const result = await generateAISummaryResult(env, serverConfig, maskGlassPlain(feed.content));
   if (result.summary) {
     await db
       .update(feeds)

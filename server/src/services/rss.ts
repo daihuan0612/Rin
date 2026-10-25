@@ -4,6 +4,7 @@ import type { AppContext } from "../core/hono-types";
 import { profileAsync } from "../core/server-timing";
 import { feeds, users } from "../db/schema";
 import { extractImage } from "../utils/image";
+import { maskGlassPlain } from "../utils/glass";
 import { path_join } from "../utils/path";
 import { getStorageObject, getStoragePublicUrl, headStorageObject, putStorageObjectAtKey } from "../utils/storage";
 import { FAVICON_ALLOWED_TYPES, getFaviconKey } from "./favicon";
@@ -216,21 +217,26 @@ async function generateFeed(env: Env, db: DB, frontendUrl: string, c?: AppContex
 
     for (const f of feed_list) {
         const { summary, content, user, ...other } = f;
-        
+
+        // `[glass]` 隐藏段：RSS 是最容易漏的公开出口（还会被 cron 存进 S3），
+        // 转 HTML / 取摘要之前先打码，原文一个字都不许进 RSS。
+        const maskedContent = maskGlassPlain(content);
+        const maskedSummary = maskGlassPlain(summary);
+
         // Convert markdown to HTML
         let contentHtml = '';
-        if (content) {
+        if (maskedContent) {
             try {
                 const file = await unified()
                     .use(remarkParse)
                     .use(remarkGfm)
                     .use(remarkRehype)
                     .use(rehypeStringify)
-                    .process(content);
+                    .process(maskedContent);
                 contentHtml = file.toString();
             } catch (e) {
                 console.error('[RSS] Markdown conversion error:', e);
-                contentHtml = content;
+                contentHtml = maskedContent;
             }
         }
 
@@ -239,11 +245,11 @@ async function generateFeed(env: Env, db: DB, frontendUrl: string, c?: AppContex
             id: other.id?.toString() || "0",
             link: `${frontendUrl}/feed/${other.id}`,
             date: other.createdAt,
-            description: summary.length > 0
-                ? summary
-                : content.length > 100
-                    ? content.slice(0, 100)
-                    : content,
+            description: maskedSummary.length > 0
+                ? maskedSummary
+                : maskedContent.length > 100
+                    ? maskedContent.slice(0, 100)
+                    : maskedContent,
             content: contentHtml,
             author: user ? [{ name: user.username }] : undefined,
             image: extractImage(content),
