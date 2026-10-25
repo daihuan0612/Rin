@@ -5,7 +5,7 @@ import { createMiddleware } from 'hono/factory';
 import { timing } from 'hono/timing';
 import { eq } from 'drizzle-orm';
 import * as schema from '../../src/db/schema';
-import type { Variables, JWTUtils, OAuth2Utils, CacheImpl } from '../../src/core/hono-types';
+import type { Variables, JWTUtils, CacheImpl } from '../../src/core/hono-types';
 import { profileAsync } from '../../src/core/server-timing';
 import { users } from '../../src/db/schema';
 
@@ -359,18 +359,11 @@ export async function setupTestApp(
                 },
             };
 
-            const oauth2: OAuth2Utils = {
-                generateState: () => 'mock_state',
-                createRedirectUrl: (state: string, provider: string) => `https://github.com/login?state=${state}`,
-                authorize: async (provider: string, code: string) => code === 'valid_code' ? { accessToken: 'gh_token' } : null,
-            };
-
             c.set('db', db as any);
             c.set('cache', cache);
             c.set('serverConfig', serverConfig);
             c.set('clientConfig', clientConfig);
             c.set('jwt', jwt);
-            c.set('oauth2', oauth2);
             c.set('env', env);
         });
 

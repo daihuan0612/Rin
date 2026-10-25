@@ -128,7 +128,7 @@ export interface UpdateProfileRequest {
 // ============================================================================
 
 export interface AuthStatus {
-  github: boolean;
+  // GitHub OAuth 已整套删除：只剩密码登录（作者）+ 邀请码注册（读者）
   password: boolean;
 }
 
@@ -361,6 +361,14 @@ export interface StorageListResponse {
   total: number;
 }
 
+/** POST /api/storage/cleanup —— 把"全站没人引用"的图片删掉 */
+export interface StorageCleanupResponse {
+  scanned: number;
+  deleted: number;
+  kept: number;
+  freedBytes: number;
+}
+
 // ============================================================================
 // Search Types
 // ============================================================================
@@ -400,7 +408,6 @@ export const API_PATHS = {
   USER_PROFILE: '/api/user/profile',
   USER_UPDATE_PROFILE: '/api/user/profile',
   USER_LOGOUT: '/api/user/logout',
-  USER_GITHUB: '/api/user/github',
 
   // Tag
   TAG_LIST: '/api/tag',

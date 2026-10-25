@@ -282,12 +282,12 @@ export function PasswordAuthService(): Hono<{
         });
     });
 
-    // Check if password login is available
+    // 进站方式：只有「密码登录（作者）」和「邀请码注册（读者）」
+    // 原先这里还会返回 github 字段，GitHub OAuth 已整套删掉，不再有第二种登录方式
     app.get("/status", async (c: AppContext) => {
         const env = c.env;
-        
+
         return c.json({
-            github: !!(env.RIN_GITHUB_CLIENT_ID && env.RIN_GITHUB_CLIENT_SECRET),
             password: !!(env.ADMIN_USERNAME && env.ADMIN_PASSWORD),
         });
     });

@@ -2,6 +2,7 @@ import { Hono } from "hono";
 import type { AppContext } from "../core/hono-types";
 import { profileAsync } from "../core/server-timing";
 import { getStorageObject, getStoragePublicUrl, putStorageObject, resolveStorageTarget } from "../utils/storage";
+import { sweepOrphanImages } from "../utils/feed-images";
 import { createS3Client, deleteObject as deleteS3Object, listObjects as listS3Objects } from "../utils/s3";
 
 function buf2hex(buffer: ArrayBuffer) {
@@ -106,6 +107,26 @@ export function StorageService(): Hono {
             }
         } catch (e: any) {
             console.error("Storage list failed:", e.message);
+            return c.text(e.message, 500);
+        }
+    });
+
+    // POST /storage/cleanup - Delete every stored image that nothing references (admin only)
+    app.post('/cleanup', async (c: AppContext) => {
+        const uid = c.get('uid');
+        const admin = c.get('admin');
+        if (!uid || !admin) {
+            return c.text('Forbidden', 403);
+        }
+
+        const env = c.get('env');
+        const db = c.get('db');
+
+        try {
+            const result = await profileAsync(c, 'storage_cleanup', () => sweepOrphanImages(env, db));
+            return c.json(result);
+        } catch (e: any) {
+            console.error("Storage cleanup failed:", e.message);
             return c.text(e.message, 500);
         }
     });

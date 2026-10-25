@@ -81,7 +81,7 @@ describe('StorageService', () => {
                 sign: async (payload: any) => `mock_token_${payload.id}`,
                 verify: async (token: string) => token.startsWith('mock_token_') ? { id: 1 } : null,
             } as JWTUtils);
-            c.set('oauth2', undefined);
+
             c.set('admin', false);
             c.set('env', env);
             c.set('uid', undefined);
@@ -318,6 +318,82 @@ describe('StorageService', () => {
             expect(res.status).toBe(200);
             expect(res.headers.get('content-type')).toBe('text/plain');
             expect(await res.text()).toBe('test');
+        });
+    });
+
+    describe('POST /cleanup - 清理没人引用的图片', () => {
+        const SHA_USED = 'e'.repeat(40);
+        const SHA_ORPHAN = 'f'.repeat(40);
+
+        function buildCleanupEnv(store: Set<string>) {
+            return createMockEnv({
+                R2_BUCKET: {
+                    async delete(key: string | string[]) {
+                        for (const k of Array.isArray(key) ? key : [key]) store.delete(k);
+                    },
+                    async list(options: { prefix?: string; cursor?: string; limit?: number } = {}) {
+                        const prefix = options.prefix ?? '';
+                        const limit = options.limit ?? 1000;
+                        const start = options.cursor ? Number(options.cursor) : 0;
+                        const all = [...store].filter((k) => k.startsWith(prefix)).sort();
+                        const page = all.slice(start, start + limit);
+                        const truncated = start + limit < all.length;
+                        return {
+                            objects: page.map((key) => ({ key, size: 2048 })),
+                            truncated,
+                            cursor: truncated ? String(start + limit) : undefined,
+                        };
+                    },
+                    async put() { },
+                    async get() { return null; },
+                    async head() { return null; },
+                } as unknown as R2Bucket,
+            });
+        }
+
+        function createCleanupApp(appEnv: Env, isAdmin: boolean) {
+            const serviceApp = new Hono<{ Bindings: Env; Variables: Variables }>();
+            serviceApp.use(createMiddleware<{ Bindings: Env; Variables: Variables }>(async (c, next) => {
+                c.set('db', db);
+                c.set('cache', new TestCacheImpl());
+                c.set('serverConfig', new TestCacheImpl());
+                c.set('clientConfig', new TestCacheImpl());
+                c.set('jwt', {
+                    sign: async (payload: any) => `mock_token_${payload.id}`,
+                    verify: async (token: string) => token.startsWith('mock_token_') ? { id: 1 } : null,
+                } as JWTUtils);
+                c.set('env', appEnv);
+                c.set('uid', isAdmin ? 1 : undefined);
+                c.set('admin', isAdmin);
+                await next();
+            }));
+            serviceApp.route('/', StorageService());
+            return serviceApp;
+        }
+
+        it('非管理员不能清理', async () => {
+            const store = new Set<string>();
+            const cleanupEnv = buildCleanupEnv(store);
+            const res = await createCleanupApp(cleanupEnv, false).request('/cleanup', { method: 'POST' }, cleanupEnv);
+            expect(res.status).toBe(403);
+        });
+
+        it('只删没人引用的图，并在用的图保留', async () => {
+            const store = new Set([`images/${SHA_USED}.png`, `images/${SHA_ORPHAN}.png`]);
+            const cleanupEnv = buildCleanupEnv(store);
+
+            sqlite.exec(`
+                INSERT INTO feeds (id, title, content, uid, draft, listed)
+                VALUES (100, '用了图', '![x](https://test-image-domain.com/images/${SHA_USED}.png)', 1, 0, 1)
+            `);
+
+            const res = await createCleanupApp(cleanupEnv, true).request('/cleanup', { method: 'POST' }, cleanupEnv);
+
+            expect(res.status).toBe(200);
+            const body = await res.json() as any;
+            expect(body).toEqual({ scanned: 2, deleted: 1, kept: 1, freedBytes: 2048 });
+            expect(store.has(`images/${SHA_USED}.png`)).toBe(true);
+            expect(store.has(`images/${SHA_ORPHAN}.png`)).toBe(false);
         });
     });
 });

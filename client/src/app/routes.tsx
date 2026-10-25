@@ -7,7 +7,6 @@ import Footer from "../components/footer";
 import { Header } from "../components/header";
 import { Padding } from "../components/padding";
 import { getHeaderLayoutDefinition } from "../components/site-header/layout-registry";
-import { Tips, TipsPage } from "../components/tips";
 import useTableOfContents from "../hooks/useTableOfContents";
 import { useSiteConfig } from "../hooks/useSiteConfig";
 import { CallbackPage } from "../page/callback";
@@ -132,24 +131,6 @@ export function AppRoutes() {
       <TocRoute path="/:alias">
         {(params, toc, cleanup) => <FeedPage id={params.alias || ""} TOC={toc} clean={cleanup} />}
       </TocRoute>
-
-      <AppRoute path="/user/github">
-        <TipsPage>
-          <Tips value={t("error.api_url")} type="error" />
-        </TipsPage>
-      </AppRoute>
-
-      <AppRoute path="/*/user/github">
-        <TipsPage>
-          <Tips value={t("error.api_url_slash")} type="error" />
-        </TipsPage>
-      </AppRoute>
-
-      <AppRoute path="/user/github/callback">
-        <TipsPage>
-          <Tips value={t("error.github_callback")} type="error" />
-        </TipsPage>
-      </AppRoute>
 
       <AppRoute>
         <ErrorPage error={t("error.not_found")} />

@@ -2,7 +2,7 @@
 import type { Context as HonoContext } from "hono";
 
 // Re-export from hono-types
-export type { DB, Variables, AppContext, JWTUtils, OAuth2Utils } from "./hono-types";
+export type { DB, Variables, AppContext, JWTUtils } from "./hono-types";
 
 // Middleware type
 export type Middleware = (context: Context, env: Env) => Promise<Response | void>;

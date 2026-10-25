@@ -1,6 +1,6 @@
 import { createClient } from "../api/client";
-import { endpoint, oauth_url } from "../config";
+import { endpoint } from "../config";
 
-export { endpoint, oauth_url };
+export { endpoint };
 
 export const client = createClient(endpoint);

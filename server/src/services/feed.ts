@@ -6,6 +6,7 @@ import { feeds, visits, visitStats } from "../db/schema";
 import { HyperLogLog } from "../utils/hyperloglog";
 import { extractImageWithMetadata } from "../utils/image";
 import { hasGlass, hasOwner, maskGlassPlain, renderGlass, type GlassViewer } from "../utils/glass";
+import { deleteOrphanImagesFromText } from "../utils/feed-images";
 import { makeSummary, stripMarkdown } from "../utils/markdown";
 import { syncFeedAISummaryQueueState } from "./feed-ai-summary";
 import { bindTagToPost } from "./tag";
@@ -557,6 +558,13 @@ export function FeedService(): Hono<{
         }
 
         await profileAsync(c, 'feed_delete_db', () => db.delete(feeds).where(eq(feeds.id, id_num)));
+
+        // 图片跟着文章走：只有"全站再也没人引用"的那些才删（同一张图可能被别的文章用着）
+        // ⚠️ 必须在上面那行**之后**：文章还在库里的时候，「还有人引用吗」永远为真
+        await profileAsync(c, 'feed_delete_images', () =>
+            deleteOrphanImagesFromText(db, env, `${feed.content}\n${feed.summary ?? ''}`),
+        );
+
         await profileAsync(c, 'feed_delete_cache_invalidate', () => clearFeedCache(cache, id_num, feed.alias, null));
         await profileAsync(c, 'feed_delete_cdn_purge', () => purgeCdnForFeed(env, c.req.header('host') || '', id_num, feed.alias));
         return c.text('Deleted');

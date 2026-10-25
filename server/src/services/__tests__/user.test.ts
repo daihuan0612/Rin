@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach, afterEach } from 'bun:test';
 import { UserService } from '../user';
 import { Hono } from "hono";
 import { createMiddleware } from "hono/factory";
-import type { Variables, JWTUtils, OAuth2Utils } from "../../core/hono-types";
+import type { Variables, JWTUtils } from "../../core/hono-types";
 import { setupTestApp, TestCacheImpl, cleanupTestDB, createMockEnv } from '../../../tests/fixtures';
 import type { Database } from 'bun:sqlite';
 
@@ -57,134 +57,7 @@ describe('UserService', () => {
         `);
     }
 
-    describe('GET /github - Initiate GitHub OAuth', () => {
-        it('should redirect to GitHub OAuth', async () => {
-            const res = await app.request('/github', {
-                method: 'GET',
-                headers: { 'Referer': 'http://localhost:5173/' }
-            }, env);
-            
-            expect(res.status).toBe(302);
-            const location = res.headers.get('Location');
-            expect(location).toContain('github.com');
-            expect(location).toContain('state=');
-        });
-
-        it('should require referer header', async () => {
-            const res = await app.request('/github', { method: 'GET' }, env);
-            
-            expect(res.status).toBe(400);
-            const data = await res.json() as { error: { message: string } };
-            expect(data.error.message).toBe('Referer header is required');
-        });
-
-        it('should return 400 if OAuth not configured', async () => {
-            const envNoOAuth = createMockEnv({
-                RIN_GITHUB_CLIENT_ID: '',
-                RIN_GITHUB_CLIENT_SECRET: '',
-            });
-            
-            const appNoOAuth = new Hono<{ Bindings: Env; Variables: Variables }>();
-            appNoOAuth.use(createMiddleware<{ Bindings: Env; Variables: Variables }>(async (c, next) => {
-                c.set('db', db);
-                c.set('cache', new TestCacheImpl());
-                c.set('serverConfig', new TestCacheImpl());
-                c.set('clientConfig', new TestCacheImpl());
-                c.set('jwt', {
-                    sign: async (payload: any) => `mock_token_${payload.id}`,
-                    verify: async (token: string) => null,
-                } as JWTUtils);
-                c.set('oauth2', undefined);
-                c.set('env', envNoOAuth);
-                await next();
-            }));
-            appNoOAuth.route('/', UserService());
-            
-            // Error handler for appNoOAuth
-            appNoOAuth.onError((err, c) => {
-                const error = err as any;
-                if (error.code && error.statusCode) {
-                    return c.json({
-                        success: false,
-                        error: {
-                            code: error.code,
-                            message: error.message,
-                            details: error.details,
-                        },
-                    }, error.statusCode as any);
-                }
-                return c.json({
-                    success: false,
-                    error: {
-                        code: 'INTERNAL_ERROR',
-                        message: err.message || 'An unexpected error occurred',
-                    },
-                }, 500);
-            });
-            
-            const res = await appNoOAuth.request('/github', {
-                method: 'GET',
-                headers: { 'Referer': 'http://localhost:5173/' }
-            }, envNoOAuth);
-            
-            expect(res.status).toBe(400);
-            const data = await res.json() as { error: { message: string } };
-            expect(data.error.message).toBe('GitHub OAuth is not configured');
-        });
-
-        it('should set redirect_to cookie', async () => {
-            const res = await app.request('/github', {
-                method: 'GET',
-                headers: { 'Referer': 'http://localhost:5173/feed/123' }
-            }, env);
-            
-            expect(res.status).toBe(302);
-            const setCookie = res.headers.get('Set-Cookie');
-            expect(setCookie).toContain('redirect_to');
-        });
-    });
-
-    describe('GET /github/callback - GitHub OAuth callback', () => {
-        it('should authenticate existing user', async () => {
-            const originalFetch = global.fetch;
-            global.fetch = async () => {
-                return new Response(JSON.stringify({
-                    id: 'gh_123',
-                    login: 'user1',
-                    name: 'User One',
-                    avatar_url: 'https://github.com/avatar.png'
-                }), { status: 200 });
-            };
-
-            try {
-                const res = await app.request('/github/callback?code=valid_code&state=mock_state', {
-                    method: 'GET',
-                    headers: {
-                        'Cookie': 'state=mock_state; redirect_to=http://localhost:5173/callback'
-                    }
-                }, env);
-                
-                expect(res.status).toBe(302);
-                const location = res.headers.get('Location');
-                expect(location).toContain('/callback');
-            } finally {
-                global.fetch = originalFetch;
-            }
-        });
-
-        it('should reject invalid state', async () => {
-            const res = await app.request('/github/callback?code=valid_code&state=wrong_state', {
-                method: 'GET',
-                headers: {
-                    'Cookie': 'state=mock_state; redirect_to=http://localhost:5173/callback'
-                }
-            }, env);
-            
-            expect(res.status).toBe(400);
-            const data = await res.json() as { error: { message: string } };
-            expect(data.error.message).toBe('Invalid state parameter');
-        });
-    });
+    // GitHub OAuth 路由已删除（作者不需要 GitHub 登录），对应的两条 describe 一并移除。
 
     describe('GET /profile - Get user profile', () => {
         it('should return user profile', async () => {

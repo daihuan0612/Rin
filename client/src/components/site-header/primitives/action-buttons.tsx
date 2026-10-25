@@ -156,7 +156,7 @@ export function UserAvatar({
 }) {
   const { t } = useTranslation();
   const [, setLocation] = useLocation();
-  const label = t("github_login");
+  const label = t("login.title");
   const config = useContext(ClientConfigContext);
   const [isOpen, setIsOpen] = useState(false);
   const shouldShowEntry = Boolean(profile) || config.getBoolean("login.enabled");

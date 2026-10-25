@@ -9,11 +9,7 @@ export interface JWTUtils {
     verify(token: string): Promise<any | null>;
 }
 
-export interface OAuth2Utils {
-    generateState(): string;
-    createRedirectUrl(state: string, provider: string): string;
-    authorize(provider: string, code: string): Promise<{ accessToken: string } | null>;
-}
+// GitHub OAuth 已整套删除，不再有 OAuth2Utils（原 generateState / createRedirectUrl / authorize 接口）
 
 export interface CacheImpl {
     get(key: string): Promise<any | null>;
@@ -34,7 +30,6 @@ export interface Variables {
     serverConfig: CacheImpl;
     clientConfig: CacheImpl;
     jwt: JWTUtils;
-    oauth2?: OAuth2Utils;
     uid?: number;
     admin: boolean;
     username?: string;

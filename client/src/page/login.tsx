@@ -2,16 +2,16 @@ import { t } from "i18next";
 import { useEffect, useState } from "react";
 import { useLocation, Link } from "wouter";
 import { ButtonWithLoading } from "../components/button";
-import { Icon } from "../components/icon";
 import { Input } from "../components/input";
-import { client, oauth_url } from "../app/runtime";
+import { client } from "../app/runtime";
 import { setAuthToken } from "../utils/auth";
 import { getLoginRedirectPath } from "../utils/auth-redirect";
 
 export function LoginPage() {
     const [username, setUsername] = useState('')
     const [password, setPassword] = useState('')
-    const [authStatus, setAuthStatus] = useState<{ github: boolean; password: boolean }>({ github: false, password: false });
+    // GitHub OAuth 已整套删掉，现在只有「密码登录」（作者）+「邀请码注册」（读者）
+    const [authStatus, setAuthStatus] = useState<{ password: boolean }>({ password: false });
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState('');
     const [, setLocation] = useLocation();
@@ -71,7 +71,7 @@ export function LoginPage() {
                 )}
 
                 {/* Password login form */}
-                {authStatus.password && (
+                {authStatus.password ? (
                     <>
                         <Input
                             value={username}
@@ -96,23 +96,7 @@ export function LoginPage() {
                             />
                         </div>
                     </>
-                )}
-
-                {/* OAuth options */}
-                {authStatus.github && (
-                    <div className="flex flex-col justify-center items-center space-y-2 pt-2">
-                        {authStatus.password && <p className="text-xs t-secondary">{t('login.or')}</p>}
-                        {!authStatus.password && <p className="text-xs t-secondary">{t('login.oauth_only')}</p>}
-                        <div className="flex flex-row items-center space-x-4">
-                            <Icon label={t('github_login')} name="ri-github-line" onClick={() => {
-                                window.location.href = `${oauth_url}`
-                            }} hover={true} />
-                        </div>
-                    </div>
-                )}
-
-                {/* No auth methods available */}
-                {!authStatus.github && !authStatus.password && (
+                ) : (
                     <p className="text-sm text-red-500">{t('login.no_methods')}</p>
                 )}
 

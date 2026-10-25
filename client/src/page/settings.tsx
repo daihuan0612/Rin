@@ -4,7 +4,7 @@ import { Helmet } from "react-helmet";
 import { useTranslation } from "react-i18next";
 import ReactLoading from "react-loading";
 import Modal from "react-modal";
-import { client, oauth_url } from "../app/runtime";
+import { client } from "../app/runtime";
 import { Button } from "../components/button";
 import { useAlert } from "../components/dialog.tsx";
 import { HeaderLayoutPreview } from "../components/site-header/layout-preview";
@@ -427,7 +427,7 @@ export function Settings() {
           <ItemTitle title={t("settings.other.title")} />
           <ItemSwitch
             title={t("settings.login.enable.title")}
-            description={t("settings.login.enable.desc", { url: oauth_url })}
+            description={t("settings.login.enable.desc")}
             checked={clientConfig.getBoolean("login.enabled")}
             onChange={(checked) => {
               setConfigValue("client", "login.enabled", checked);

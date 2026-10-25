@@ -19,7 +19,6 @@ interface AuthApi {
         };
     }>>;
     status(): Promise<ApiResponse<{
-        github: boolean;
         password: boolean;
     }>>;
 }

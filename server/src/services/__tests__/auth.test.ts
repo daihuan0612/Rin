@@ -257,11 +257,10 @@ describe("PasswordAuthService", () => {
   });
 
   describe("GET /auth/status - Check auth availability", () => {
-    it("should return github and password status", async () => {
+    it("should return password status (GitHub OAuth removed)", async () => {
       const result = await api.auth.status();
 
       expect(result.error).toBeUndefined();
-      expect(result.data?.github).toBe(true); // Has GitHub credentials in env
       expect(result.data?.password).toBe(true); // Has admin credentials
     });
 
@@ -323,7 +322,6 @@ describe("PasswordAuthService", () => {
       const result = await apiNoCreds.auth.status();
 
       expect(result.error).toBeUndefined();
-      expect(result.data?.github).toBe(false);
       expect(result.data?.password).toBe(false);
     });
   });

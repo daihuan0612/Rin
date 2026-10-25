@@ -203,7 +203,6 @@
   "error": {
     "api_url": "API_URL in Pages environment variables should be the Worker address. Please check if API_URL in Pages environment variables is correct.",
     "api_url_slash": "API_URL in Pages environment variables should be the Worker address. Please check if API_URL in Pages environment variables is correct and ensure API_URL does not end with a slash (/).",
-    "github_callback": "GitHub OAuth callback URL should be `https://<Worker address>/api/user/github/callback`. Please check if the GitHub OAuth callback URL is correct.",
     "not_found": "Page not found",
     "permission_denied": "Permission denied",
     "title": "Error"
@@ -227,7 +226,6 @@
     },
     "title": "Friends"
   },
-  "github_login": "Github Login",
   "hashtags": "Hashtags",
   "home": "Home",
   "index": {
@@ -320,6 +318,30 @@
       "title": "Users"
     }
   },
+  "images": {
+    "admin": {
+      "title": "Images",
+      "total": "{{count}} images",
+      "no_images": "No images yet",
+      "delete": "Delete",
+      "delete_failed": "Delete failed",
+      "confirm_delete": "Delete this image?",
+      "confirm_batch_delete": "Delete the {{count}} selected images?",
+      "select_all": "Select all",
+      "deselect_all": "Deselect all",
+      "delete_selected": "Delete selected ({{count}})",
+      "retry": "Retry",
+      "copy_url": "Copy URL",
+      "preview": "Preview",
+      "copied": "Copied",
+      "cleanup": "Clean unreferenced images",
+      "cleanup_desc": "Deletes images that no post, moment, comment, avatar or site setting references. Catches what was left behind when a post was removed.",
+      "cleanup_running": "Cleaning…",
+      "cleanup_confirm": "This deletes every image that nothing references any more. Deleted images cannot be recovered. Continue?",
+      "cleanup_result": "Deleted {{deleted}}, kept {{kept}}, freed {{size}}",
+      "cleanup_nothing": "Nothing to clean up (all {{kept}} images are in use)"
+    }
+  },
   "login": {
     "error": {
       "empty": "Please enter username and password",
@@ -329,7 +351,6 @@
     },
     "loading": "Logging in...",
     "no_methods": "No login methods available",
-    "oauth_only": "Please log in to continue",
     "or": "or",
     "password": {
       "placeholder": "Please enter your password"
@@ -733,27 +754,20 @@
         },
         "missing": {
           "impact": "Users can see the login entry but no working login method is configured.",
-          "summary": "Neither GitHub OAuth nor password login is configured.",
-          "suggestion": "Configure RIN_GITHUB_CLIENT_ID/RIN_GITHUB_CLIENT_SECRET or ADMIN_USERNAME/ADMIN_PASSWORD."
+          "summary": "ADMIN_USERNAME / ADMIN_PASSWORD is not configured, so admin login is unavailable.",
+          "suggestion": "Set ADMIN_USERNAME / ADMIN_PASSWORD for the author account. Readers sign up with invite codes."
         },
         "default_password": {
           "impact": "The admin account is still using the default username and password, which is a critical security risk.",
           "summary": "ADMIN_USERNAME/ADMIN_PASSWORD are still set to admin / admin123.",
           "suggestion": "Change the default username or password immediately before exposing the site."
         },
-        "oauth_missing": {
-          "impact": "Only the local password account can sign in. Other users cannot log in and comment through OAuth.",
-          "summary": "GitHub OAuth is not configured.",
-          "suggestion": "Configure RIN_GITHUB_CLIENT_ID/RIN_GITHUB_CLIENT_SECRET if you expect other users to log in."
-        },
         "ready": {
           "impact": "Admin sign-in is available.",
-          "summary": "OAuth login is configured and the current password login configuration is not using the default credentials.",
+          "summary": "Password login is configured and is not using the default credentials.",
           "suggestion": "No action required."
         },
         "details": {
-          "github_configured": "GitHub OAuth: configured",
-          "github_missing": "GitHub OAuth: missing",
           "password_configured": "Password login: configured",
           "password_missing": "Password login: missing",
           "password_default": "Password login: using default credentials"

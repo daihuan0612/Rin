@@ -64,6 +64,7 @@ export function ImagesAdminPage() {
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [preview, setPreview] = useState<StorageImageItem | null>(null);
   const [toast, setToast] = useState<string | null>(null);
+  const [cleaning, setCleaning] = useState(false);
 
   const showToast = (msg: string) => {
     setToast(msg);
@@ -111,6 +112,27 @@ export function ImagesAdminPage() {
       }
     }
     setSelected(new Set());
+  };
+
+  // 清理：删掉"全站没人引用"的图（文章删了、图没跟着走的那些）
+  const handleCleanup = async () => {
+    if (!confirm(t("images.admin.cleanup_confirm"))) return;
+    setCleaning(true);
+    const res = await client.storage.cleanup();
+    setCleaning(false);
+    if (res.error) {
+      alert(res.error.value);
+      return;
+    }
+    const result = res.data;
+    if (result) {
+      showToast(
+        result.deleted > 0
+          ? t("images.admin.cleanup_result", { deleted: result.deleted, kept: result.kept, size: formatSize(result.freedBytes) })
+          : t("images.admin.cleanup_nothing", { kept: result.kept }),
+      );
+      if (result.deleted > 0) await loadImages();
+    }
   };
 
   const toggleSelect = (key: string) => {
@@ -165,6 +187,15 @@ export function ImagesAdminPage() {
           {t("images.admin.total", { count: images.length })}
         </p>
         <div className="flex items-center gap-3">
+          <button
+            onClick={handleCleanup}
+            disabled={cleaning}
+            title={t("images.admin.cleanup_desc")}
+            className="flex items-center gap-1.5 rounded-lg border border-black/10 px-3 py-1.5 text-xs font-medium t-primary transition-colors hover:bg-neutral-100 disabled:opacity-50 dark:border-white/10 dark:hover:bg-white/5"
+          >
+            <i className="ri-brush-line" />
+            {cleaning ? t("images.admin.cleanup_running") : t("images.admin.cleanup")}
+          </button>
           <button
             onClick={selectAll}
             className="rounded-lg border border-black/10 px-3 py-1.5 text-xs font-medium t-primary transition-colors hover:bg-neutral-100 dark:border-white/10 dark:hover:bg-white/5"

@@ -2,7 +2,6 @@
 // This client provides a clean, type-safe interface for all backend API endpoints
 
 import { getAuthToken } from "../utils/auth";
-import { endpoint } from "../config";
 
 // Import shared types
 import type {
@@ -40,6 +39,7 @@ import type {
   InviteListResponse,
   CommentAdminListResponse,
   StorageListResponse,
+  StorageCleanupResponse,
 } from "@rin/api";
 
 export interface SettingsConfigResponse {
@@ -406,11 +406,6 @@ class UserAPI {
     return this.http.post<void>("/api/user/logout");
   }
 
-  // GET /api/user/github
-  githubAuth(): string {
-    return `${endpoint}/api/user/github`;
-  }
-
   // GET /api/user/admin/list —— 用户管理（备注 / 注册自述 / 注册 IP / 用了哪枚码）
   async adminList(): Promise<ApiResponse<AdminUserItem[]>> {
     return this.http.get<AdminUserItem[]>("/api/user/admin/list");
@@ -639,6 +634,11 @@ class StorageAPI {
   // DELETE /api/storage/:key
   async delete(key: string): Promise<ApiResponse<{ success: boolean }>> {
     return this.http.delete<{ success: boolean }>(`/api/storage/${encodeURIComponent(key)}`);
+  }
+
+  // POST /api/storage/cleanup —— 把"全站没人引用"的图片删掉（文章删了图没删的补偿手段）
+  async cleanup(): Promise<ApiResponse<StorageCleanupResponse>> {
+    return this.http.post<StorageCleanupResponse>("/api/storage/cleanup", {});
   }
 }
 

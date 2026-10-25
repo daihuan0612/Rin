@@ -230,7 +230,6 @@
   "error": {
     "api_url": "Pages 环境变量中 API_URL 应为 Worker 地址，请检查 Pages 环境变量中 API_URL 是否正确",
     "api_url_slash": "Pages 环境变量中 API_URL 应为 Worker 地址，请检查 Pages 环境变量中 API_URL 是否正确，且 API_URL 末尾不能有 /",
-    "github_callback": "GitHub OAuth 回调地址应为 `https://<Worker 地址>/api/user/github/callback`，请检查 GitHub OAuth 回调地址是否正确",
     "not_found": "页面未找到",
     "permission_denied": "权限不足",
     "title": "错误"
@@ -254,7 +253,6 @@
     },
     "title": "朋友们"
   },
-  "github_login": "Github 登录",
   "hashtags": "标签",
   "home": "首页",
   "index": {
@@ -356,7 +354,6 @@
     },
     "loading": "登录中...",
     "no_methods": "没有可用的登录方式",
-    "oauth_only": "请登录后继续",
     "or": "或",
     "password": {
       "placeholder": "请输入密码"
@@ -760,27 +757,20 @@
         },
         "missing": {
           "impact": "用户可以看到登录入口，但没有任何可用的登录方式。",
-          "summary": "GitHub OAuth 和密码登录都未配置。",
-          "suggestion": "请配置 RIN_GITHUB_CLIENT_ID/RIN_GITHUB_CLIENT_SECRET 或 ADMIN_USERNAME/ADMIN_PASSWORD。"
+          "summary": "ADMIN_USERNAME / ADMIN_PASSWORD 未配置，后台登录不可用。",
+          "suggestion": "请配置 ADMIN_USERNAME / ADMIN_PASSWORD（作者的登录账号）；读者走邀请码注册。"
         },
         "default_password": {
           "impact": "管理员账号仍在使用默认用户名和密码，属于严重安全风险。",
           "summary": "ADMIN_USERNAME/ADMIN_PASSWORD 仍然是 admin / admin123。",
           "suggestion": "在公开站点前请立即修改默认用户名或密码。"
         },
-        "oauth_missing": {
-          "impact": "当前只能使用本地密码账号登录，其他用户无法通过 OAuth 登录并评论。",
-          "summary": "GitHub OAuth 未配置。",
-          "suggestion": "如果希望其他用户登录，请配置 RIN_GITHUB_CLIENT_ID/RIN_GITHUB_CLIENT_SECRET。"
-        },
         "ready": {
           "impact": "后台登录可用。",
-          "summary": "OAuth 登录已配置，且当前密码登录未使用默认凭据。",
+          "summary": "密码登录已配置，且未使用默认凭据。",
           "suggestion": "无需处理。"
         },
         "details": {
-          "github_configured": "GitHub OAuth：已配置",
-          "github_missing": "GitHub OAuth：未配置",
           "password_configured": "密码登录：已配置",
           "password_missing": "密码登录：未配置",
           "password_default": "密码登录：使用默认凭据"
@@ -920,7 +910,13 @@
       "retry": "重试",
       "copy_url": "复制链接",
       "preview": "预览",
-      "copied": "已复制"
+      "copied": "已复制",
+      "cleanup": "清理无引用图片",
+      "cleanup_desc": "把「没有任何文章、动态、评论、头像或站点设置引用」的图片删掉；删文章时漏掉的图会被这一步收掉",
+      "cleanup_running": "清理中…",
+      "cleanup_confirm": "清理会删除全站没有任何引用的图片，删掉就找不回来了。继续吗？",
+      "cleanup_result": "已删除 {{deleted}} 张，保留 {{kept}} 张，释放 {{size}}",
+      "cleanup_nothing": "没有可清理的图片（{{kept}} 张都在用）"
     }
   }
 }

@@ -676,6 +676,70 @@ describe('FeedService', () => {
             expect(getRes.status).toBe(404);
         });
 
+        it('删除文章时把只被它引用的图片一起删掉，共用的图保留', async () => {
+            const SHA_OWN = 'c'.repeat(40);
+            const SHA_SHARED = 'd'.repeat(40);
+            const store = new Set([`images/${SHA_OWN}.png`, `images/${SHA_SHARED}.png`]);
+            // 这个用例要一个带 R2 绑定的环境，所以单独起一套 ctx（fixture 的中间件是从闭包里取 env 的）
+            const ctx = await setupTestApp(FeedService, {
+                R2_BUCKET: {
+                    async delete(key: string | string[]) {
+                        for (const k of Array.isArray(key) ? key : [key]) store.delete(k);
+                    },
+                    async list() {
+                        return { objects: [...store].map((key) => ({ key, size: 10 })), truncated: false };
+                    },
+                    async put() { },
+                    async get() { return null; },
+                    async head() { return null; },
+                } as any,
+            });
+            await createTestUser(ctx.sqlite);
+            const testApp = ctx.app;
+            const testEnv = ctx.env;
+
+            const imageMd = (sha: string) => `![图](https://test-image-domain.com/images/${sha}.png)`;
+            const headers = { 'Authorization': 'Bearer mock_token_1', 'Content-Type': 'application/json' };
+
+            try {
+                const createA = await testApp.request('/', {
+                    method: 'POST',
+                    headers,
+                    body: JSON.stringify({
+                        title: '只有自己的图',
+                        content: `${imageMd(SHA_OWN)}\n${imageMd(SHA_SHARED)}`,
+                        listed: true,
+                        draft: false,
+                        tags: [],
+                    }),
+                }, testEnv);
+                const idA = (await createA.json() as any).insertedId;
+
+                await testApp.request('/', {
+                    method: 'POST',
+                    headers,
+                    body: JSON.stringify({
+                        title: '共用同一张图',
+                        content: imageMd(SHA_SHARED),
+                        listed: true,
+                        draft: false,
+                        tags: [],
+                    }),
+                }, testEnv);
+
+                const deleteRes = await testApp.request(`/${idA}`, {
+                    method: 'DELETE',
+                    headers: { 'Authorization': 'Bearer mock_token_1' },
+                }, testEnv);
+                expect(deleteRes.status).toBe(200);
+
+                expect(store.has(`images/${SHA_OWN}.png`)).toBe(false);
+                expect(store.has(`images/${SHA_SHARED}.png`)).toBe(true);
+            } finally {
+                cleanupTestDB(ctx.sqlite);
+            }
+        });
+
         it('should require admin permission to delete', async () => {
             // Create feed first
             const createRes = await app.request('/', {
