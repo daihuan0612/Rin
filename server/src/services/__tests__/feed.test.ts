@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach } from 'bun:test';
 import { FeedService } from '../feed';
+import { buildQueueStatusResponse } from '../config-queue-status';
 import { Hono } from "hono";
 import type { Variables } from "../../core/hono-types";
 import { setupTestApp, createTestUser, cleanupTestDB } from '../../../tests/fixtures';
@@ -135,6 +136,65 @@ describe('FeedService', () => {
             const data = await res.json() as any;
             expect(data.size).toBe(1);
         });
+
+        it('列表摘要也按视角：注册读者在首页能看到 [glass] 原文，游客仍打码', async () => {
+            // 注册读者（permission 0）
+            sqlite.prepare("INSERT INTO users (id, username, openid, permission) VALUES (9, 'lister', 'lister-openid', 0)").run();
+
+            await app.request('/', {
+                method: 'POST',
+                headers: {
+                    'Authorization': 'Bearer mock_token_1',
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    title: 'List tiering',
+                    content: '公开开头[glass]给注册读者看的摘要内容[/glass]中间[owner]只有作者能看的摘要内容[/owner]结尾',
+                    listed: true,
+                    draft: false,
+                    tags: [],
+                }),
+            }, env);
+
+            // 游客：两种标记都打码（假字夹在哨兵里，前端据此套毛玻璃），原文一个字都不出去
+            const guestRes = await app.request('/', { method: 'GET' }, env);
+            const guest = await guestRes.json() as any;
+            const guestSummary = guest.data[0].summary as string;
+            expect(guestSummary).toContain('公开开头');
+            expect(guestSummary).not.toContain('给注册读者看的摘要内容');
+            expect(guestSummary).not.toContain('只有作者能看的摘要内容');
+            // 不再是一排 `▒` 方块，而是「哨兵 + 假字 + 哨兵」，哨兵是单个控制字符
+            expect(guestSummary).not.toContain('▒');
+            expect(guestSummary).toContain('\u0001');
+            expect(guestSummary).toContain('\u0002');
+            expect(guestSummary).toContain('\u0003');
+            // 哨兵必须成对：开合数量一致
+            expect((guestSummary.match(/\u0001|\u0003/g) ?? []).length).toBe(
+                (guestSummary.match(/\u0002/g) ?? []).length,
+            );
+
+            // 注册读者：吃不到游客那份缓存，[glass] 是原文，[owner] 仍然打码
+            const memberRes = await app.request('/', {
+                method: 'GET',
+                headers: { 'Authorization': 'Bearer mock_token_9' },
+            }, env);
+            const member = await memberRes.json() as any;
+            const memberSummary = member.data[0].summary as string;
+            expect(memberSummary).toContain('给注册读者看的摘要内容');
+            expect(memberSummary).not.toContain('只有作者能看的摘要内容');
+            expect(memberRes.headers.get('cache-control')).toContain('private');
+            expect(memberRes.headers.get('cache-control')).toContain('no-store');
+
+            // 作者：两段都是原文
+            const ownerRes = await app.request('/', {
+                method: 'GET',
+                headers: { 'Authorization': 'Bearer mock_token_1' },
+            }, env);
+            const owner = await ownerRes.json() as any;
+            const ownerSummary = owner.data[0].summary as string;
+            expect(ownerSummary).toContain('给注册读者看的摘要内容');
+            expect(ownerSummary).toContain('只有作者能看的摘要内容');
+        });
     });
 
     describe('GET /:id - Get single feed', () => {
@@ -164,6 +224,41 @@ describe('FeedService', () => {
             expect(getRes.status).toBe(200);
             const data = await getRes.json() as any;
             expect(data.title).toBe('Test Feed');
+        });
+
+        it('详情接口的 summary 也按视角给：游客拿不到隐藏段原文，作者拿原文（写作页要还原标记）', async () => {
+            const createRes = await app.request('/', {
+                method: 'POST',
+                headers: {
+                    'Authorization': 'Bearer mock_token_1',
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    title: 'Summary leak check',
+                    content: '正文',
+                    summary: '摘要开头[glass]摘要里的隐藏话[/glass]结尾',
+                    listed: true,
+                    draft: false,
+                    tags: [],
+                }),
+            }, env);
+            expect(createRes.status).toBe(200);
+            const feedId = (await createRes.json() as any).insertedId;
+
+            // 游客：摘要里不能出现隐藏段原话（F12 / 网络面板也看不到）
+            const guestRes = await app.request(`/${feedId}`, { method: 'GET' }, env);
+            const guest = await guestRes.json() as any;
+            expect(guest.summary).toContain('摘要开头');
+            expect(guest.summary).not.toContain('摘要里的隐藏话');
+            expect(guest.summary).toContain('\u0001');
+
+            // 作者：原文 + 标记都在（写作页靠它把编辑框还原成 [glass]…[/glass]）
+            const ownerRes = await app.request(`/${feedId}`, {
+                method: 'GET',
+                headers: { 'Authorization': 'Bearer mock_token_1' },
+            }, env);
+            const owner = await ownerRes.json() as any;
+            expect(owner.summary).toContain('[glass]摘要里的隐藏话[/glass]');
         });
 
         it('should prefer a numeric feed id over another feed numeric alias', async () => {
@@ -263,6 +358,47 @@ describe('FeedService', () => {
             const data = await getRes.json() as any;
             expect(data.ai_summary_status).toBe('pending');
             expect(data.ai_summary_error).toBe('');
+        });
+
+        it('删掉的文章不会继续留在 AI 摘要队列状态里', async () => {
+            env.TASK_QUEUE = {
+                send: async () => {},
+                sendBatch: async () => {},
+            } as unknown as Queue<any>;
+            await serverConfig.set('ai_summary.enabled', 'true');
+
+            const createRes = await app.request('/', {
+                method: 'POST',
+                headers: {
+                    'Authorization': 'Bearer mock_token_1',
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    title: 'Queue cleanup check',
+                    content: '排队中的正文',
+                    listed: true,
+                    draft: false,
+                    tags: [],
+                }),
+            }, env);
+            expect(createRes.status).toBe(200);
+            const feedId = (await createRes.json() as any).insertedId;
+
+            // 建完就该进队列状态（pending）
+            const before = await buildQueueStatusResponse(db, env);
+            expect(before.items.some((item) => item.id === feedId)).toBe(true);
+            expect(before.summary.pending).toBe(1);
+
+            await app.request(`/${feedId}`, {
+                method: 'DELETE',
+                headers: { 'Authorization': 'Bearer mock_token_1' },
+            }, env);
+
+            // 文章没了 ⇒ 队列状态里也不能再有它（也不能剩一条没标题的孤儿记录）
+            const after = await buildQueueStatusResponse(db, env);
+            expect(after.items.some((item) => item.id === feedId)).toBe(false);
+            expect(after.items.length).toBe(0);
+            expect(after.summary.pending).toBe(0);
         });
 
         it('should return 404 for non-existent feed', async () => {

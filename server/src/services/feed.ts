@@ -5,7 +5,7 @@ import { profileAsync } from "../core/server-timing";
 import { feeds, visits, visitStats } from "../db/schema";
 import { HyperLogLog } from "../utils/hyperloglog";
 import { extractImageWithMetadata } from "../utils/image";
-import { hasGlass, hasOwner, maskGlassPlain, renderGlass, type GlassViewer } from "../utils/glass";
+import { balanceGlassTags, hasGlass, hasOwner, maskGlassTagged, renderGlass, type GlassViewer } from "../utils/glass";
 import { deleteOrphanImagesFromText } from "../utils/feed-images";
 import { makeSummary, stripMarkdown } from "../utils/markdown";
 import { syncFeedAISummaryQueueState } from "./feed-ai-summary";
@@ -91,6 +91,7 @@ export function FeedService(): Hono<{
 
         const page_num = (page ? parseInt(page) > 0 ? parseInt(page) : 1 : 1) - 1;
         const limit_num = limit ? parseInt(limit) > 50 ? 50 : parseInt(limit) : 20;
+        const viewer = viewerOf(admin, uid);
         const cacheKey = `feeds_${type}_${page_num}_${limit_num}`;
         const cached = await profileAsync(c, 'feed_list_cache_get', () => cache.get(cacheKey));
 
@@ -128,10 +129,11 @@ export function FeedService(): Hono<{
             limit: limit_num + 1,
         }))).map(({ content, hashtags, summary, ai_summary, ...other }: any) => {
             const avatar = extractImageWithMetadata(content);
-            const plainText = stripMarkdown(maskGlassPlain(content));
-            const maskedSummary = maskGlassPlain(summary);
+            const plainText = stripMarkdown(maskGlassTagged(content, viewer));
+            const taggedSummary = maskGlassTagged(summary, viewer);
             return {
-                summary: maskedSummary.length > 0 ? maskedSummary : makeSummary(plainText, 100),
+                // 打码段用哨兵夹着假字，前端据此套毛玻璃罩子（见 FeedCard）
+                summary: balanceGlassTags(taggedSummary.length > 0 ? taggedSummary : makeSummary(plainText, 100)),
                 hashtags: hashtags.map(({ hashtag }: any) => hashtag),
                 ai_summary: gateAiSummary(content, ai_summary, admin, uid),
                 avatar,
@@ -325,7 +327,19 @@ export function FeedService(): Hono<{
         // 隐藏段：作者看原文、登录用户看 `[glass]` 原文、游客全打码。
         // ⚠️ 必须写在 `cache.getOrSet`（上面取 feed 那里）之外：缓存里存的是数据库原始行、
         // 所有人共用，只有这里组装给响应的 content 才能按视角区分。
-        const result = { ...other, content: renderGlass(other.content, viewerOf(admin, uid)), hashtags: hashtags_flatten, pv, uv };
+        const viewer = viewerOf(admin, uid);
+        const result = {
+            ...other,
+            content: renderGlass(other.content, viewer),
+            // 摘要也要挡：详情页自己不显示摘要，但摘要里可能抄了隐藏段原话，
+            // 直接发原文等于给 F12 留了个后门。作者仍拿原文（写作页要用它还原）
+            summary: viewer === 'owner'
+                ? other.summary
+                : balanceGlassTags(maskGlassTagged(other.summary ?? '', viewer)),
+            hashtags: hashtags_flatten,
+            pv,
+            uv,
+        };
 
         // AI 摘要按标记分档（详见 `gateAiSummary`）
         result.ai_summary = gateAiSummary(other.content, other.ai_summary, admin, uid);
@@ -344,6 +358,10 @@ export function FeedService(): Hono<{
     app.get("/adjacent/:id", async (c) => {
         const db = c.get('db');
         const cache = c.get('cache');
+        const admin = c.get('admin');
+        const uid = c.get('uid');
+        // 卡片摘要按视角算 ⇒ 缓存键必须带视角，否则游客版会把登录用户的原文顶掉（反之亦然）
+        const viewer = viewerOf(admin, uid);
         const id = c.req.param('id');
         let id_num = parseFeedId(id);
 
@@ -369,12 +387,12 @@ export function FeedService(): Hono<{
         function formatAndCacheData(feed: any, feedDirection: "previous_feed" | "next_feed") {
             if (feed) {
                 const hashtags_flatten = feed.hashtags.map((f: any) => f.hashtag);
-                const plainText = stripMarkdown(maskGlassPlain(feed.content));
-                const maskedSummary = maskGlassPlain(feed.summary);
-                const summary = maskedSummary.length > 0
-                    ? maskedSummary
-                    : makeSummary(plainText, 50);
-                const cacheKey = `${feed.id}_${feedDirection}_${id_num}`;
+                const plainText = stripMarkdown(maskGlassTagged(feed.content, viewer));
+                const taggedSummary = maskGlassTagged(feed.summary, viewer);
+                const summary = balanceGlassTags(taggedSummary.length > 0
+                    ? taggedSummary
+                    : makeSummary(plainText, 50));
+                const cacheKey = `${feed.id}_${feedDirection}_${id_num}_${viewer}`;
                 const cacheData = {
                     id: feed.id,
                     title: feed.title,
@@ -390,7 +408,7 @@ export function FeedService(): Hono<{
         }
 
         const getPreviousFeed = async () => {
-            const previousFeedCached = await profileAsync(c, 'feed_adjacent_prev_cache', () => cache.getBySuffix(`previous_feed_${id_num}`));
+            const previousFeedCached = await profileAsync(c, 'feed_adjacent_prev_cache', () => cache.getBySuffix(`previous_feed_${id_num}_${viewer}`));
             if (previousFeedCached && previousFeedCached.length > 0) {
                 return previousFeedCached[0];
             } else {
@@ -410,7 +428,7 @@ export function FeedService(): Hono<{
         };
 
         const getNextFeed = async () => {
-            const nextFeedCached = await profileAsync(c, 'feed_adjacent_next_cache', () => cache.getBySuffix(`next_feed_${id_num}`));
+            const nextFeedCached = await profileAsync(c, 'feed_adjacent_next_cache', () => cache.getBySuffix(`next_feed_${id_num}_${viewer}`));
             if (nextFeedCached && nextFeedCached.length > 0) {
                 return nextFeedCached[0];
             } else {
@@ -430,7 +448,8 @@ export function FeedService(): Hono<{
         };
 
         const [previousFeed, nextFeed] = await Promise.all([getPreviousFeed(), getNextFeed()]);
-        c.header('cache-control', 'public, max-age=0, must-revalidate, s-maxage=600');
+        // 登录用户/作者拿到的摘要含隐藏段原文 ⇒ 不能标 public，否则 CDN 会把原文发给游客
+        applyCacheControl(c, uid, 600);
         return c.json({ previousFeed, nextFeed });
     });
 
@@ -586,6 +605,7 @@ export function SearchService(): Hono<{
         }
 
         const cacheKey = `search_${keyword}`;
+        const viewer = viewerOf(admin, uid);
         const searchKeyword = `%${keyword}%`;
         const whereClause = or(
             like(feeds.title, searchKeyword),
@@ -606,10 +626,10 @@ export function SearchService(): Hono<{
             },
             orderBy: [desc(feeds.createdAt), desc(feeds.updatedAt)],
         })))).map(({ content, hashtags, summary, ai_summary, ...other }: any) => {
-            const plainText = stripMarkdown(maskGlassPlain(content));
-            const maskedSummary = maskGlassPlain(summary);
+            const plainText = stripMarkdown(maskGlassTagged(content, viewer));
+            const taggedSummary = maskGlassTagged(summary, viewer);
             return {
-                summary: maskedSummary.length > 0 ? maskedSummary : makeSummary(plainText, 100),
+                summary: balanceGlassTags(taggedSummary.length > 0 ? taggedSummary : makeSummary(plainText, 100)),
                 hashtags: hashtags.map(({ hashtag }: any) => hashtag),
                 // 搜索也是公开出口：按标记分档给 AI 摘要
                 ai_summary: gateAiSummary(content, ai_summary, admin, uid),

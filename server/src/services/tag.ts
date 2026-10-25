@@ -3,7 +3,7 @@ import { Hono } from "hono";
 import type { DB } from "../core/hono-types";
 import { profileAsync } from "../core/server-timing";
 import { feedHashtags, hashtags } from "../db/schema";
-import { maskGlassPlain, renderGlass, type GlassViewer } from "../utils/glass";
+import { balanceGlassTags, maskGlassTagged, renderGlass, type GlassViewer } from "../utils/glass";
 import type { AppContext } from "../core/hono-types";
 
 export function TagService(): Hono {
@@ -66,7 +66,7 @@ export function TagService(): Hono {
                 ...tagFeed.feed,
                 // 隐藏段：这条接口把 content 全文带出去了，必须在这里按视角打码
                 content: renderGlass(tagFeed.feed.content, viewer),
-                summary: maskGlassPlain(tagFeed.feed.summary),
+                summary: balanceGlassTags(maskGlassTagged(tagFeed.feed.summary, viewer)),
                 hashtags: tagFeed.feed.hashtags.map((hashtag: any) => hashtag.hashtag)
             };
         }).filter((feed: any) => feed !== null);

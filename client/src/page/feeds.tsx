@@ -57,7 +57,10 @@ export function FeedsPage() {
         })
     }
     useEffect(() => {
-        const key = `${query.get("page")} ${query.get("type")} ${limit}`
+        // 视角也进 key：登录 / 退出后摘要的隐藏段等级会变（游客打码、登录读者给 [glass] 原文），
+        // 光按 page/type/limit 判重会让登录后还留着游客那份
+        const viewerKey = profile ? `u${profile.id}` : 'guest'
+        const key = `${query.get("page")} ${query.get("type")} ${limit} ${viewerKey}`
         if (ref.current == key) return
         const type = query.get("type") as FeedType || 'normal'
         if (type !== listState) {
@@ -66,7 +69,7 @@ export function FeedsPage() {
         setStatus('loading')
         fetchFeeds(type)
         ref.current = key
-    }, [limit, query.get("page"), query.get("type")])
+    }, [limit, query.get("page"), query.get("type"), profile?.id])
     return (
         <>
             <Helmet>

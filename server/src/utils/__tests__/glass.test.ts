@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'bun:test';
-import { hasGlass, hasOwner, maskGlassPlain, maskGlassText, renderGlass } from '../glass';
+import { balanceGlassTags, hasGlass, hasOwner, maskGlassPlain, maskGlassTagged, maskGlassText, renderGlass } from '../glass';
 
 describe('maskGlassText', () => {
     it('非空白字符全换假字，长度 / 换行 / 空格保留（排版不塌）', () => {
@@ -121,6 +121,52 @@ describe('maskGlassPlain', () => {
 
     it('没有标记 ⇒ 原样返回', () => {
         expect(maskGlassPlain('什么都没有')).toBe('什么都没有');
+    });
+});
+
+describe('maskGlassTagged（列表摘要 → 前端套毛玻璃）', () => {
+    it('游客：两段都被哨兵夹住，夹的是假字不是原文', () => {
+        const out = maskGlassTagged('前[glass]甲乙[/glass]后[owner]丙[/owner]', 'guest');
+        const inner = out.slice(out.indexOf('\u0001') + 1, out.indexOf('\u0002'));
+        expect(inner.length).toBe(2);
+        expect(inner).not.toContain('甲乙');
+        expect(out).toContain('\u0003');
+        expect(out.startsWith('前')).toBe(true);
+    });
+
+    it('登录读者：[glass] 原样（不进哨兵），[owner] 带哨兵', () => {
+        const out = maskGlassTagged('前[glass]给读者[/glass]中[owner]只给作者[/owner]后', 'member');
+        expect(out).toContain('前给读者中');
+        expect(out).not.toContain('\u0001');
+        expect(out).toContain('\u0003');
+        expect(out).not.toContain('只给作者');
+    });
+
+    it('作者：标记全去掉，没有任何哨兵', () => {
+        const out = maskGlassTagged('前[glass]甲[/glass]中[owner]乙[/owner]后', 'owner');
+        expect(out).toBe('前甲中乙后');
+    });
+
+    it('没有标记 ⇒ 原样返回', () => {
+        expect(maskGlassTagged('普通正文', 'guest')).toBe('普通正文');
+        expect(maskGlassTagged('', 'guest')).toBe('');
+    });
+});
+
+describe('balanceGlassTags（截断后收尾成对）', () => {
+    it('未闭合的段在末尾补上关闭符', () => {
+        const cut = '开头\u0001假字假字';
+        expect(balanceGlassTags(cut)).toBe('开头\u0001假字假字\u0002');
+    });
+
+    it('孤儿关闭符直接丢掉', () => {
+        expect(balanceGlassTags('开头\u0002结尾')).toBe('开头结尾');
+    });
+
+    it('成对的保持不变；嵌套的以最后一个为准', () => {
+        const ok = 'a\u0001b\u0002c\u0003d\u0002e';
+        expect(balanceGlassTags(ok)).toBe(ok);
+        expect(balanceGlassTags('a\u0001b\u0003c\u0002')).toBe('a\u0001b\u0002\u0003c\u0002');
     });
 });
 

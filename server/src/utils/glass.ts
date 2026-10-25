@@ -88,12 +88,69 @@ export function renderGlass(content: string, viewer: GlassViewer): string {
     });
 }
 
+/** 一段隐藏内容换成多少个方块（`PLAIN_MAX` 封顶，防止整章隐藏刷出一屏 ▒） */
+function plainMask(inner: string): string {
+    return "▒".repeat(Math.min(inner.replace(/\s/g, "").length, PLAIN_MAX));
+}
+
 /** 摘要 / 搜索 / RSS 这类纯文本场景：整段换成一排方块（两种标记都打） */
 export function maskGlassPlain(content: string): string {
     if (!content) return content;
-    return content.replace(HIDDEN_RE, (_m, _kind: string, inner: string) =>
-        "▒".repeat(Math.min(inner.replace(/\s/g, "").length, PLAIN_MAX))
-    );
+    return content.replace(HIDDEN_RE, (_m, _kind: string, inner: string) => plainMask(inner));
+}
+
+/**
+ * 列表 / 搜索 / 标签页的摘要出口：打码段不换方块，而是**用哨兵夹住假字**，
+ * 前端（`GlassSummary`）看见哨兵就套一层毛玻璃罩子
+ * （`<span class="glass"><span class="glass-text">假字</span></span>`）。
+ *
+ * 口径跟 `renderGlass` 一致：`owner` 全原文 / `member` 留 `[glass]` 原文、`[owner]` 打码 /
+ * `guest` 两种都打码。
+ *
+ * 为什么发假字而不是原文：正文原文一个字都不能出服务器，前端只拿到"同字形的占位"，
+ * 所以 F12 里看到的也是假字。为什么不用 HTML：摘要还得走"首行缩进 / 换行压缩"那套文本处理，
+ * 混进标签会被 trim / split 弄乱，哨兵是单个控制字符，处理完照原样剩下。
+ */
+export const GLASS_MASK_OPEN = "\u0001";
+export const GLASS_MASK_CLOSE = "\u0002";
+export const GLASS_MASK_OPEN_OWNER = "\u0003";
+
+export function maskGlassTagged(content: string, viewer: GlassViewer): string {
+    if (!content) return content;
+    return content.replace(HIDDEN_RE, (_m, kind: string, inner: string) => {
+        const ownerOnly = kind === "owner";
+        if (viewer === "owner") return inner;
+        if (viewer === "member" && !ownerOnly) return inner;
+        const open = ownerOnly ? GLASS_MASK_OPEN_OWNER : GLASS_MASK_OPEN;
+        return `${open}${maskGlassText(inner)}${GLASS_MASK_CLOSE}`;
+    });
+}
+
+/**
+ * 截断（`makeSummary` 只取前 N 个字）可能把哨兵切坏 ⇒ 统一收尾：
+ * 丢掉孤儿关闭符、没闭合的在末尾补上，保证前端拿到的一定是成对的。
+ */
+export function balanceGlassTags(text: string): string {
+    if (!text) return text;
+    let out = "";
+    let open = false;
+    for (const ch of text) {
+        if (ch === GLASS_MASK_CLOSE) {
+            // 孤儿关闭符（前面没开）直接丢；正常的成对关闭符留着
+            if (open) {
+                out += ch;
+                open = false;
+            }
+            continue;
+        }
+        if (ch === GLASS_MASK_OPEN || ch === GLASS_MASK_OPEN_OWNER) {
+            if (open) out += GLASS_MASK_CLOSE; // 上一段没闭合，先替它关上
+            open = true;
+        }
+        out += ch;
+    }
+    if (open) out += GLASS_MASK_CLOSE;
+    return out;
 }
 
 /** 正文里有没有任何一种隐藏段（给"AI 摘要这类二次加工产物"当开关用） */
