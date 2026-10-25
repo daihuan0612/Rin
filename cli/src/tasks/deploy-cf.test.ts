@@ -12,6 +12,8 @@ describe("collectWorkerSecrets", () => {
       JWT_SECRET: "jwt-secret",
       ADMIN_USERNAME: "admin",
       ADMIN_PASSWORD: "password",
+      RIN_GITHUB_CLIENT_ID: "client-id",
+      RIN_GITHUB_CLIENT_SECRET: "client-secret",
       S3_ACCESS_KEY_ID: "access-key",
       S3_SECRET_ACCESS_KEY: "secret-key",
       UNUSED: "ignored",
@@ -21,6 +23,8 @@ describe("collectWorkerSecrets", () => {
       JWT_SECRET: "jwt-secret",
       ADMIN_USERNAME: "admin",
       ADMIN_PASSWORD: "password",
+      RIN_GITHUB_CLIENT_ID: "client-id",
+      RIN_GITHUB_CLIENT_SECRET: "client-secret",
       S3_ACCESS_KEY_ID: "access-key",
       S3_SECRET_ACCESS_KEY: "secret-key",
     });
