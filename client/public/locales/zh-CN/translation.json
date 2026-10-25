@@ -190,6 +190,8 @@
       "center": "居中",
       "code_block": "代码块",
       "glass": "隐藏段（注册读者可见）",
+      "glass_off": "取消打码（文字留着）",
+      "glass_off_empty": "选中的范围里没有打码段",
       "glass_jump": "这一段是 [glass] 隐藏段：没登录的只看毛玻璃。点击跳到下一处",
       "heading": "标题",
       "horizontal_rule": "分割线",

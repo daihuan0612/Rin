@@ -10,6 +10,7 @@ import { Button } from "./button";
 import { useAlert } from "./dialog";
 import { useColorMode } from "../utils/darkModeUtils";
 import { buildMarkdownImage, uploadImageFile } from "../utils/image-upload";
+import { unwrapHiddenMarkers } from "../utils/glass-markers";
 import { parseVideoUrl } from "../utils/video-embed";
 import { Markdown } from "./markdown";
 
@@ -174,8 +175,45 @@ export function MarkdownEditor({ content, setContent, placeholder = "> Write you
     replaceSelection(selection, insertedText, nextSelection);
   };
 
-  const insertLink = () => {
+  /**
+   * 取消打码：把 `[glass]…[/glass]` / `[owner]…[/owner]` 的标记去掉、文字留着。
+   *
+   * 不用先精确选中整段：
+   * - 光标停在隐藏段里 ⇒ 这一段的标记直接去掉；
+   * - 选中了段里的一部分 ⇒ 也整段取消（免得剩半截标记）；
+   * - 选中范围内有配对不上的孤立标记 ⇒ 一并清掉。
+   * 整篇替换（而不是拼接多处小编辑）是为了让 Ctrl+Z 一步就能撤回。
+   */
+  const unwrapHidden = () => {
     const editorState = getEditorAndSelection();
+    if (!editorState) return;
+
+    const { editorInstance, model, selection } = editorState;
+    const startOffset = model.getOffsetAt(selection.getStartPosition());
+    const endOffset = model.getOffsetAt(selection.getEndPosition());
+    const result = unwrapHiddenMarkers(model.getValue(), startOffset, endOffset);
+
+    if (!result) {
+      showAlert(t("markdown_editor.toolbar.glass_off_empty"));
+      return;
+    }
+
+    editorInstance.pushUndoStop();
+    editorInstance.executeEdits("markdown-toolbar", [{
+      range: model.getFullModelRange(),
+      text: result.text,
+      forceMoveMarkers: true,
+    }]);
+    editorInstance.pushUndoStop();
+    setContent(result.text);
+
+    const nextStart = model.getPositionAt(result.start);
+    const nextEnd = model.getPositionAt(result.end);
+    editorInstance.setSelection(new Selection(nextStart.lineNumber, nextStart.column, nextEnd.lineNumber, nextEnd.column));
+    editorInstance.focus();
+  };
+
+  const insertLink = () => {    const editorState = getEditorAndSelection();
     if (!editorState) return;
 
     const { model, selection } = editorState;
@@ -488,6 +526,7 @@ export function MarkdownEditor({ content, setContent, placeholder = "> Write you
     { key: "center", icon: "ri-align-center", label: t("markdown_editor.toolbar.center"), onClick: () => wrapSelection("<center>", "</center>", t("markdown_editor.placeholder.center")) },
     { key: "glass", icon: "ri-eye-off-line", label: t("markdown_editor.toolbar.glass"), onClick: () => wrapSelection("[glass]", "[/glass]", t("markdown_editor.placeholder.glass")) },
     { key: "owner", icon: "ri-lock-line", label: t("markdown_editor.toolbar.owner"), onClick: () => wrapSelection("[owner]", "[/owner]", t("markdown_editor.placeholder.owner")) },
+    { key: "glass-off", icon: "ri-eye-line", label: t("markdown_editor.toolbar.glass_off"), onClick: unwrapHidden },
     { key: "link", icon: "ri-link", label: t("markdown_editor.toolbar.link"), onClick: insertLink },
     { key: "image", icon: "ri-image-line", label: t("markdown_editor.toolbar.image"), onClick: insertMarkdownImage },
     { key: "video", icon: "ri-video-line", label: t("markdown_editor.toolbar.insert_video"), onClick: openVideoDialog },

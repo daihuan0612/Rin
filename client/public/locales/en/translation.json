@@ -165,6 +165,8 @@
       "center": "Center",
       "code_block": "Code block",
       "glass": "Hidden block (registered readers can see it)",
+      "glass_off": "Remove mask (keep the text)",
+      "glass_off_empty": "No masked block in the selection.",
       "glass_jump": "This is a [glass] hidden block: visitors only see frosted glass. Click to jump to the next one",
       "owner": "Owner only",
       "owner_jump": "This is an [owner] hidden block: even registered users cannot read it, only I can. Click to jump to the next one",
