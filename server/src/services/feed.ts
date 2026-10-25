@@ -14,9 +14,6 @@ import { clearFeedCache } from "./clear-feed-cache";
 export { clearFeedCache } from "./clear-feed-cache";
 import { purgeCache } from "../utils/purge-cache";
 
-// Lazy-loaded modules for WordPress import
-let XMLParser: any;
-let html2md: any;
 
 function parseFeedId(value: string): number | null {
     if (!/^[1-9]\d*$/.test(value)) {
@@ -67,17 +64,6 @@ async function purgeCdnForFeed(env: any, host: string, id: number, alias: string
         paths.push(buildApiUrl(host, `/feed/${alias}`));
     }
     await purgeCache(env, paths);
-}
-
-async function initWPModules() {
-    if (!XMLParser) {
-        const fxp = await import("fast-xml-parser");
-        XMLParser = fxp.XMLParser;
-    }
-    if (!html2md) {
-        const h2m = await import("html-to-md");
-        html2md = h2m.default;
-    }
 }
 
 export function FeedService(): Hono<{
@@ -644,120 +630,4 @@ export function SearchService(): Hono<{
         }
     });
     return app;
-}
-
-
-export function WordPressService(): Hono<{
-    Bindings: Env;
-    Variables: Variables;
-}> {
-    const app = new Hono<{
-        Bindings: Env;
-        Variables: Variables;
-    }>();
-
-    // POST /wp - WordPress import
-    app.post('/', async (c) => {
-        const db = c.get('db');
-        const cache = c.get('cache');
-        const admin = c.get('admin');
-        const body = await profileAsync(c, 'wp_import_parse', () => c.req.parseBody());
-        const data = body.data as File;
-
-        if (!admin) {
-            return c.text('Permission denied', 403);
-        }
-
-        if (!data) {
-            return c.text('Data is required', 400);
-        }
-
-        // Initialize WordPress import modules lazily
-        await profileAsync(c, 'wp_import_modules', () => initWPModules());
-
-        const xml = await profileAsync(c, 'wp_import_read', () => data.text());
-        const parser = new XMLParser();
-        const result = await profileAsync(c, 'wp_import_xml_parse', () => parser.parse(xml));
-        const items = result.rss.channel.item;
-
-        if (!items) {
-            return c.text('No items found', 404);
-        }
-
-        const feedItems: FeedItem[] = items?.map((item: any) => {
-            const createdAt = new Date(item?.['wp:post_date']);
-            const updatedAt = new Date(item?.['wp:post_modified']);
-            const draft = item?.['wp:status'] !== 'publish';
-            const contentHtml = item?.['content:encoded'];
-            const content = html2md(contentHtml);
-            const summary = makeSummary(content, 100);
-            let tags = item?.['category'];
-
-            if (tags && Array.isArray(tags)) {
-                tags = tags.map((tag: any) => tag + '');
-            } else if (tags && typeof tags === 'string') {
-                tags = [tags];
-            }
-
-            return {
-                title: item.title,
-                summary,
-                content,
-                draft,
-                createdAt,
-                updatedAt,
-                tags
-            };
-        });
-
-        let success = 0;
-        let skipped = 0;
-        let skippedList: { title: string, reason: string }[] = [];
-
-        for (const item of feedItems) {
-            if (!item.content) {
-                skippedList.push({ title: item.title, reason: "no content" });
-                skipped++;
-                continue;
-            }
-
-            const exist = await profileAsync(c, 'wp_import_existing', () => db.query.feeds.findFirst({ where: eq(feeds.content, item.content) }));
-            if (exist) {
-                skippedList.push({ title: item.title, reason: "content exists" });
-                skipped++;
-                continue;
-            }
-
-            const result = await profileAsync(c, 'wp_import_insert', () => db.insert(feeds).values({
-                title: item.title,
-                content: item.content,
-                summary: item.summary,
-                uid: 1,
-                listed: 1,
-                draft: item.draft ? 1 : 0,
-                createdAt: item.createdAt,
-                updatedAt: item.updatedAt
-            }).returning({ insertedId: feeds.id }));
-
-            if (item.tags) {
-                const tags = item.tags;
-                await profileAsync(c, 'wp_import_tags', () => bindTagToPost(db, result[0].insertedId, tags));
-            }
-            success++;
-        }
-
-        await profileAsync(c, 'wp_import_cache_invalidate', () => cache.deletePrefix('feeds_'));
-        return c.json({ success, skipped, skippedList });
-    });
-    return app;
-}
-
-type FeedItem = {
-    title: string;
-    summary: string;
-    content: string;
-    draft: boolean;
-    createdAt: Date;
-    updatedAt: Date;
-    tags?: string[];
 }

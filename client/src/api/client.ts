@@ -682,18 +682,6 @@ class AuthAPI {
 }
 
 /**
- * WordPress Import API methods
- */
-class WordPressAPI {
-  constructor(private http: HttpClient) {}
-
-  // POST /api/wp
-  async import(xml: string): Promise<ApiResponse<{ imported: number }>> {
-    return this.http.post<{ imported: number }>("/api/wp", { xml });
-  }
-}
-
-/**
  * RSS API methods - direct fetch for RSS feeds
  */
 class RSSAPI {
@@ -736,7 +724,6 @@ export class ApiClient {
   search: SearchAPI;
   auth: AuthAPI;
   invite: InviteAPI;
-  wp: WordPressAPI;
   rss: RSSAPI;
 
   constructor(baseUrl: string) {
@@ -753,7 +740,6 @@ export class ApiClient {
     this.search = new SearchAPI(this.http);
     this.auth = new AuthAPI(this.http);
     this.invite = new InviteAPI(this.http);
-    this.wp = new WordPressAPI(this.http);
     this.rss = new RSSAPI(baseUrl);
   }
 }

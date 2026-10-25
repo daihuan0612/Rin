@@ -561,11 +561,6 @@
       }
     },
     "get_config_failed$message": "获取配置失败，{{message}}",
-    "import_failed$message": "导入失败，{{message}}",
-    "import_result": "导入结果",
-    "import_skipped": "跳过导入",
-    "import_skipped_item$title$reason": "《{{title}}》- {{reason}}",
-    "import_success$success$skipped": "导入成功，{{success}} 篇文章导入成功，{{skipped}} 篇文章跳过",
     "login": {
       "enable": {
         "desc": "开启/关闭右上角登录按钮，关闭后可通过「双击」底部文字 “© 2024 Powered by” 「三次」触发登录入口",
@@ -664,11 +659,7 @@
       "title": "RSS 订阅链接"
     },
     "title": "设置",
-    "update_failed$message": "更新失败: {{message}}",
-    "wordpress": {
-      "desc": "上传 WordPress 导出的 XML 文件",
-      "title": "从 WordPress 导入"
-    }
+    "update_failed$message": "更新失败: {{message}}"
   },
   "sitename": "站点名称",
   "sort_order": "排序",

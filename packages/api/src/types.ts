@@ -376,16 +376,6 @@ export interface StorageCleanupResponse {
 // Uses FeedListResponse
 
 // ============================================================================
-// WordPress Import Types
-// ============================================================================
-
-export interface WordPressImportResponse {
-  success: number;
-  skipped: number;
-  skippedList: Array<{ title: string; reason: string }>;
-}
-
-// ============================================================================
 // API Endpoint Paths
 // ============================================================================
 
@@ -451,9 +441,6 @@ export const API_PATHS = {
 
   // Search
   SEARCH: (keyword: string) => `/search/${encodeURIComponent(keyword)}`,
-
-  // WordPress
-  WP_IMPORT: '/wp',
 
   // RSS
   RSS_GET: (name: string) => `/${encodeURIComponent(name)}`,

@@ -229,7 +229,6 @@ import { feeds } from "../db/schema";
 ### Server (Cloudflare Workers)
 
 - Service pattern: Each feature is a service function that takes a `Router`
-- Lazy loading for heavy dependencies (WordPress import modules)
 - Database via Drizzle ORM with D1
 - Caching via custom CacheImpl utility
 

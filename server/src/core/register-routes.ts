@@ -3,7 +3,7 @@ import { PasswordAuthService } from "../services/auth";
 import { CommentService } from "../services/comments";
 import { ConfigService } from "../services/config";
 import { FaviconService } from "../services/favicon";
-import { FeedService, SearchService, WordPressService } from "../services/feed";
+import { FeedService, SearchService } from "../services/feed";
 import { FriendService } from "../services/friends";
 import { InviteService } from "../services/invite";
 import { MomentsService } from "../services/moments";
@@ -17,7 +17,6 @@ export function registerRoutes(app: RinApp) {
 
   app.route("/feed", FeedService());
   app.route("/search", SearchService());
-  app.route("/wp", WordPressService());
   app.route("/tag", TagService());
   app.route("/comment", CommentService());
   app.route("/storage", StorageService());

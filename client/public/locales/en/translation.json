@@ -558,11 +558,6 @@
       }
     },
     "get_config_failed$message": "Failed to get configuration, {{message}}",
-    "import_failed$message": "Import failed, {{message}}",
-    "import_result": "Import Result",
-    "import_skipped": "Import Skipped",
-    "import_skipped_item$title$reason": "《{{title}}》- {{reason}}",
-    "import_success$success$skipped": "Import successful, {{success}} articles imported, {{skipped}} articles skipped",
     "login": {
       "enable": {
         "desc": "Turn on/off the login button in the upper right corner. After turning it off, you can trigger the login entrance by double-clicking the bottom text \"© 2024 Powered by\" three times",
@@ -661,11 +656,7 @@
       "title": "RSS Subscription Link"
     },
     "title": "Settings",
-    "update_failed$message": "Update failed: {{message}}",
-    "wordpress": {
-      "desc": "Upload the XML file exported from WordPress",
-      "title": "Import from WordPress"
-    }
+    "update_failed$message": "Update failed: {{message}}"
   },
   "sitename": "Site Name",
   "sort_order": "Sort Order",
