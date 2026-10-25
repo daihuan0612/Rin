@@ -5,7 +5,7 @@ import { profileAsync } from "../core/server-timing";
 import { feeds, visits, visitStats } from "../db/schema";
 import { HyperLogLog } from "../utils/hyperloglog";
 import { extractImageWithMetadata } from "../utils/image";
-import { maskGlassPlain, renderGlass } from "../utils/glass";
+import { hasGlass, maskGlassPlain, renderGlass } from "../utils/glass";
 import { makeSummary, stripMarkdown } from "../utils/markdown";
 import { syncFeedAISummaryQueueState } from "./feed-ai-summary";
 import { bindTagToPost } from "./tag";
@@ -107,13 +107,16 @@ export function FeedService(): Hono<{
             orderBy: [desc(feeds.top), desc(feeds.createdAt), desc(feeds.updatedAt)],
             offset: page_num * limit_num,
             limit: limit_num + 1,
-        }))).map(({ content, hashtags, summary, ...other }: any) => {
+        }))).map(({ content, hashtags, summary, ai_summary, ...other }: any) => {
             const avatar = extractImageWithMetadata(content);
             const plainText = stripMarkdown(maskGlassPlain(content));
             const maskedSummary = maskGlassPlain(summary);
             return {
                 summary: maskedSummary.length > 0 ? maskedSummary : makeSummary(plainText, 100),
                 hashtags: hashtags.map(({ hashtag }: any) => hashtag),
+                // AI 摘要是整篇正文生成的一句话，正文里的隐藏段会被它复述出来，
+                // 而库里那份是纯文本、`maskGlassPlain` 拦不到 ⇒ 有隐藏段就只给作者
+                ai_summary: !admin && hasGlass(content) ? "" : ai_summary,
                 avatar,
                 ...other
             };
@@ -305,6 +308,12 @@ export function FeedService(): Hono<{
         // ⚠️ 必须写在 `cache.getOrSet`（上面取 feed 那里）之外：缓存里存的是数据库原始行、
         // 所有人共用，只有这里组装给响应的 content 才能按 admin 区分。
         const result = { ...other, content: renderGlass(other.content, admin), hashtags: hashtags_flatten, pv, uv };
+
+        // AI 摘要：由整篇正文生成，隐藏段里的话会被它复述出来（库里那份是纯文本，标记已经不在，
+        // `maskGlassPlain` 对它无效）⇒ 正文有隐藏段时，非作者拿到的 ai_summary 一律清空。
+        if (!admin && hasGlass(other.content)) {
+            result.ai_summary = "";
+        }
 
         if (!admin && !feed.draft) {
             c.header('cache-control', 'public, max-age=0, must-revalidate, s-maxage=60');
@@ -570,12 +579,14 @@ export function SearchService(): Hono<{
                 user: { columns: { id: true, username: true, avatar: true } }
             },
             orderBy: [desc(feeds.createdAt), desc(feeds.updatedAt)],
-        })))).map(({ content, hashtags, summary, ...other }: any) => {
+        })))).map(({ content, hashtags, summary, ai_summary, ...other }: any) => {
             const plainText = stripMarkdown(maskGlassPlain(content));
             const maskedSummary = maskGlassPlain(summary);
             return {
                 summary: maskedSummary.length > 0 ? maskedSummary : makeSummary(plainText, 100),
                 hashtags: hashtags.map(({ hashtag }: any) => hashtag),
+                // 同上：搜索也是公开出口，有隐藏段就别把 AI 摘要带出去
+                ai_summary: !admin && hasGlass(content) ? "" : ai_summary,
                 ...other
             };
         });

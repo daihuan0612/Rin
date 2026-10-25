@@ -271,6 +271,41 @@ describe('FeedService', () => {
             expect(res.status).toBe(404);
         });
 
+        it('should blank ai_summary for non-author when content has a glass block', async () => {
+            const createRes = await app.request('/', {
+                method: 'POST',
+                headers: {
+                    'Authorization': 'Bearer mock_token_1',
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    title: 'Glass Summary Feed',
+                    content: '前面[glass]只有作者能看的秘密[/glass]后面',
+                    listed: true,
+                    draft: false,
+                    tags: [],
+                }),
+            }, env);
+
+            const createData = await createRes.json() as any;
+            // 模拟"在隐藏段生效之前就生成好并落库"的 AI 摘要：纯文本、没有标记，maskGlassPlain 拦不到
+            sqlite.prepare("UPDATE feeds SET ai_summary = ?, ai_summary_status = 'completed' WHERE id = ?")
+                .run('只有作者能看的秘密被总结出来了', createData.insertedId);
+
+            const guestRes = await app.request(`/${createData.insertedId}`, { method: 'GET' }, env);
+            const guest = await guestRes.json() as any;
+            expect(guest.ai_summary).toBe('');
+            expect(guest.content).not.toContain('只有作者能看的秘密');
+
+            const adminRes = await app.request(`/${createData.insertedId}`, {
+                method: 'GET',
+                headers: { 'Authorization': 'Bearer mock_token_1' },
+            }, env);
+            const admin = await adminRes.json() as any;
+            expect(admin.ai_summary).toBe('只有作者能看的秘密被总结出来了');
+            expect(admin.content).toContain('只有作者能看的秘密');
+        });
+
         it('should bypass stale public cache when cache is disabled', async () => {
             await clientConfig.set('cache.enabled', false);
             await clientConfig.set('counter.enabled', false);

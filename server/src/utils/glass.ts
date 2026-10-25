@@ -63,3 +63,9 @@ export function maskGlassPlain(content: string): string {
         "▒".repeat(Math.min(inner.replace(/\s/g, "").length, PLAIN_MAX))
     );
 }
+
+/** 正文里有没有隐藏段（给"AI 摘要这类二次加工产物"当开关用） */
+export function hasGlass(content: string): boolean {
+    if (!content) return false;
+    return /\[glass\][\s\S]*?\[\/glass\]/.test(content);
+}
