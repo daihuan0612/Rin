@@ -266,8 +266,6 @@ describe("PasswordAuthService", () => {
 
     it("should return false when credentials not configured", async () => {
       const envNoCreds = createMockEnv({
-        RIN_GITHUB_CLIENT_ID: "",
-        RIN_GITHUB_CLIENT_SECRET: "",
         ADMIN_USERNAME: "",
         ADMIN_PASSWORD: "",
       });

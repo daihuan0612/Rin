@@ -46,7 +46,7 @@ bun run test
 
 :::tip
 通常情况下，您只需要填写 `AVATAR`、`NAME` 和 `DESCRIPTION`。
-如需配置 GitHub OAuth，需要创建一个 OAuth App，回调地址为 `http://localhost:11498/api/user/github/callback`
+登录用的是账号密码（`wrangler.toml` 里的 `ADMIN_USERNAME` / `ADMIN_PASSWORD`），不需要再建 GitHub OAuth App。
 :::
 
 5. 运行设置脚本生成配置文件

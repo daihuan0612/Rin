@@ -445,6 +445,26 @@ describe("ConfigService", () => {
             expect(row.ai_summary_status).toBe("idle");
             expect(row.ai_summary_error).toBe("");
         });
+
+        it("should delete a stuck pending queue task record", async () => {
+            // 队列消费者没跑 / 消息丢了 ⇒ 一直挂在 pending，也得能手动清掉
+            sqlite.exec(`
+                INSERT INTO feeds (id, title, summary, ai_summary, ai_summary_status, ai_summary_error, content, listed, draft, top, uid)
+                VALUES (2, 'Stuck Feed', '', '', 'pending', '', 'content', 1, 0, 0, 1);
+            `);
+
+            const res = await app.request("/queue-status/2", {
+                method: "DELETE",
+                headers: {
+                    Authorization: "Bearer mock_token_1",
+                },
+            });
+
+            expect(res.status).toBe(200);
+
+            const row = sqlite.prepare("SELECT ai_summary_status FROM feeds WHERE id = 2").get() as any;
+            expect(row.ai_summary_status).toBe("idle");
+        });
     });
 
     describe("POST /:type - Update config", () => {

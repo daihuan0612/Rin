@@ -74,8 +74,6 @@ The following environment variables are optional:
 
 | Variable | Description |
 |----------|-------------|
-| `RIN_GITHUB_CLIENT_ID` | GitHub OAuth Client ID |
-| `RIN_GITHUB_CLIENT_SECRET` | GitHub OAuth Client Secret |
 | `JWT_SECRET` | JWT signing key |
 | `S3_ACCESS_KEY_ID` | S3 Access Key |
 | `S3_SECRET_ACCESS_KEY` | S3 Secret Key |
@@ -237,15 +235,6 @@ bun run db:migrate
 # Manually run configuration generation
 bun run dev:setup
 ```
-
-### GitHub OAuth Configuration
-
-GitHub OAuth needs to be configured for local development:
-
-1. Visit https://github.com/settings/developers
-2. Create a new OAuth App
-3. Authorization callback URL: `http://localhost:11498/api/user/github/callback`
-4. Fill Client ID and Client Secret into `.env.local`
 
 ## Project Structure
 

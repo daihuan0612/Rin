@@ -24,27 +24,14 @@ v0.3.0 版本包含重大的架构变更：
 
 #### 必需变更
 
-**GitHub OAuth 变量（如果使用 GitHub 登录）**
-
-旧变量名已弃用：
-
-```
-GITHUB_CLIENT_ID      → RIN_GITHUB_CLIENT_ID
-GITHUB_CLIENT_SECRET  → RIN_GITHUB_CLIENT_SECRET
-```
-
-**操作步骤**：
-1. 进入 Settings → Secrets and variables → Actions
-2. 添加带 `RIN_` 前缀的新 Secrets
-3. （可选）删除旧 Secrets
-
-#### 可选：添加账号密码登录
-
-如果您更喜欢简单的账号密码登录而非 GitHub OAuth：
+**账号密码登录**
 
 1. 添加以下 Secrets：
    - `ADMIN_USERNAME`: 您想要的用户名
    - `ADMIN_PASSWORD`: 您想要的密码
+   - `JWT_SECRET`: 任意随机字符串
+
+> 本仓库已移除 GitHub OAuth 登录，只剩账号密码登录；`RIN_GITHUB_CLIENT_ID` / `RIN_GITHUB_CLIENT_SECRET` 不再需要（填了也没人读）。
 
 ### 第三步：移除 Pages（可选但推荐）
 
@@ -64,14 +51,6 @@ GITHUB_CLIENT_SECRET  → RIN_GITHUB_CLIENT_SECRET
 3. **清理多余的域名绑定**
    - 检查 Worker 的自定义域列表
    - 删除不需要的绑定（如 `seo/*`、`sub/*` 等）
-
-4. **更新 GitHub OAuth Callback**
-   - 进入 GitHub → Settings → Developer settings → OAuth Apps
-   - 找到您的 OAuth App
-   - 将 Authorization callback URL 从：
-     - `https://<worker-domain>/user/github/callback`
-   - 修改为：
-     - `https://<your-domain>/api/user/github/callback`
 
 ### 第四步：更新 Cloudflare API Key 权限
 
@@ -128,8 +107,6 @@ const feeds = await client.feed.list({ page: 1 });
 
 | 旧名称 | 新名称 | 必需 |
 |--------|--------|------|
-| `GITHUB_CLIENT_ID` | `RIN_GITHUB_CLIENT_ID` | 可选* |
-| `GITHUB_CLIENT_SECRET` | `RIN_GITHUB_CLIENT_SECRET` | 可选* |
 | - | `ADMIN_USERNAME` | 可选* |
 | - | `ADMIN_PASSWORD` | 可选* |
 
@@ -160,7 +137,7 @@ const feeds = await client.feed.list({ page: 1 });
 ### "无法登录"
 
 **解决方案**：
-1. 验证至少配置了一种登录方式（GitHub OAuth 或 账号密码）
+1. 确认 `ADMIN_USERNAME` / `ADMIN_PASSWORD` / `JWT_SECRET` 都已配置
 2. 检查 Secrets 是否正确设置
 3. 尝试清除浏览器缓存
 

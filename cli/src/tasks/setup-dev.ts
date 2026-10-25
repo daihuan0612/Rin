@@ -19,8 +19,6 @@ export async function runSetupDev() {
   const baseRequiredVars = [
     "NAME",
     "AVATAR",
-    "RIN_GITHUB_CLIENT_ID",
-    "RIN_GITHUB_CLIENT_SECRET",
     "JWT_SECRET",
   ];
   const storageRequiredVars = env.R2_BUCKET_NAME
@@ -100,9 +98,7 @@ RSS_ENABLE=${env.RSS_ENABLE || "false"}
   );
   fs.writeFileSync(
     path.join(rootDir, ".dev.vars"),
-    `RIN_GITHUB_CLIENT_ID=${env.RIN_GITHUB_CLIENT_ID}
-RIN_GITHUB_CLIENT_SECRET=${env.RIN_GITHUB_CLIENT_SECRET}
-JWT_SECRET=${env.JWT_SECRET}
+    `JWT_SECRET=${env.JWT_SECRET}
 ${env.R2_BUCKET_NAME ? "" : `S3_ACCESS_KEY_ID=${env.S3_ACCESS_KEY_ID}
 S3_SECRET_ACCESS_KEY=${env.S3_SECRET_ACCESS_KEY}
 `}

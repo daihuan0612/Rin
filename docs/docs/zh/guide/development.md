@@ -74,8 +74,6 @@ bun run dev
 
 | 变量名 | 说明 |
 |--------|------|
-| `RIN_GITHUB_CLIENT_ID` | GitHub OAuth Client ID |
-| `RIN_GITHUB_CLIENT_SECRET` | GitHub OAuth Client Secret |
 | `JWT_SECRET` | JWT 签名密钥 |
 | `S3_ACCESS_KEY_ID` | S3 Access Key |
 | `S3_SECRET_ACCESS_KEY` | S3 Secret Key |
@@ -237,15 +235,6 @@ bun run db:migrate
 # 手动运行配置生成
 bun run dev:setup
 ```
-
-### GitHub OAuth 配置
-
-本地开发时需要配置 GitHub OAuth：
-
-1. 访问 https://github.com/settings/developers
-2. 创建新的 OAuth App
-3. Authorization callback URL 填写：`http://localhost:11498/api/user/github/callback`
-4. 将 Client ID 和 Client Secret 填入 `.env.local`
 
 ## 项目结构
 

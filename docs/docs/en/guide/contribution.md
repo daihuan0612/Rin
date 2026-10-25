@@ -46,7 +46,7 @@ If you want to skip the hook (not recommended), run `git commit` with the `--no-
 
 :::tip
 Typically, you only need to fill in `AVATAR`, `NAME` and `DESCRIPTION`.
-For GitHub OAuth, you need to create a separate OAuth App with a callback address of `http://localhost:11498/api/user/github/callback`
+Login uses username/password (`ADMIN_USERNAME` / `ADMIN_PASSWORD` in `wrangler.toml`); no GitHub OAuth App is needed.
 :::
 
 5. Run the setup script to generate configuration files

@@ -60,18 +60,16 @@ Rin 部署需要配置两类环境变量：**Variables（明文变量）**和**S
 
 这些敏感信息必须作为 **Cloudflare Workers Secrets** 配置，部署时通过命令行输入或提前设置。
 
-### 认证相关（至少配置一种）
+### 认证相关
 
 | 变量名 | 用途 | 获取方式 |
 |--------|------|----------|
-| `RIN_GITHUB_CLIENT_ID` | GitHub OAuth 客户端 ID | GitHub OAuth App 设置 |
-| `RIN_GITHUB_CLIENT_SECRET` | GitHub OAuth 客户端密钥 | GitHub OAuth App 设置 |
 | `ADMIN_USERNAME` | 账号密码登录用户名 | 自行设定 |
 | `ADMIN_PASSWORD` | 账号密码登录密码 | 自行设定 |
 | `JWT_SECRET` | JWT 签名密钥（任意随机字符串） | 自行生成 |
 
 :::warning 认证要求
-必须配置 **GitHub OAuth** 或 **账号密码** 其中一种登录方式，否则无法登录后台。
+必须配置 **账号密码**（`ADMIN_USERNAME` / `ADMIN_PASSWORD`）与 `JWT_SECRET`，否则无法登录后台。
 :::
 
 ### S3 存储凭证
@@ -118,8 +116,6 @@ S3_ACCESS_HOST            # S3/R2 访问域名
 S3_BUCKET                 # S3 存储桶名称
 S3_ACCESS_KEY_ID          # S3 访问密钥 ID
 S3_SECRET_ACCESS_KEY      # S3 访问密钥
-RIN_GITHUB_CLIENT_ID      # GitHub OAuth ID（可选）
-RIN_GITHUB_CLIENT_SECRET  # GitHub OAuth Secret（可选）
 ADMIN_USERNAME            # 管理员用户名（可选）
 ADMIN_PASSWORD            # 管理员密码（可选）
 JWT_SECRET                # JWT 密钥
@@ -143,8 +139,6 @@ S3_ACCESS_KEY_ID=xxx
 S3_SECRET_ACCESS_KEY=xxx
 
 # 认证（GitHub 或账号密码）
-RIN_GITHUB_CLIENT_ID=xxx
-RIN_GITHUB_CLIENT_SECRET=xxx
 # 或
 ADMIN_USERNAME=admin
 ADMIN_PASSWORD=secure_password

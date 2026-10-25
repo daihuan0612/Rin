@@ -50,8 +50,6 @@ function createMockEnv(storageMode: CacheStorageMode = 'database'): Env {
         WEBHOOK_URL: '',
         RSS_TITLE: 'Test',
         RSS_DESCRIPTION: 'Test Environment',
-        RIN_GITHUB_CLIENT_ID: 'test-client-id',
-        RIN_GITHUB_CLIENT_SECRET: 'test-client-secret',
         JWT_SECRET: 'test-jwt-secret',
         S3_ACCESS_KEY_ID: 'test-access-key',
         S3_SECRET_ACCESS_KEY: 'test-secret-key',

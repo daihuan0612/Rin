@@ -46,20 +46,14 @@ Save the token after creation.
 
 #### Login Configuration Secrets
 
-Rin currently supports username/password login and GitHub OAuth login. You can choose one or configure both.
-
-**Username/Password Login (Recommended)**
+Rin now only supports username/password login.
 
 | Secret Name | Value | Description |
 |-------------|-------|-------------|
 | `ADMIN_USERNAME` | Your desired username | Login username |
 | `ADMIN_PASSWORD` | Your desired password | Login password |
 
-**GitHub OAuth Login (Optional)**
-
-If you want to use your GitHub account to log in, please refer to the [Advanced Configuration](#github-oauth-configuration) section to add OAuth configuration.
-
-> **Tip**: Username/password login and GitHub OAuth login can be enabled simultaneously. Users can freely choose their preferred login method on the login page.
+> **Tip**: This repository removed GitHub OAuth login; `RIN_GITHUB_CLIENT_ID` / `RIN_GITHUB_CLIENT_SECRET` are no longer needed.
 
 ### Step 3: Trigger Deployment
 
@@ -141,21 +135,6 @@ And the following Variables (optional):
 | `S3_REGION` | Storage region | `auto` |
 | `S3_FOLDER` | Image storage path | `images/` |
 | `S3_FORCE_PATH_STYLE` | Use path-style URLs | `false` |
-
-### GitHub OAuth Configuration
-
-If you want to log in with your GitHub account:
-
-1. Visit GitHub Settings > Developer settings > OAuth Apps
-2. Click **"New OAuth App"**
-3. Fill in the application information:
-    - **Application name**: Rin Blog
-    - **Homepage URL**: Your frontend page address
-    - **Authorization callback URL**: `https://your-worker-name.your-account-id.workers.dev/api/user/github/callback`
-4. After creation, obtain the Client ID and Client Secret
-5. Add to GitHub Secrets:
-    - `RIN_GITHUB_CLIENT_ID`
-    - `RIN_GITHUB_CLIENT_SECRET`
 
 ### Webhook Notifications
 

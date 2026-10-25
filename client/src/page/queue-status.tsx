@@ -29,7 +29,8 @@ function QueueStatusEntry({
 }) {
   const { t } = useTranslation();
   const canRetry = item.aiSummaryStatus === "failed";
-  const canDelete = item.aiSummaryStatus === "failed" || item.aiSummaryStatus === "completed";
+  // 任何非 idle 的记录都能删（卡在 pending/processing 的也得有个出口）
+  const canDelete = item.aiSummaryStatus !== "idle";
 
   return (
     <SettingsCard tone={getQueueTone(item.aiSummaryStatus)}>

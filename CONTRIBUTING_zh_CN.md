@@ -55,10 +55,9 @@ cp .\cli\templates\git-commit-msg.sh .\.git\hooks\commit-msg
 
 7. 配置 `.dev.vars` 文件
    将 `.dev.example.vars` 复制到 `.dev.vars` 并填写必要信息
-   > [!TIP]   
-   > 通常情况下，您需要填写 `RIN_GITHUB_CLIENT_ID` 和 `RIN_GITHUB_CLIENT_SECRET` 以及 `JWT_SECRET` 三项 \
-   > 开发环境下需要单独创建一个 Github OAuth 服务，回调地址为 `http://localhost:11498/api/user/github/callback` \\
-   > 如果手动修改过 server 的监听端口，请同时修改回调地址中的端口号
+   > [!TIP]
+   > 至少要填 `JWT_SECRET`（不用 R2 的话再填 S3 那几项）。
+   > 账号密码登录用的是 `wrangler.toml` 里的 `ADMIN_USERNAME` / `ADMIN_PASSWORD`。
 
 8. 启动开发服务器
     ```sh

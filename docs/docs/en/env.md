@@ -60,18 +60,16 @@ We recommend setting `CACHE_STORAGE_MODE` to `database` to reduce deployment com
 
 These sensitive values must be configured as **Cloudflare Workers Secrets**, entered via CLI during deployment or set in advance.
 
-### Authentication (Configure at least one)
+### Authentication
 
 | Variable | Purpose | How to Obtain |
 |----------|---------|---------------|
-| `RIN_GITHUB_CLIENT_ID` | GitHub OAuth client ID | GitHub OAuth App settings |
-| `RIN_GITHUB_CLIENT_SECRET` | GitHub OAuth client secret | GitHub OAuth App settings |
 | `ADMIN_USERNAME` | Username for password login | Set yourself |
 | `ADMIN_PASSWORD` | Password for password login | Set yourself |
 | `JWT_SECRET` | JWT signing key (any random string) | Generate yourself |
 
 :::warning Authentication Required
-You must configure either **GitHub OAuth** or **Username/Password** authentication, otherwise you cannot access the admin panel.
+You must configure **Username/Password** authentication (`ADMIN_USERNAME` / `ADMIN_PASSWORD`) plus `JWT_SECRET`, otherwise you cannot access the admin panel.
 :::
 
 ### S3 Storage Credentials
@@ -118,8 +116,6 @@ S3_ACCESS_HOST                # S3/R2 access domain
 S3_BUCKET                     # S3 bucket name
 S3_ACCESS_KEY_ID              # S3 access key ID
 S3_SECRET_ACCESS_KEY          # S3 secret access key
-RIN_GITHUB_CLIENT_ID          # GitHub OAuth ID (optional)
-RIN_GITHUB_CLIENT_SECRET      # GitHub OAuth Secret (optional)
 ADMIN_USERNAME                # Admin username (optional)
 ADMIN_PASSWORD                # Admin password (optional)
 JWT_SECRET                    # JWT secret key
@@ -143,8 +139,6 @@ S3_ACCESS_KEY_ID=xxx
 S3_SECRET_ACCESS_KEY=xxx
 
 # Authentication (GitHub or Username/Password)
-RIN_GITHUB_CLIENT_ID=xxx
-RIN_GITHUB_CLIENT_SECRET=xxx
 # OR
 ADMIN_USERNAME=admin
 ADMIN_PASSWORD=secure_password

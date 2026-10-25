@@ -24,27 +24,14 @@ Version 0.3.0 includes significant architectural changes:
 
 #### Required Changes
 
-**GitHub OAuth Variables (if using GitHub login)**
-
-Old variable names are deprecated:
-
-```
-GITHUB_CLIENT_ID      → RIN_GITHUB_CLIENT_ID
-GITHUB_CLIENT_SECRET  → RIN_GITHUB_CLIENT_SECRET
-```
-
-**Steps**:
-1. Go to Settings → Secrets and variables → Actions
-2. Add new Secrets with the `RIN_` prefix
-3. (Optional) Delete old Secrets
-
-#### Optional: Add Username/Password Login
-
-If you prefer simple username/password authentication over GitHub OAuth:
+**Username/Password Login**
 
 1. Add the following Secrets:
     - `ADMIN_USERNAME`: Your desired username
     - `ADMIN_PASSWORD`: Your desired password
+    - `JWT_SECRET`: Any random string
+
+> This repository removed GitHub OAuth login; only username/password login remains. `RIN_GITHUB_CLIENT_ID` / `RIN_GITHUB_CLIENT_SECRET` are no longer needed (nothing reads them).
 
 ### Step 3: Remove Pages (Optional but Recommended)
 
@@ -64,14 +51,6 @@ Starting from 0.3.0, Rin now uses Workers to host static assets instead of Cloud
 3. **Clean Up Extra Domain Bindings**
    - Check the Worker's custom domain list
    - Remove unnecessary bindings (e.g., `seo/*`, `sub/*`, etc.)
-
-4. **Update GitHub OAuth Callback**
-   - Go to GitHub → Settings → Developer settings → OAuth Apps
-   - Find your OAuth App
-   - Change the Authorization callback URL from:
-     - `https://<worker-domain>/user/github/callback`
-   - To:
-     - `https://<your-domain>/api/user/github/callback`
 
 ### Step 4: Update Cloudflare API Key Permissions
 
@@ -125,8 +104,6 @@ If you have custom frontend code using the old API, please update accordingly.
 
 | Old Name | New Name | Required |
 |----------|----------|----------|
-| `GITHUB_CLIENT_ID` | `RIN_GITHUB_CLIENT_ID` | Optional* |
-| `GITHUB_CLIENT_SECRET` | `RIN_GITHUB_CLIENT_SECRET` | Optional* |
 | - | `ADMIN_USERNAME` | Optional* |
 | - | `ADMIN_PASSWORD` | Optional* |
 
@@ -157,7 +134,7 @@ After successful migration, you can:
 ### "Cannot Login"
 
 **Solution**:
-1. Verify at least one login method is configured (GitHub OAuth or username/password)
+1. Make sure `ADMIN_USERNAME` / `ADMIN_PASSWORD` / `JWT_SECRET` are configured
 2. Check Secrets are set correctly
 3. Try clearing browser cache
 

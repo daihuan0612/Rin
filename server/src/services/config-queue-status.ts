@@ -69,8 +69,10 @@ export async function deleteQueueStatusTask(
     throw new Error("Feed not found");
   }
 
-  if (feed.ai_summary_status !== "failed" && feed.ai_summary_status !== "completed") {
-    throw new Error("Only failed or completed AI summary task records can be deleted");
+  // 任何非 idle 的记录都能手动清掉：原来只允许 failed/completed，
+  // 卡在 pending/processing（队列消费者没跑、消息丢了）的记录就永远删不掉，只能干看着
+  if (feed.ai_summary_status === "idle") {
+    throw new Error("This task record is already idle");
   }
 
   await db
