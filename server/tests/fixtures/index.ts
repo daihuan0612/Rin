@@ -32,8 +32,23 @@ export function createMockDB() {
             openid TEXT NOT NULL,
             password TEXT,
             permission INTEGER DEFAULT 0,
+            note TEXT DEFAULT '' NOT NULL,
+            signup_note TEXT DEFAULT '' NOT NULL,
+            signup_ip TEXT DEFAULT '' NOT NULL,
+            disabled INTEGER DEFAULT 0 NOT NULL,
             created_at INTEGER DEFAULT (unixepoch()),
             updated_at INTEGER DEFAULT (unixepoch())
+        );
+
+        -- Invite codes table（一次一码）
+        CREATE TABLE IF NOT EXISTS invite_codes (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            code TEXT NOT NULL UNIQUE,
+            note TEXT DEFAULT '' NOT NULL,
+            used_by INTEGER,
+            used_at INTEGER,
+            revoked INTEGER DEFAULT 0 NOT NULL,
+            created_at INTEGER DEFAULT (unixepoch()) NOT NULL
         );
 
         -- Feeds table

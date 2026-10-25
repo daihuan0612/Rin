@@ -22,6 +22,9 @@ import { HashtagPage } from "../page/hashtag";
 import { HashtagsPage } from "../page/hashtags";
 import { ImagesAdminPage } from "../page/images-admin";
 import { LoginPage } from "../page/login";
+import { RegisterPage } from "../page/register";
+import { UsersAdminPage } from "../page/users-admin";
+import { InviteAdminPage } from "../page/invite-admin";
 import { MomentsPage } from "../page/moments";
 import { ProfilePage } from "../page/profile";
 import { QueueStatusPage } from "../page/queue-status";
@@ -98,12 +101,24 @@ export function AppRoutes() {
         <ImagesAdminPage />
       </AdminRoute>
 
+      <AdminRoute path="/admin/users" requirePermission title={t("user.admin.title")} description={t("admin.users_description")}>
+        <UsersAdminPage />
+      </AdminRoute>
+
+      <AdminRoute path="/admin/invite" requirePermission title={t("invite.admin.title")} description={t("admin.invite_description")}>
+        <InviteAdminPage />
+      </AdminRoute>
+
       <AppRoute path="/callback">
         <CallbackPage />
       </AppRoute>
 
       <AppRoute path="/login">
         <LoginPage />
+      </AppRoute>
+
+      <AppRoute path="/register">
+        <RegisterPage />
       </AppRoute>
 
       <AppRoute path="/profile">

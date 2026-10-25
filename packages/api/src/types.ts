@@ -143,6 +143,53 @@ export interface LoginResponse {
   user: UserProfile;
 }
 
+/** 邀请码注册（一次一码）：注册成功直接返回登录态 */
+export interface RegisterRequest {
+  username: string;
+  password: string;
+  invite: string;
+  signupNote?: string;
+}
+
+export type RegisterResponse = LoginResponse;
+
+/** 邀请码（作者后台用） */
+export interface InviteCodeItem {
+  id: number;
+  code: string;
+  note: string;
+  revoked: boolean;
+  usedBy: number | null;
+  usedByName: string;
+  usedAt: string | number | null;
+  createdAt: string | number | null;
+}
+
+export interface InviteListResponse {
+  list: InviteCodeItem[];
+  summary: { total: number; unused: number; used: number };
+}
+
+/** 用户管理（作者后台用）：备注跟着邀请码走，所以这里能看出"这个人是谁" */
+export interface AdminUserItem {
+  id: number;
+  username: string;
+  avatar: string;
+  permission: boolean;
+  note: string;
+  signupNote: string;
+  signupIp: string;
+  disabled: boolean;
+  inviteCode: string;
+  inviteNote: string;
+  createdAt: string | number | null;
+}
+
+export interface AdminUserUpdateRequest {
+  note?: string;
+  disabled?: boolean;
+}
+
 // ============================================================================
 // Tag Types
 // ============================================================================

@@ -70,8 +70,32 @@ export const users = sqliteTable("users", {
     avatar: text("avatar"),
     password: text("password"),
     permission: integer("permission").default(0),
+    // 作者给这个用户写的备注：注册时从邀请码的备注自动带过来（"这个码给老王"⇒ 用户备注就是老王），
+    // 之后作者也可以随时改。目的是"不管他起什么网名，我都知道他是谁"。
+    note: text("note").default("").notNull(),
+    // 注册时他自己填的一句"你是谁"（只读，和上面的备注分开存）
+    signup_note: text("signup_note").default("").notNull(),
+    // 注册时的来源 IP，用来认人 / 事后追
+    signup_ip: text("signup_ip").default("").notNull(),
+    // 停用：登录直接拒绝；已经登录的会话在 authMiddleware 里当作未登录
+    disabled: integer("disabled").default(0).notNull(),
     createdAt: created_at,
     updatedAt: updated_at,
+});
+
+/**
+ * 邀请码：一次一码。
+ * 每个码带一句备注（"给谁的"），注册成功后备注自动写进那个用户的 `note`，
+ * 码本身标记 used_by / used_at，不能再用 —— 这样"码 → 人 → 用户名"能对上。
+ */
+export const inviteCodes = sqliteTable("invite_codes", {
+    id: integer("id").primaryKey(),
+    code: text("code").notNull().unique(),
+    note: text("note").default("").notNull(),
+    used_by: integer("used_by"),
+    used_at: integer("used_at", { mode: 'timestamp' }),
+    revoked: integer("revoked").default(0).notNull(),
+    createdAt: created_at,
 });
 
 export const comments = sqliteTable("comments", {

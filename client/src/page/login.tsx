@@ -1,6 +1,6 @@
 import { t } from "i18next";
 import { useEffect, useState } from "react";
-import { useLocation } from "wouter";
+import { useLocation, Link } from "wouter";
 import { ButtonWithLoading } from "../components/button";
 import { Icon } from "../components/icon";
 import { Input } from "../components/input";
@@ -115,6 +115,11 @@ export function LoginPage() {
                 {!authStatus.github && !authStatus.password && (
                     <p className="text-sm text-red-500">{t('login.no_methods')}</p>
                 )}
+
+                {/* 邀请码注册入口 */}
+                <Link href="/register" className="text-xs t-secondary hover:underline">
+                    {t('login.register_link')}
+                </Link>
             </div>
         </div>
     );

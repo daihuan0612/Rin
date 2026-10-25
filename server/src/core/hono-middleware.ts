@@ -128,7 +128,8 @@ export const authMiddleware = createMiddleware<{
                     where: eq(users.id, profile.id)
                 }));
 
-                if (user) {
+                // 被作者停用的账号当作未登录：拿不到隐藏段、也不能评论
+                if (user && user.disabled !== 1) {
                     c.set('uid', user.id);
                     c.set('username', user.username);
                     c.set('admin', user.permission === 1);

@@ -33,6 +33,11 @@ import type {
   AuthStatus,
   LoginRequest,
   LoginResponse,
+  RegisterRequest,
+  RegisterResponse,
+  AdminUserItem,
+  AdminUserUpdateRequest,
+  InviteListResponse,
   CommentAdminListResponse,
   StorageListResponse,
 } from "@rin/api";
@@ -405,6 +410,43 @@ class UserAPI {
   githubAuth(): string {
     return `${endpoint}/api/user/github`;
   }
+
+  // GET /api/user/admin/list —— 用户管理（备注 / 注册自述 / 注册 IP / 用了哪枚码）
+  async adminList(): Promise<ApiResponse<AdminUserItem[]>> {
+    return this.http.get<AdminUserItem[]>("/api/user/admin/list");
+  }
+
+  // PUT /api/user/admin/:id
+  async adminUpdate(id: number, body: AdminUserUpdateRequest): Promise<ApiResponse<{ success: boolean }>> {
+    return this.http.put<{ success: boolean }>(`/api/user/admin/${id}`, body);
+  }
+}
+
+/**
+ * Invite API methods（邀请码：一次一码）
+ */
+class InviteAPI {
+  constructor(private http: HttpClient) {}
+
+  // GET /api/invite?status=unused|used|all
+  async list(status: "all" | "unused" | "used" = "all"): Promise<ApiResponse<InviteListResponse>> {
+    return this.http.get<InviteListResponse>(`/api/invite?status=${status}`);
+  }
+
+  // POST /api/invite
+  async create(body: { count?: number; note?: string }): Promise<ApiResponse<{ created: string[] }>> {
+    return this.http.post<{ created: string[] }>("/api/invite", body);
+  }
+
+  // POST /api/invite/:id/revoke
+  async revoke(id: number): Promise<ApiResponse<{ success: boolean }>> {
+    return this.http.post<{ success: boolean }>(`/api/invite/${id}/revoke`);
+  }
+
+  // DELETE /api/invite/:id
+  async remove(id: number): Promise<ApiResponse<{ success: boolean }>> {
+    return this.http.delete<{ success: boolean }>(`/api/invite/${id}`);
+  }
 }
 
 /**
@@ -632,6 +674,11 @@ class AuthAPI {
   async login(body: LoginRequest): Promise<ApiResponse<LoginResponse>> {
     return this.http.post<LoginResponse>("/api/auth/login", body);
   }
+
+  // POST /api/auth/register —— 邀请码注册，成功后直接拿到登录态
+  async register(body: RegisterRequest): Promise<ApiResponse<RegisterResponse>> {
+    return this.http.post<RegisterResponse>("/api/auth/register", body);
+  }
 }
 
 /**
@@ -688,6 +735,7 @@ export class ApiClient {
   storage: StorageAPI;
   search: SearchAPI;
   auth: AuthAPI;
+  invite: InviteAPI;
   wp: WordPressAPI;
   rss: RSSAPI;
 
@@ -704,6 +752,7 @@ export class ApiClient {
     this.storage = new StorageAPI(this.http);
     this.search = new SearchAPI(this.http);
     this.auth = new AuthAPI(this.http);
+    this.invite = new InviteAPI(this.http);
     this.wp = new WordPressAPI(this.http);
     this.rss = new RSSAPI(baseUrl);
   }

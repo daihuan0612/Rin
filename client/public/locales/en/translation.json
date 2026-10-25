@@ -7,9 +7,11 @@
     "back_to_site": "Back to site",
     "compat_tasks_description": "Run compatibility jobs in bulk to backfill missing AI summaries and image blurhash metadata for older posts.",
     "health_description": "Review required configuration, missing integrations, and risks that can affect runtime behavior.",
+    "invite_description": "Create and revoke invite codes. One code works once; the note you write on it becomes that account's note, so you always know who it is.",
     "queue_status_description": "Inspect AI summary queue progress, recent task results, and failures.",
     "settings_description": "Manage site behavior, integrations, and publishing rules in one place.",
     "title": "Admin",
+    "users_description": "See who registered: the invite code they used, the note on that code, what they wrote about themselves, and their signup IP. Edit notes or disable accounts here.",
     "writing_description": "Write, edit, and publish content from the private management workspace."
   },
   "compat_tasks": {
@@ -235,6 +237,86 @@
   "listed": "Listed in articles",
   "show_toc": "Show table of contents",
   "load_more": "Load More",
+  "invite": {
+    "admin": {
+      "action_failed": "That didn't work, please try again",
+      "copied": "Copied",
+      "copy": "Click to copy",
+      "create": "Create",
+      "create_failed": "Could not create codes, please try again",
+      "create_hint": "One code works once. Write who it is for in the note (e.g. \"Wang, from the forum\") — after they register, that note becomes their account note.",
+      "create_title": "Create invite codes",
+      "creating": "Creating...",
+      "delete": "Delete",
+      "delete_confirm": "Delete this invite code?",
+      "empty_unused": "No unused invite codes",
+      "empty_used": "Nobody has registered with a code yet",
+      "invalid_count": "Enter a number between 1 and 20",
+      "loading": "Loading invite codes...",
+      "note_placeholder": "Who is this code for (optional)",
+      "revoke": "Revoke",
+      "revoked_title": "{{count}} revoked",
+      "summary_total": "{{count}} total",
+      "summary_unused": "{{count}} unused",
+      "summary_used": "{{count}} used",
+      "title": "Invite codes",
+      "unused_title": "Unused",
+      "used_by": "{{name}} registered · {{date}}",
+      "used_title": "Used codes ({{count}})"
+    }
+  },
+  "register": {
+    "confirm": {
+      "placeholder": "Repeat password"
+    },
+    "error": {
+      "empty": "Username, password and invite code are required",
+      "failed": "Registration failed: the invite code is invalid or already used, or the username is taken",
+      "mismatch": "The two passwords do not match",
+      "network": "Network error, please try again",
+      "short_password": "Password needs at least 6 characters"
+    },
+    "have_account": "Already have an account? Sign in",
+    "hint": "Registration needs an invite code. Fill in a username and password; you are signed in right after.",
+    "invite": {
+      "placeholder": "Invite code (like K7QP-3MZ9)"
+    },
+    "loading": "Registering...",
+    "password": {
+      "placeholder": "Password (at least 6 characters)"
+    },
+    "signup_note": {
+      "placeholder": "Who are you (optional, helps the author recognize you)"
+    },
+    "submit": "Register",
+    "title": "Register with an invite code",
+    "username": {
+      "placeholder": "Username (2-20 characters)"
+    }
+  },
+  "user": {
+    "admin": {
+      "count": "{{count}} accounts",
+      "disable": "Disable",
+      "disabled": "Disabled",
+      "empty": "Nobody has registered yet",
+      "enable": "Enable",
+      "invite_code": "Invite code",
+      "loading": "Loading users...",
+      "note_placeholder": "Note: who is this",
+      "only_readers": "Registered readers only",
+      "registered_at": "Registered {{date}}",
+      "role_owner": "Owner",
+      "role_reader": "Reader",
+      "save_failed": "Could not save, please try again",
+      "save_note": "Save note",
+      "saved": "Saved",
+      "search_placeholder": "Search username, note, invite code",
+      "signup_ip": "Signup IP",
+      "signup_note": "What they wrote",
+      "title": "Users"
+    }
+  },
   "login": {
     "error": {
       "empty": "Please enter username and password",
@@ -250,6 +332,7 @@
       "placeholder": "Please enter your password"
     },
     "required": "Please log in to continue",
+    "register_link": "Have an invite code? Register",
     "title": "Login",
     "username": {
       "placeholder": "Please enter your username"
