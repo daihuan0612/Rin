@@ -3,7 +3,7 @@ import { Hono } from "hono";
 import type { DB } from "../core/hono-types";
 import { profileAsync } from "../core/server-timing";
 import { feedHashtags, hashtags } from "../db/schema";
-import { maskGlassPlain, renderGlass } from "../utils/glass";
+import { maskGlassPlain, renderGlass, type GlassViewer } from "../utils/glass";
 import type { AppContext } from "../core/hono-types";
 
 export function TagService(): Hono {
@@ -32,6 +32,8 @@ export function TagService(): Hono {
     app.get('/:name', async (c: AppContext) => {
         const db = c.get('db');
         const admin = c.get('admin');
+        const uid = c.get('uid');
+        const viewer: GlassViewer = admin ? 'owner' : (typeof uid === 'number' ? 'member' : 'guest');
         const nameDecoded = decodeURI(c.req.param('name'));
         
         const tag = await profileAsync(c, 'tag_detail_db', () => db.query.hashtags.findFirst({
@@ -62,8 +64,8 @@ export function TagService(): Hono {
             if (!tagFeed.feed) return null;
             return {
                 ...tagFeed.feed,
-                // `[glass]` 隐藏段：这条接口把 content 全文带出去了，必须在这里打码
-                content: renderGlass(tagFeed.feed.content, admin),
+                // 隐藏段：这条接口把 content 全文带出去了，必须在这里按视角打码
+                content: renderGlass(tagFeed.feed.content, viewer),
                 summary: maskGlassPlain(tagFeed.feed.summary),
                 hashtags: tagFeed.feed.hashtags.map((hashtag: any) => hashtag.hashtag)
             };
@@ -73,7 +75,10 @@ export function TagService(): Hono {
             return c.text('Not found', 404);
         }
         
-        if (!admin) {
+        // 登录用户拿到的是原文 ⇒ 不能进公共缓存
+        if (typeof uid === 'number') {
+            c.header('cache-control', 'private, no-store');
+        } else {
             c.header('cache-control', 'public, max-age=0, must-revalidate, s-maxage=300');
         }
         return c.json({ ...tag, feeds: tagFeeds });

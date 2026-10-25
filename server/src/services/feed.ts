@@ -5,7 +5,7 @@ import { profileAsync } from "../core/server-timing";
 import { feeds, visits, visitStats } from "../db/schema";
 import { HyperLogLog } from "../utils/hyperloglog";
 import { extractImageWithMetadata } from "../utils/image";
-import { hasGlass, maskGlassPlain, renderGlass } from "../utils/glass";
+import { hasGlass, hasOwner, maskGlassPlain, renderGlass, type GlassViewer } from "../utils/glass";
 import { makeSummary, stripMarkdown } from "../utils/markdown";
 import { syncFeedAISummaryQueueState } from "./feed-ai-summary";
 import { bindTagToPost } from "./tag";
@@ -28,6 +28,36 @@ function parseFeedId(value: string): number | null {
 
 function buildApiUrl(host: string, path: string) {
     return `https://${host}/api${path}`;
+}
+
+/** 这次请求算哪一档视角：作者 / 登录用户 / 游客 */
+function viewerOf(admin: boolean, uid: number | undefined): GlassViewer {
+    if (admin) return 'owner';
+    return typeof uid === 'number' ? 'member' : 'guest';
+}
+
+/**
+ * AI 摘要闸门。
+ * 摘要是"整篇正文生成的一句话"，库里存的是纯文本、标记早没了，`maskGlassPlain` 拦不住，
+ * 所以按正文里的标记分档给：含 `[owner]` ⇒ 只有作者有；含 `[glass]` ⇒ 游客没有。
+ */
+function gateAiSummary(content: string, aiSummary: string, admin: boolean, uid: number | undefined): string {
+    if (admin) return aiSummary;
+    if (hasOwner(content)) return '';
+    if (hasGlass(content) && typeof uid !== 'number') return '';
+    return aiSummary;
+}
+
+/**
+ * 带隐藏段的响应**不能进公共缓存**：登录用户拿到的是原文，一旦标成 `public`，
+ * CDN 就会把那份原文发给游客。游客才允许 `public`。
+ */
+function applyCacheControl(c: any, uid: number | undefined, sMaxAge: number) {
+    if (typeof uid === 'number') {
+        c.header('cache-control', 'private, no-store');
+    } else {
+        c.header('cache-control', `public, max-age=0, must-revalidate, s-maxage=${sMaxAge}`);
+    }
 }
 
 async function purgeCdnForFeed(env: any, host: string, id: number, alias: string | null) {
@@ -63,6 +93,7 @@ export function FeedService(): Hono<{
         const db = c.get('db');
         const cache = c.get('cache');
         const admin = c.get('admin');
+        const uid = c.get('uid');
         const page = c.req.query('page');
         const limit = c.req.query('limit');
         const type = c.req.query('type');
@@ -76,7 +107,8 @@ export function FeedService(): Hono<{
         const cacheKey = `feeds_${type}_${page_num}_${limit_num}`;
         const cached = await profileAsync(c, 'feed_list_cache_get', () => cache.get(cacheKey));
 
-        if (cached) {
+        // 缓存里存的是**游客版**（面向所有人公开的那份）；登录用户/作者要按自己视角算，不吃这份缓存
+        if (cached && typeof uid !== 'number') {
             return c.json(cached);
         }
 
@@ -114,9 +146,7 @@ export function FeedService(): Hono<{
             return {
                 summary: maskedSummary.length > 0 ? maskedSummary : makeSummary(plainText, 100),
                 hashtags: hashtags.map(({ hashtag }: any) => hashtag),
-                // AI 摘要是整篇正文生成的一句话，正文里的隐藏段会被它复述出来，
-                // 而库里那份是纯文本、`maskGlassPlain` 拦不到 ⇒ 有隐藏段就只给作者
-                ai_summary: !admin && hasGlass(content) ? "" : ai_summary,
+                ai_summary: gateAiSummary(content, ai_summary, admin, uid),
                 avatar,
                 ...other
             };
@@ -131,12 +161,13 @@ export function FeedService(): Hono<{
         const data = { size: size[0].count, data: feed_list, hasNext };
 
         if (type === undefined || type === 'normal' || type === '') {
-            await profileAsync(c, 'feed_list_cache_set', () => cache.set(cacheKey, data));
+            // 只有游客版可以进公共缓存
+            if (typeof uid !== 'number') {
+                await profileAsync(c, 'feed_list_cache_set', () => cache.set(cacheKey, data));
+            }
         }
 
-        if (!admin) {
-            c.header('cache-control', 'public, max-age=0, must-revalidate, s-maxage=300');
-        }
+        applyCacheControl(c, uid, 300);
 
         return c.json(data);
     });
@@ -304,19 +335,19 @@ export function FeedService(): Hono<{
             await profileAsync(c, 'feed_detail_visit_insert', () => db.insert(visits).values({ feedId: feed.id, ip: ip }));
         }
 
-        // `[glass]` 隐藏段：作者看原文，其他人看颗粒。
+        // 隐藏段：作者看原文、登录用户看 `[glass]` 原文、游客全打码。
         // ⚠️ 必须写在 `cache.getOrSet`（上面取 feed 那里）之外：缓存里存的是数据库原始行、
-        // 所有人共用，只有这里组装给响应的 content 才能按 admin 区分。
-        const result = { ...other, content: renderGlass(other.content, admin), hashtags: hashtags_flatten, pv, uv };
+        // 所有人共用，只有这里组装给响应的 content 才能按视角区分。
+        const result = { ...other, content: renderGlass(other.content, viewerOf(admin, uid)), hashtags: hashtags_flatten, pv, uv };
 
-        // AI 摘要：由整篇正文生成，隐藏段里的话会被它复述出来（库里那份是纯文本，标记已经不在，
-        // `maskGlassPlain` 对它无效）⇒ 正文有隐藏段时，非作者拿到的 ai_summary 一律清空。
-        if (!admin && hasGlass(other.content)) {
-            result.ai_summary = "";
-        }
+        // AI 摘要按标记分档（详见 `gateAiSummary`）
+        result.ai_summary = gateAiSummary(other.content, other.ai_summary, admin, uid);
 
-        if (!admin && !feed.draft) {
-            c.header('cache-control', 'public, max-age=0, must-revalidate, s-maxage=60');
+        // 登录用户看到的是原文 ⇒ 这份响应绝不能进 CDN；草稿一律不缓存
+        if (feed.draft) {
+            c.header('cache-control', 'private, no-store');
+        } else {
+            applyCacheControl(c, uid, 60);
         }
 
         return c.json(result);
@@ -547,6 +578,7 @@ export function SearchService(): Hono<{
         const db = c.get('db');
         const cache = c.get('cache');
         const admin = c.get('admin');
+        const uid = c.get('uid');
         const page = c.req.query('page');
         const limit = c.req.query('limit');
         let keyword = c.req.param('keyword');
@@ -585,8 +617,8 @@ export function SearchService(): Hono<{
             return {
                 summary: maskedSummary.length > 0 ? maskedSummary : makeSummary(plainText, 100),
                 hashtags: hashtags.map(({ hashtag }: any) => hashtag),
-                // 同上：搜索也是公开出口，有隐藏段就别把 AI 摘要带出去
-                ai_summary: !admin && hasGlass(content) ? "" : ai_summary,
+                // 搜索也是公开出口：按标记分档给 AI 摘要
+                ai_summary: gateAiSummary(content, ai_summary, admin, uid),
                 ...other
             };
         });

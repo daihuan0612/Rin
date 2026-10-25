@@ -75,12 +75,14 @@ function MarkdownToolButton({
 }
 
 /**
- * `[glass]…[/glass]` 在**预览窗**里显示成正常文字（作者视角，正文零提示）。
- * 编辑区（Monaco）仍然显示 `[glass]` 标记 —— 那就是"这一段我打过码"的提示。
+ * 两种隐藏段在**预览窗**里都显示成正常文字（作者视角，正文零提示）。
+ * 编辑区（Monaco）仍然显示 `[glass]` / `[owner]` 标记 —— 那就是"这一段我打过码"的提示。
  * 真正的打码在服务端做（server/src/utils/glass.ts），这里只管预览好看。
  */
 function renderGlassPreview(text: string): string {
-  return text.replace(/\[glass\]([\s\S]*?)\[\/glass\]/g, '<span class="glass self">$1</span>');
+  return text
+    .replace(/\[glass\]([\s\S]*?)\[\/glass\]/g, '<span class="glass self">$1</span>')
+    .replace(/\[owner\]([\s\S]*?)\[\/owner\]/g, '<span class="owner self">$1</span>');
 }
 
 export function MarkdownEditor({ content, setContent, placeholder = "> Write your content here...", height = "400px" }: MarkdownEditorProps) {
@@ -485,6 +487,7 @@ export function MarkdownEditor({ content, setContent, placeholder = "> Write you
     { key: "italic", icon: "ri-italic", label: t("markdown_editor.toolbar.italic"), onClick: () => wrapSelection("*", "*", t("markdown_editor.placeholder.italic")) },
     { key: "center", icon: "ri-align-center", label: t("markdown_editor.toolbar.center"), onClick: () => wrapSelection("<center>", "</center>", t("markdown_editor.placeholder.center")) },
     { key: "glass", icon: "ri-eye-off-line", label: t("markdown_editor.toolbar.glass"), onClick: () => wrapSelection("[glass]", "[/glass]", t("markdown_editor.placeholder.glass")) },
+    { key: "owner", icon: "ri-lock-line", label: t("markdown_editor.toolbar.owner"), onClick: () => wrapSelection("[owner]", "[/owner]", t("markdown_editor.placeholder.owner")) },
     { key: "link", icon: "ri-link", label: t("markdown_editor.toolbar.link"), onClick: insertLink },
     { key: "image", icon: "ri-image-line", label: t("markdown_editor.toolbar.image"), onClick: insertMarkdownImage },
     { key: "video", icon: "ri-video-line", label: t("markdown_editor.toolbar.insert_video"), onClick: openVideoDialog },
@@ -561,9 +564,9 @@ export function MarkdownEditor({ content, setContent, placeholder = "> Write you
     );
   }
 
-  /* ---------------- `[glass]` 隐藏段提示 ----------------
-   * 只有这一件事：把编辑器里每一段 `[glass]…[/glass]` 框起来（`.glass-marker`），
-   * 划到那儿一眼就知道"这段我打过码"；没打码的地方完全正常。
+  /* ---------------- 隐藏段提示（`[glass]` / `[owner]`） ----------------
+   * 只有这一件事：把编辑器里每一段标记整段框起来，划到那儿一眼就知道"这段我打过码"。
+   * `[glass]`（登录读者可见）用蓝灰框，`[owner]`（只有我能看）用紫灰框，两种一眼分开。
    * （正文页面里作者看到的是纯原文，没有任何提示。）
    */
   const glassDecorationIds = useRef<string[]>([]);
@@ -575,16 +578,19 @@ export function MarkdownEditor({ content, setContent, placeholder = "> Write you
 
     const text = model.getValue();
     const decorations: editor.IModelDeltaDecoration[] = [];
-    const re = /\[glass\][\s\S]*?\[\/glass\]/g;
+    const re = /\[(glass|owner)\][\s\S]*?\[\/\1\]/g;
     let match: RegExpExecArray | null;
     while ((match = re.exec(text)) !== null) {
       const start = model.getPositionAt(match.index);
       const end = model.getPositionAt(match.index + match[0].length);
+      const isOwner = match[1] === "owner";
       decorations.push({
         range: new Range(start.lineNumber, start.column, end.lineNumber, end.column),
         options: {
-          inlineClassName: "glass-marker",
-          hoverMessage: { value: t("markdown_editor.toolbar.glass_jump") },
+          inlineClassName: isOwner ? "owner-marker" : "glass-marker",
+          hoverMessage: {
+            value: t(isOwner ? "markdown_editor.toolbar.owner_jump" : "markdown_editor.toolbar.glass_jump"),
+          },
         },
       });
     }

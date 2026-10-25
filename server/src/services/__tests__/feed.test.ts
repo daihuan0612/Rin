@@ -306,6 +306,93 @@ describe('FeedService', () => {
             expect(admin.content).toContain('只有作者能看的秘密');
         });
 
+        it('三视角：游客全打码、注册读者看到 [glass] 原文但看不到 [owner]、缓存头按登录态分流', async () => {
+            // 注册读者（permission 0）：评论、看 [glass] 都靠它
+            sqlite.prepare("INSERT INTO users (id, username, openid, permission) VALUES (2, 'reader', 'reader-openid', 0)").run();
+
+            const createRes = await app.request('/', {
+                method: 'POST',
+                headers: {
+                    'Authorization': 'Bearer mock_token_1',
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    title: 'Two tiers',
+                    content: '公开开头[glass]给注册读者看的[/glass]中间[owner]只有作者能看[/owner]结尾',
+                    listed: true,
+                    draft: false,
+                    tags: [],
+                }),
+            }, env);
+            const createData = await createRes.json() as any;
+
+            // 游客：两段都打码，且允许 CDN 缓存
+            const guestRes = await app.request(`/${createData.insertedId}`, { method: 'GET' }, env);
+            const guest = await guestRes.json() as any;
+            expect(guest.content).not.toContain('给注册读者看的');
+            expect(guest.content).not.toContain('只有作者能看');
+            expect(guest.content).toContain('公开开头');
+            expect(guestRes.headers.get('cache-control')).toContain('public');
+
+            // 注册读者：[glass] 原文给了，[owner] 仍然是假字；响应绝不能被公共缓存
+            const memberRes = await app.request(`/${createData.insertedId}`, {
+                method: 'GET',
+                headers: { 'Authorization': 'Bearer mock_token_2' },
+            }, env);
+            const member = await memberRes.json() as any;
+            expect(member.content).toContain('给注册读者看的');
+            expect(member.content).not.toContain('只有作者能看');
+            expect(member.content).toContain('class="glass member"');
+            expect(memberRes.headers.get('cache-control')).toContain('private');
+            expect(memberRes.headers.get('cache-control')).toContain('no-store');
+
+            // 作者：两段都原文
+            const ownerRes = await app.request(`/${createData.insertedId}`, {
+                method: 'GET',
+                headers: { 'Authorization': 'Bearer mock_token_1' },
+            }, env);
+            const owner = await ownerRes.json() as any;
+            expect(owner.content).toContain('给注册读者看的');
+            expect(owner.content).toContain('只有作者能看');
+            expect(ownerRes.headers.get('cache-control')).toContain('private');
+        });
+
+        it('[owner] 段的 AI 摘要：连注册读者也不给', async () => {
+            sqlite.prepare("INSERT INTO users (id, username, openid, permission) VALUES (3, 'reader2', 'reader2-openid', 0)").run();
+
+            const createRes = await app.request('/', {
+                method: 'POST',
+                headers: {
+                    'Authorization': 'Bearer mock_token_1',
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    title: 'Owner only summary',
+                    content: '开头[owner]只有作者知道的私事[/owner]结尾',
+                    listed: true,
+                    draft: false,
+                    tags: [],
+                }),
+            }, env);
+            const createData = await createRes.json() as any;
+            sqlite.prepare("UPDATE feeds SET ai_summary = ?, ai_summary_status = 'completed' WHERE id = ?")
+                .run('把私事复述出来的摘要', createData.insertedId);
+
+            const memberRes = await app.request(`/${createData.insertedId}`, {
+                method: 'GET',
+                headers: { 'Authorization': 'Bearer mock_token_3' },
+            }, env);
+            const member = await memberRes.json() as any;
+            expect(member.ai_summary).toBe('');
+
+            const ownerRes = await app.request(`/${createData.insertedId}`, {
+                method: 'GET',
+                headers: { 'Authorization': 'Bearer mock_token_1' },
+            }, env);
+            const owner = await ownerRes.json() as any;
+            expect(owner.ai_summary).toBe('把私事复述出来的摘要');
+        });
+
         it('should bypass stale public cache when cache is disabled', async () => {
             await clientConfig.set('cache.enabled', false);
             await clientConfig.set('counter.enabled', false);

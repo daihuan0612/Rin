@@ -1,13 +1,18 @@
 /**
- * `[glass]…[/glass]` 隐藏段 —— 服务端打码，前端只管样式。
+ * 隐藏段 —— 服务端打码，前端只管样式。
+ *
+ * 两种标记：
+ *   - `[glass]…[/glass]`  → **登录用户 + 作者**可见（给注册读者的独家内容）
+ *   - `[owner]…[/owner]`  → **只有作者**可见（连注册用户也看不到）
  *
  * 为什么必须在服务端做：正文以 markdown 存在 D1、由前端渲染，
  * 只加 CSS blur 等于把原文原样发给浏览器，F12 一看就有。
  * 所以这里在**返回 JSON 之前**就把隐藏段换掉，前端拿到的从来不是原文。
  *
- * 三方视角：
- *   - 作者（站上唯一授权账号，`c.get('admin')`）→ 原文，套 `.glass.self`（无障碍阅读，正文零提示）
- *   - 其他人（游客/未登录/搜索引擎）→ **等长的假字**，套 `.glass`（前端再模糊 + 磨砂玻璃质感）
+ * 三方视角（`GlassViewer`）：
+ *   - `owner` 作者（`permission === 1`）→ 全部原文，套 `.glass.self` / `.owner.self`（正文零提示，编辑器靠这些类还原标记）
+ *   - `member` 登录用户（有 uid、非作者）→ `[glass]` 原文；`[owner]` 仍是假字
+ *   - `guest` 游客 / 未登录 / 搜索引擎 / RSS → 两种都假字
  *
  * 为什么用假字而不是颗粒符号：
  * 一开始这里放的是 `░▒▓` 这类方块颗粒，前端模糊之后会变成一条条"蚯蚓"，
@@ -16,9 +21,13 @@
  *
  * 已知边界：
  *   - 隐藏段里**不要写 markdown 语法**（加粗/链接/列表）——它走原始 HTML 分支，`**` 会原样显示。
+ *   - **不支持嵌套**（`[owner]` 里再套 `[glass]`）；同一个标记也不能自己套自己。
  *   - 站内搜索的 SQL `like` 仍按原文命中（本文件只挡"显示"）。
- *   - 只认小写 `[glass]` / `[/glass]`，没有闭合标签的按普通正文原样输出。
+ *   - 只认小写 `[glass]` / `[owner]`，没有闭合标签的按普通正文原样输出。
  */
+
+/** 谁在看：作者 / 登录用户 / 游客 */
+export type GlassViewer = "owner" | "member" | "guest";
 
 /**
  * 假字池：常用汉字的固定序列（跟原文无关，按位置取，因此同一段每次渲染都一样）。
@@ -30,7 +39,14 @@ const PSEUDO_POOL =
 /** `maskGlassPlain` 里一段最长打多少个方块（防止整章隐藏刷出一屏 ▒） */
 const PLAIN_MAX = 120;
 
-const GLASS_RE = /\[glass\]([\s\S]*?)\[\/glass\]/g;
+/**
+ * 两种标记一次扫完；`\1` 保证闭合标签跟开标签配对。
+ * 内层**不许再出现任何标记**（`(?:(?!...)[\s\S])*?`）：正文里偶尔会有人把 `[glass]` 当词写出来
+ * （比如"这一段是（[glass]）那种"），没有这条约束的话，那个孤立开标签会一路吞到下一段的 `[/glass]`，
+ * 把后面真正要打码的内容整段卷进来。加上之后孤立标记原地不动、按普通正文输出。
+ */
+const HIDDEN_RE =
+    /\[(glass|owner)\]((?:(?!\[(?:glass|owner)\]|\[\/(?:glass|owner)\])[\s\S])*?)\[\/\1\]/g;
 
 const escapeHtml = (s: string) =>
     s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
@@ -44,28 +60,50 @@ export function maskGlassText(text: string): string {
     return text.replace(/[^\s]/g, () => PSEUDO_POOL[i++ % PSEUDO_POOL.length]);
 }
 
+/** 假字块（磨砂玻璃）：`ownerOnly` 决定悬停提示说的是哪一档 */
+function maskedSpan(inner: string, ownerOnly: boolean): string {
+    const cls = ownerOnly ? "glass glass-owner" : "glass";
+    const title = ownerOnly ? "此处内容仅作者可见" : "此处内容已隐藏（注册后可读）";
+    return `<span class="${cls}" title="${title}"><span class="glass-text">${maskGlassText(inner)}</span></span>`;
+}
+
 /**
- * 渲染用：作者看原文（`.self` 不打磨砂），其他人看假字。
- * `title` 是给访客的诚实提示：想复制/悬停时会看到"此处内容已隐藏"，而不是以为自己看到了乱码。
+ * 渲染用：按视角决定每段看原文还是假字。
+ * - `owner` 原文套 `.glass.self` —— 作者看到的是普通正文，零提示；编辑器靠这个类把标记还原回去
+ * - `member` 的 `[glass]` 原文套 `.glass.member`（样式同 `.glass.self`，对读者也是"哪段是独家"的轻微留白提示）
  */
-export function renderGlass(content: string, isAuthor: boolean): string {
+export function renderGlass(content: string, viewer: GlassViewer): string {
     if (!content) return content;
-    return content.replace(GLASS_RE, (_m, inner: string) => {
-        if (isAuthor) return `<span class="glass self">${escapeHtml(inner)}</span>`;
-        return `<span class="glass" title="此处内容已隐藏（仅作者可见）"><span class="glass-text">${maskGlassText(inner)}</span></span>`;
+    return content.replace(HIDDEN_RE, (_m, kind: string, inner: string) => {
+        const ownerOnly = kind === "owner";
+        if (viewer === "owner") {
+            return ownerOnly
+                ? `<span class="owner self">${escapeHtml(inner)}</span>`
+                : `<span class="glass self">${escapeHtml(inner)}</span>`;
+        }
+        if (viewer === "member" && !ownerOnly) {
+            return `<span class="glass member">${escapeHtml(inner)}</span>`;
+        }
+        return maskedSpan(inner, ownerOnly);
     });
 }
 
-/** 摘要 / 搜索 / RSS 这类纯文本场景：整段换成一排方块 */
+/** 摘要 / 搜索 / RSS 这类纯文本场景：整段换成一排方块（两种标记都打） */
 export function maskGlassPlain(content: string): string {
     if (!content) return content;
-    return content.replace(GLASS_RE, (_m, inner: string) =>
+    return content.replace(HIDDEN_RE, (_m, _kind: string, inner: string) =>
         "▒".repeat(Math.min(inner.replace(/\s/g, "").length, PLAIN_MAX))
     );
 }
 
-/** 正文里有没有隐藏段（给"AI 摘要这类二次加工产物"当开关用） */
+/** 正文里有没有任何一种隐藏段（给"AI 摘要这类二次加工产物"当开关用） */
 export function hasGlass(content: string): boolean {
     if (!content) return false;
     return /\[glass\][\s\S]*?\[\/glass\]/.test(content);
+}
+
+/** 正文里有没有"只有作者能看"的段（比 hasGlass 更严：连登录用户都得挡） */
+export function hasOwner(content: string): boolean {
+    if (!content) return false;
+    return /\[owner\][\s\S]*?\[\/owner\]/.test(content);
 }

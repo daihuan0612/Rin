@@ -294,8 +294,10 @@ a.toc-link {
   color: rgba(226, 234, 250, 0.6);
 }
 
-/* 作者视角：原文，全部还原成正常文字（无障碍阅读，正文里没有任何提示） */
-.glass.self {
+/* 作者视角（`.self`）和登录读者视角（`.member`）：原文，全部还原成正常文字
+ * —— 作者侧正文里零提示；读者侧也是普通正文（"这一整段是给我看的"已经由权限说明了） */
+.glass.self,
+.glass.member {
   padding: 0;
   color: inherit;
   font: inherit;
@@ -312,8 +314,30 @@ a.toc-link {
   box-decoration-break: slice;
 }
 
-.glass.self::after {
+.glass.self::after,
+.glass.member::after {
   content: none;
+}
+
+/* `[owner]` 段（只有作者能看）：偏冷灰一点，游客/读者能看出"这段跟别的隐藏段不是一档" */
+.glass-owner {
+  background: linear-gradient(
+    135deg,
+    rgba(246, 247, 251, 0.86) 0%,
+    rgba(216, 221, 236, 0.7) 40%,
+    rgba(236, 240, 249, 0.74) 100%
+  );
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 1), inset 0 -2px 0 rgba(255, 255, 255, 0.7),
+    0 0 0 1px rgba(163, 172, 196, 0.55), 0 3px 10px -2px rgba(60, 70, 100, 0.24);
+}
+
+[data-color-mode="dark"] .glass-owner {
+  background: linear-gradient(
+    135deg,
+    rgba(210, 218, 236, 0.14) 0%,
+    rgba(160, 172, 200, 0.1) 45%,
+    rgba(220, 228, 244, 0.12) 100%
+  );
 }
 
 /* ===== 编辑器里的隐藏段提示（只在写作页的 Monaco 里，正文页面不出现） =====
@@ -329,4 +353,16 @@ a.toc-link {
 [data-color-mode="dark"] .glass-marker {
   background: rgba(150, 175, 220, 0.2);
   box-shadow: inset 0 0 0 1.5px rgba(160, 188, 235, 0.8);
+}
+
+/* `[owner]` 段在编辑器里的框：换个色（偏紫灰），跟 `[glass]` 一眼能分开 */
+.owner-marker {
+  background: rgba(150, 140, 186, 0.16);
+  box-shadow: inset 0 0 0 1.5px rgba(116, 102, 168, 0.9);
+  border-radius: 3px;
+}
+
+[data-color-mode="dark"] .owner-marker {
+  background: rgba(176, 166, 214, 0.18);
+  box-shadow: inset 0 0 0 1.5px rgba(186, 172, 232, 0.85);
 }
