@@ -77,6 +77,41 @@ export function stripImageUrlMetadata(url?: string | null) {
   return parseImageUrlMetadata(url).src;
 }
 
+/**
+ * 外链图片换成同源代理地址 —— 2026-10-28
+ *
+ * 背景：iPhone Safari 里这些图全变成破图小问号，电脑 Chrome 却正常。
+ * 查下来图床本身没毛病（200 / image/jpeg / 证书链完整），
+ * 差别是**手机那条网络连不到那个第三方域名**（本机 WebKit 也一样取不到，
+ * 同一台机器上 Chromium 却能取到）。样式上怎么改都不可能把图变出来。
+ *
+ * 办法：让服务端去取，浏览器只连本站域名（`/api/img-proxy`）。
+ * ⚠️ 白名单必须跟 `server/src/services/image-proxy.ts` 的 `IMAGE_PROXY_HOSTS` 一致，
+ *    多一个少一个都会出现"前端指向代理、后端 403"的破图。
+ */
+const IMAGE_PROXY_HOSTS = new Set(["pan.xfl.cc.cd", "xfl.cc.cd"]);
+
+export function proxiedImageUrl(url?: string | null): string | undefined {
+  if (!url) {
+    return undefined;
+  }
+
+  let parsed: URL;
+  try {
+    // 相对地址会解析到假基址，hostname 不在白名单，原样返回
+    parsed = new URL(url, "https://rin.local");
+  } catch {
+    return url;
+  }
+
+  if (!IMAGE_PROXY_HOSTS.has(parsed.hostname)) {
+    return url;
+  }
+
+  return `/api/img-proxy?url=${encodeURIComponent(parsed.toString())}`;
+}
+
+
 export function buildMarkdownImage(fileName: string, url: string, metadata: ImageMetadata = {}) {
   const safeAlt = fileName.replace(/[[\]]/g, "");
   const safeUrl = url.replace(/\s/g, "%20");

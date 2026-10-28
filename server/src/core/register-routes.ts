@@ -8,6 +8,7 @@ import { FriendService } from "../services/friends";
 import { InviteService } from "../services/invite";
 import { MomentsService } from "../services/moments";
 import { RSSService } from "../services/rss";
+import { ImageProxyService } from "../services/image-proxy";
 import { BlobService, StorageService } from "../services/storage";
 import { TagService } from "../services/tag";
 import { UserService } from "../services/user";
@@ -21,6 +22,7 @@ export function registerRoutes(app: RinApp) {
   app.route("/comment", CommentService());
   app.route("/storage", StorageService());
   app.route("/blob", BlobService());
+  app.route("/img-proxy", ImageProxyService());
   app.route("/friend", FriendService());
   app.route("/moments", MomentsService());
   app.route("/user", UserService());

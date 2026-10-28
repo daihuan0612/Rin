@@ -4,7 +4,7 @@ import { timeago } from "../utils/timeago";
 import { HashTag } from "./hashtag";
 import { useEffect, useRef } from "react";
 import { drawBlurhashToCanvas } from "../utils/blurhash";
-import { parseImageUrlMetadata } from "../utils/image-upload";
+import { parseImageUrlMetadata, proxiedImageUrl } from "../utils/image-upload";
 import { useImageLoadState } from "../utils/use-image-load-state";
 import { type FeedCardVariant, normalizeFeedCardVariant } from "./feed-card-options";
 import { useSiteConfig } from "../hooks/useSiteConfig";
@@ -45,7 +45,7 @@ function FeedCardImage({ src, variant }: { src: string; variant: FeedCardVariant
             ) : null}
             <img
                 ref={imageRef}
-                src={cleanSrc}
+                src={proxiedImageUrl(cleanSrc)}
                 alt=""
                 width={width}
                 height={height}

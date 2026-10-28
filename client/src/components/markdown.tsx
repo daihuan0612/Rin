@@ -115,7 +115,7 @@ import Zoom from "yet-another-react-lightbox/plugins/zoom";
 import "yet-another-react-lightbox/styles.css";
 import { drawBlurhashToCanvas } from "../utils/blurhash";
 import { useColorMode } from "../utils/darkModeUtils";
-import { parseImageUrlMetadata } from "../utils/image-upload";
+import { parseImageUrlMetadata, proxiedImageUrl } from "../utils/image-upload";
 import { useImageLoadState } from "../utils/use-image-load-state";
 import { DownloadCard } from "./download-card";
 import { useTranslation } from "react-i18next";
@@ -174,6 +174,11 @@ function MarkdownImage({
   const { failed, imageRef, loaded, onError, onLoad } = useImageLoadState(cleanSrc);
   const roundedClass = rounded ? "rounded-xl" : "";
   const aspectRatio = width && height ? `${width} / ${height}` : undefined;
+  /**
+   * 外链图走同源代理：手机 Safari 连不到第三方图床，只有本站域名能取到
+   * （详见 `utils/image-upload.ts` 里 `proxiedImageUrl` 的头注释）。
+   */
+  const displaySrc = proxiedImageUrl(cleanSrc);
 
   /**
    * 模糊半径按图片**实际显示宽度**算，不用固定像素。
@@ -225,7 +230,7 @@ function MarkdownImage({
       ) : null}
       <img
         ref={imageRef}
-        src={cleanSrc}
+        src={displaySrc}
         alt={alt}
         width={width}
         height={height}
@@ -233,7 +238,7 @@ function MarkdownImage({
           masked
             ? undefined
             : () => {
-                show(cleanSrc);
+                show(displaySrc);
               }
         }
         onLoad={onLoad}
