@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'bun:test';
-import { balanceGlassTags, hasGlass, hasOwner, maskGlassPlain, maskGlassTagged, maskGlassText, renderGlass } from '../glass';
+import { balanceGlassTags, hasGlass, hasOwner, maskGlassPlain, maskGlassTagged, maskGlassText, renderGlass, stripHiddenImages } from '../glass';
 
 describe('maskGlassText', () => {
     it('非空白字符全换假字，长度 / 换行 / 空格保留（排版不塌）', () => {
@@ -150,6 +150,23 @@ describe('renderGlass', () => {
             expect(out).toContain('glass-with-image');
             // 作者/读者用的是 .glass.self / .glass.member，本来就没有壳，不需要这个类
             expect(renderGlass('[glass]![图](https://x/e.png)[/glass]', 'owner')).not.toContain('glass-with-image');
+        });
+
+        it('列表摘要：隐藏段里的图片不参与打码（否则卡片上会多出一串没来由的假字）', () => {
+            // 纯图片段：什么都不留
+            expect(maskGlassTagged('[glass]![图](https://x/a.png)[/glass]', 'guest')).toBe('');
+            // 文字+图：只有文字变假字，地址一个字都不留
+            const out = maskGlassTagged('[glass]秘密\n![图](https://x/a.png)[/glass]', 'guest');
+            expect(out).not.toContain('秘密');
+            expect(out).not.toContain('https');
+            expect(out).toContain('的一');
+        });
+
+        it('列表封面：隐藏段里的图不参与提取（否则卡片缩略图就是清晰原图）', () => {
+            expect(stripHiddenImages('[glass]![图](https://x/a.png)[/glass]')).not.toContain('https');
+            const mixed = '![公开](https://x/b.png)\n[glass]![私密](https://x/a.png)[/glass]';
+            expect(stripHiddenImages(mixed)).toContain('https://x/b.png');
+            expect(stripHiddenImages(mixed)).not.toContain('https://x/a.png');
         });
     });
 });

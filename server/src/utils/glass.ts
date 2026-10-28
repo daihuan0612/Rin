@@ -70,6 +70,8 @@ function maskedSpan(inner: string, ownerOnly: boolean): string {
 /** 隐藏段里的 markdown 图片：`![说明](地址)` */
 const MD_IMAGE_RE = /!\[([^\]]*)\]\(([^)\s]+)\)/g;
 const HAS_MD_IMAGE_RE = /!\[[^\]]*\]\([^)\s]+\)/;
+/** 只用来"把图片整段删掉"的版本（摘要那条链路上用） */
+const MD_IMAGE_ANY_RE = /!\[[^\]]*\]\([^)\s]+\)/g;
 
 const escapeAttr = (s: string) => escapeHtml(s).replace(/"/g, "&quot;");
 
@@ -172,7 +174,16 @@ export function maskGlassTagged(content: string, viewer: GlassViewer): string {
         if (viewer === "owner") return inner;
         if (viewer === "member" && !ownerOnly) return inner;
         const open = ownerOnly ? GLASS_MASK_OPEN_OWNER : GLASS_MASK_OPEN;
-        return `${open}${maskGlassText(inner)}${GLASS_MASK_CLOSE}`;
+        /**
+         * ⚠️ 图片先剥掉再打码。
+         * 列表摘要那条链路是「先 `maskGlassTagged`、再 `stripMarkdown`」——
+         * 图片语法 `![图](地址)` 如果先被换成假字，`stripMarkdown` 就认不出它是图片了，
+         * 结果卡片摘要把**地址的长度**变成一串假字显示出来（用户看到"明明没文字却打了一串码"）。
+         * 剥完是空的（纯图片段）就干脆不产生哨兵，摘要里直接没有这一段。
+         */
+        const masked = maskGlassText(inner.replace(MD_IMAGE_ANY_RE, ""));
+        if (!masked.trim()) return "";
+        return `${open}${masked}${GLASS_MASK_CLOSE}`;
     });
 }
 
@@ -203,8 +214,19 @@ export function balanceGlassTags(text: string): string {
     return out;
 }
 
-/** 正文里有没有任何一种隐藏段（给"AI 摘要这类二次加工产物"当开关用） */
-export function hasGlass(content: string): boolean {
+/**
+ * 把隐藏段里的图片整段删掉（列表卡片封面用）。
+ * ⚠️ 封面是从正文里"取第一张图"，不处理的话打码的图会当上首页缩略图 —— 正文里遮了等于没遮。
+ * 这里不按视角分：封面所有人可见，作者自己在首页也不拿它当封面（点进详情页照样能看）。
+ */
+export function stripHiddenImages(content: string): string {
+    if (!content) return content;
+    return content.replace(HIDDEN_RE, (_m, _kind: string, inner: string) =>
+        inner.replace(MD_IMAGE_ANY_RE, ""),
+    );
+}
+
+/** 正文里有没有任何一种隐藏段（给"AI 摘要这类二次加工产物"当开关用） */export function hasGlass(content: string): boolean {
     if (!content) return false;
     return /\[glass\][\s\S]*?\[\/glass\]/.test(content);
 }
