@@ -183,7 +183,7 @@ export function FeedService(): Hono<{
         const admin = c.get('admin');
         const uid = c.get('uid');
         const body = await profileAsync(c, 'feed_create_parse', () => c.req.json());
-        const { title, alias, listed, content, summary, draft, tags, createdAt, show_toc } = body;
+        const { title, alias, listed, content, summary, draft, tags, createdAt, show_toc, ai_summary_enabled } = body;
 
         if (!admin) {
             return c.text('Permission denied', 403);
@@ -222,6 +222,8 @@ export function FeedService(): Hono<{
             listed: listed ? 1 : 0,
             draft: draft ? 1 : 0,
             show_toc: show_toc ? 1 : 0,
+            // 不传 = 默认开启（跟老文章一致）
+            ai_summary_enabled: ai_summary_enabled === undefined ? 1 : ai_summary_enabled ? 1 : 0,
             createdAt: date,
             updatedAt: date
         }).returning({ insertedId: feeds.id }));
@@ -231,6 +233,7 @@ export function FeedService(): Hono<{
             draft: Boolean(draft),
             updatedAt: date,
             resetSummary: true,
+            aiSummaryEnabled: ai_summary_enabled === undefined ? true : Boolean(ai_summary_enabled),
         }));
         await profileAsync(c, 'feed_create_cache_invalidate', () => cache.deletePrefix('feeds_'));
         await profileAsync(c, 'feed_create_cdn_purge', () => purgeCdnForFeed(env, c.req.header('host') || '', result[0].insertedId, alias || null));
@@ -463,7 +466,7 @@ export function FeedService(): Hono<{
         const uid = c.get('uid');
         const id = c.req.param('id');
         const body = await profileAsync(c, 'feed_update_parse', () => c.req.json());
-        const { title, listed, content, summary, alias, draft, top, tags, createdAt, show_toc } = body;
+        const { title, listed, content, summary, alias, draft, top, tags, createdAt, show_toc, ai_summary_enabled } = body;
 
         const id_num = parseInt(id);
         const feed = await profileAsync(c, 'feed_update_lookup', () => db.query.feeds.findFirst({ where: eq(feeds.id, id_num) }));
@@ -479,20 +482,30 @@ export function FeedService(): Hono<{
         const contentChanged = content && content !== feed.content;
         const isDraft = draft !== undefined ? draft : (feed.draft === 1);
         const shouldQueueAISummary = (contentChanged && !isDraft) || (!isDraft && feed.draft === 1 && !feed.ai_summary);
+
+        // 单篇 AI 摘要开关：请求里不传就沿用库里的值。
+        // 关掉时要把已有摘要一起清掉（否则详情页还挂着旧的），打开时要重新排一次队。
+        const aiEnabledNext = ai_summary_enabled === undefined ? feed.ai_summary_enabled === 1 : Boolean(ai_summary_enabled);
+        const aiToggledOff = !aiEnabledNext && feed.ai_summary_enabled === 1;
+        const aiToggledOn = aiEnabledNext && feed.ai_summary_enabled === 0;
+        const aiToggleChanged = aiToggledOff || aiToggledOn;
+        const clearAISummary = Boolean(shouldQueueAISummary) || aiToggleChanged;
+
         const updateTime = new Date();
 
         await profileAsync(c, 'feed_update_db', () => db.update(feeds).set({
             title,
             content,
             summary,
-            ai_summary: shouldQueueAISummary ? "" : undefined,
-            ai_summary_status: isDraft ? "idle" : undefined,
-            ai_summary_error: shouldQueueAISummary || isDraft ? "" : undefined,
+            ai_summary: clearAISummary ? "" : undefined,
+            ai_summary_status: isDraft || aiToggledOff ? "idle" : undefined,
+            ai_summary_error: clearAISummary || isDraft ? "" : undefined,
             alias,
             top,
             listed: listed ? 1 : 0,
             draft: draft === undefined ? undefined : draft ? 1 : 0,
             show_toc: show_toc === undefined ? undefined : show_toc ? 1 : 0,
+            ai_summary_enabled: ai_summary_enabled === undefined ? undefined : ai_summary_enabled ? 1 : 0,
             createdAt: createdAt ? new Date(createdAt) : undefined,
             updatedAt: updateTime
         }).where(eq(feeds.id, id_num)));
@@ -501,11 +514,12 @@ export function FeedService(): Hono<{
             await profileAsync(c, 'feed_update_tags', () => bindTagToPost(db, id_num, tags));
         }
 
-        if (shouldQueueAISummary || isDraft) {
+        if (shouldQueueAISummary || isDraft || aiToggleChanged) {
             await profileAsync(c, 'feed_update_ai_queue', () => syncFeedAISummaryQueueState(db, serverConfig, env, id_num, {
                 draft: Boolean(isDraft),
                 updatedAt: updateTime,
-                resetSummary: shouldQueueAISummary,
+                resetSummary: Boolean(shouldQueueAISummary) || aiToggleChanged,
+                aiSummaryEnabled: aiEnabledNext,
             }));
         }
 

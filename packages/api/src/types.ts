@@ -39,6 +39,8 @@ export interface Feed {
   uv: number;
   top?: number;
   show_toc?: number;
+  /** 1 = 这篇生成 AI 摘要；0 = 关掉（纯视频这类） */
+  ai_summary_enabled?: number;
 }
 
 export interface FeedListResponse {
@@ -78,6 +80,8 @@ export interface CreateFeedRequest {
   createdAt?: string;
   tags: string[];
   show_toc?: boolean;
+  /** 不给 = 默认开启 */
+  ai_summary_enabled?: boolean;
 }
 
 export interface UpdateFeedRequest {
@@ -91,6 +95,8 @@ export interface UpdateFeedRequest {
   tags?: string[];
   top?: number;
   show_toc?: boolean;
+  /** 不给 = 沿用库里原来的值 */
+  ai_summary_enabled?: boolean;
 }
 
 export interface AdjacentFeed {

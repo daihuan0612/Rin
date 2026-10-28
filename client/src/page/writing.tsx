@@ -45,6 +45,7 @@ async function publish({
   draft,
   createdAt,
   show_toc,
+  ai_summary_enabled,
   onCompleted,
   showAlert
 }: {
@@ -57,6 +58,7 @@ async function publish({
   alias?: string;
   createdAt?: Date;
   show_toc?: boolean;
+  ai_summary_enabled?: boolean;
   onCompleted?: () => void;
   showAlert: ShowAlertType;
 }) {
@@ -71,6 +73,7 @@ async function publish({
       listed,
       draft,
       show_toc,
+      ai_summary_enabled,
       createdAt: createdAt?.toISOString(),
     }
   );
@@ -99,6 +102,7 @@ async function update({
   draft,
   createdAt,
   show_toc,
+  ai_summary_enabled,
   onCompleted,
   showAlert
 }: {
@@ -112,6 +116,7 @@ async function update({
   draft?: boolean;
   createdAt?: Date;
   show_toc?: boolean;
+  ai_summary_enabled?: boolean;
   onCompleted?: () => void;
   showAlert: ShowAlertType;
 }) {
@@ -127,6 +132,7 @@ async function update({
       listed,
       draft,
       show_toc,
+      ai_summary_enabled,
       createdAt: createdAt?.toISOString(),
     }
   );
@@ -155,6 +161,7 @@ export function WritingPage({ id }: { id?: number }) {
   const [draft, setDraft] = useState(false);
   const [listed, setListed] = useState(true);
   const [showToc, setShowToc] = useState(false);
+  const [aiSummaryEnabled, setAiSummaryEnabled] = useState(true);
   const [content, setContent] = cache.useCache("content", "");
   const [createdAt, setCreatedAt] = useState<Date | undefined>(new Date());
   const [publishing, setPublishing] = useState(false)
@@ -178,6 +185,7 @@ export function WritingPage({ id }: { id?: number }) {
         draft,
         listed,
         show_toc: showToc,
+        ai_summary_enabled: aiSummaryEnabled,
         createdAt,
         onCompleted: () => {
           setPublishing(false)
@@ -203,6 +211,7 @@ export function WritingPage({ id }: { id?: number }) {
         alias,
         listed,
         show_toc: showToc,
+        ai_summary_enabled: aiSummaryEnabled,
         createdAt,
         onCompleted: () => {
           setPublishing(false)
@@ -227,6 +236,8 @@ export function WritingPage({ id }: { id?: number }) {
             setListed((data as any).listed === 1);
             setDraft((data as any).draft === 1);
             setShowToc((data as any).show_toc === 1);
+            // 老的 / 没这个字段的数据一律当"开"（跟数据库默认值一致）
+            setAiSummaryEnabled((data as any).ai_summary_enabled !== 0);
             setCreatedAt(new Date(data.createdAt));
           }
         });
@@ -353,6 +364,18 @@ export function WritingPage({ id }: { id?: number }) {
                 value={showToc}
                 setValue={setShowToc}
                 placeholder={t('show_toc')}
+              />
+            </FlatMetaRow>
+            <FlatMetaRow
+              className="cursor-pointer rounded-none border-0 bg-transparent px-0 py-2 sm:rounded-2xl sm:border sm:bg-secondary sm:px-4 sm:py-3"
+              onClick={() => setAiSummaryEnabled(!aiSummaryEnabled)}
+            >
+              <p>{t('ai_summary_enabled')}</p>
+              <Checkbox
+                id="ai_summary_enabled"
+                value={aiSummaryEnabled}
+                setValue={setAiSummaryEnabled}
+                placeholder={t('ai_summary_enabled')}
               />
             </FlatMetaRow>
             <FlatMetaRow className="gap-3 rounded-none border-0 bg-transparent px-0 py-2 sm:rounded-2xl sm:border sm:bg-secondary sm:px-4 sm:py-3 xl:col-span-3">

@@ -52,6 +52,8 @@ export async function retryQueueStatusTask(
     draft: feed.draft === 1,
     updatedAt: feed.updatedAt,
     resetSummary: false,
+    // 这篇自己关了 AI 摘要的话，点"重试"也不该把它生成出来
+    aiSummaryEnabled: feed.ai_summary_enabled !== 0,
   });
   await clearFeedCache(cache, feed.id, feed.alias, feed.alias);
 }

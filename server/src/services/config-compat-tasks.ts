@@ -14,8 +14,14 @@ function isAISummaryBackfillEligible(feed: {
   draft: number;
   ai_summary: string;
   ai_summary_status: string;
+  ai_summary_enabled: number;
 }) {
   if (feed.draft === 1) {
+    return false;
+  }
+
+  // 单篇关了 AI 摘要的（纯视频这类）不参与批量补，否则等于把用户关掉的又生成回来
+  if (feed.ai_summary_enabled === 0) {
     return false;
   }
 
@@ -29,8 +35,13 @@ function isAISummaryBackfillEligible(feed: {
 function isAISummaryForceBackfillEligible(feed: {
   draft: number;
   ai_summary_status: string;
+  ai_summary_enabled: number;
 }) {
   if (feed.draft === 1) {
+    return false;
+  }
+
+  if (feed.ai_summary_enabled === 0) {
     return false;
   }
 
@@ -45,6 +56,7 @@ export async function buildCompatTasksResponse(db: DB, serverConfig: ConfigReade
       content: true,
       ai_summary: true,
       ai_summary_status: true,
+      ai_summary_enabled: true,
       draft: true,
     },
   });
@@ -85,6 +97,7 @@ export async function runCompatAISummaryBackfill(
       updatedAt: true,
       ai_summary: true,
       ai_summary_status: true,
+      ai_summary_enabled: true,
       draft: true,
     },
     orderBy: [desc(feeds.updatedAt)],
@@ -107,6 +120,7 @@ export async function runCompatAISummaryBackfill(
       draft: false,
       updatedAt: item.updatedAt,
       resetSummary: true,
+      aiSummaryEnabled: item.ai_summary_enabled !== 0,
     });
     await clearFeedCache(cache, item.id, item.alias, item.alias);
     queued += 1;

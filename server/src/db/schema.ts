@@ -12,6 +12,8 @@ export const feeds = sqliteTable("feeds", {
     ai_summary: text("ai_summary").default("").notNull(),
     ai_summary_status: text("ai_summary_status").default("idle").notNull(),
     ai_summary_error: text("ai_summary_error").default("").notNull(),
+    /** 单篇开关：0 = 这篇不生成 AI 摘要（纯视频这类没必要总结的） */
+    ai_summary_enabled: integer("ai_summary_enabled").default(1).notNull(),
     content: text("content").notNull(),
     listed: integer("listed").default(1).notNull(),
     draft: integer("draft").default(1).notNull(),

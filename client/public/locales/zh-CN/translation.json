@@ -269,6 +269,7 @@
   },
   "listed": "列出在文章中",
   "show_toc": "显示目录",
+  "ai_summary_enabled": "生成 AI 摘要",
   "load_more": "加载更多",
   "invite": {
     "admin": {

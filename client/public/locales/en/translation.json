@@ -242,6 +242,7 @@
   },
   "listed": "Listed in articles",
   "show_toc": "Show table of contents",
+  "ai_summary_enabled": "Generate AI summary",
   "load_more": "Load More",
   "invite": {
     "admin": {

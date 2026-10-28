@@ -83,16 +83,25 @@ export async function syncFeedAISummaryQueueState(
     draft: boolean;
     updatedAt: Date;
     resetSummary?: boolean;
+    /**
+     * 单篇开关（`feeds.ai_summary_enabled`）。显式传 `false` 表示"这篇不生成摘要"，
+     * 此时连已有的摘要一起清掉 —— 否则关掉开关后详情页还会继续显示旧的 AI 摘要。
+     */
+    aiSummaryEnabled?: boolean;
   },
 ) {
   const aiConfig = await getAIConfig(serverConfig);
-  const shouldQueue = aiConfig.enabled && !options.draft;
+  const perFeedEnabled = options.aiSummaryEnabled !== false;
+  const shouldQueue = aiConfig.enabled && !options.draft && perFeedEnabled;
 
   if (!shouldQueue) {
     await db
       .update(feeds)
       .set(
-        buildStatusUpdate("idle", options.resetSummary ? { ai_summary: "" } : undefined),
+        buildStatusUpdate(
+          "idle",
+          options.resetSummary || !perFeedEnabled ? { ai_summary: "" } : undefined,
+        ),
       )
       .where(eq(feeds.id, feedId));
     return;
@@ -145,10 +154,13 @@ export async function processFeedAISummaryTask(
   }
 
   const aiConfig = await getAIConfig(serverConfig);
-  if (!aiConfig.enabled || feed.draft === 1) {
+  // 单篇开关也要在这里再挡一次：任务可能在"关开关"之前就已经入队，
+  // 晚到时如果只看全局开关，还是会把摘要生成出来。
+  const perFeedEnabled = feed.ai_summary_enabled !== 0;
+  if (!aiConfig.enabled || feed.draft === 1 || !perFeedEnabled) {
     await db
       .update(feeds)
-      .set(buildStatusUpdate("idle"))
+      .set(buildStatusUpdate("idle", perFeedEnabled ? undefined : { ai_summary: "" }))
       .where(eq(feeds.id, feed.id));
     await clearFeedCache(cache, feed.id, feed.alias, feed.alias);
     return;

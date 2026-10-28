@@ -594,6 +594,77 @@ describe('FeedService', () => {
             expect(data.insertedId).toBeDefined();
         });
 
+        it('单篇关了 AI 摘要：全局开着也不入队，状态留在 idle', async () => {
+            const sent: any[] = [];
+            env.TASK_QUEUE = {
+                send: async (msg: any) => { sent.push(msg); },
+                sendBatch: async () => {},
+            } as unknown as Queue<any>;
+            await serverConfig.set('ai_summary.enabled', 'true');
+
+            const res = await app.request('/', {
+                method: 'POST',
+                headers: {
+                    'Authorization': 'Bearer mock_token_1',
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    title: '纯视频文章',
+                    content: '<video controls><source src="https://example.com/a.mp4"></video>',
+                    listed: true,
+                    draft: false,
+                    tags: [],
+                    ai_summary_enabled: false,
+                }),
+            }, env);
+
+            expect(res.status).toBe(200);
+            const data = await res.json() as any;
+
+            // 关键：一条任务都不该发出去
+            expect(sent.length).toBe(0);
+            const row = sqlite
+                .prepare("SELECT ai_summary_enabled, ai_summary_status, ai_summary FROM feeds WHERE id = ?")
+                .get(data.insertedId) as any;
+            expect(row.ai_summary_enabled).toBe(0);
+            expect(row.ai_summary_status).toBe('idle');
+            expect(row.ai_summary).toBe('');
+        });
+
+        it('没传 ai_summary_enabled 时默认开启（老行为不变）', async () => {
+            const sent: any[] = [];
+            env.TASK_QUEUE = {
+                send: async (msg: any) => { sent.push(msg); },
+                sendBatch: async () => {},
+            } as unknown as Queue<any>;
+            await serverConfig.set('ai_summary.enabled', 'true');
+
+            const res = await app.request('/', {
+                method: 'POST',
+                headers: {
+                    'Authorization': 'Bearer mock_token_1',
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    title: '普通文章',
+                    content: '一段普通正文',
+                    listed: true,
+                    draft: false,
+                    tags: [],
+                }),
+            }, env);
+
+            expect(res.status).toBe(200);
+            const data = await res.json() as any;
+
+            expect(sent.length).toBe(1);
+            const row = sqlite
+                .prepare("SELECT ai_summary_enabled, ai_summary_status FROM feeds WHERE id = ?")
+                .get(data.insertedId) as any;
+            expect(row.ai_summary_enabled).toBe(1);
+            expect(row.ai_summary_status).toBe('pending');
+        });
+
         it('should require admin permission', async () => {
             // Create app without admin permission
             const res = await app.request('/', {
@@ -688,6 +759,59 @@ describe('FeedService', () => {
             const getRes = await app.request(`/${feedId}`, { method: 'GET' }, env);
             const data = await getRes.json() as any;
             expect(data.title).toBe('Updated Title');
+        });
+
+        it('把单篇 AI 摘要关掉时，已有摘要一起清空、也不再入队', async () => {
+            const sent: any[] = [];
+            env.TASK_QUEUE = {
+                send: async (msg: any) => { sent.push(msg); },
+                sendBatch: async () => {},
+            } as unknown as Queue<any>;
+            await serverConfig.set('ai_summary.enabled', 'true');
+
+            const createRes = await app.request('/', {
+                method: 'POST',
+                headers: {
+                    'Authorization': 'Bearer mock_token_1',
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    title: '视频文章',
+                    content: '<video controls></video>',
+                    listed: true,
+                    draft: false,
+                    tags: [],
+                }),
+            }, env);
+            const feedId = (await createRes.json() as any).insertedId;
+            // 默认是开的，所以建完就该有一条任务
+            expect(sent.length).toBe(1);
+
+            // 模拟这篇以前生成过摘要
+            sqlite
+                .prepare("UPDATE feeds SET ai_summary = '旧的AI摘要', ai_summary_status = 'completed' WHERE id = ?")
+                .run(feedId);
+
+            const sentBefore = sent.length;
+            const updateRes = await app.request(`/${feedId}`, {
+                method: 'POST',
+                headers: {
+                    'Authorization': 'Bearer mock_token_1',
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ listed: true, ai_summary_enabled: false }),
+            }, env);
+
+            expect(updateRes.status).toBe(200);
+            // 关掉不该产生新任务
+            expect(sent.length).toBe(sentBefore);
+
+            const row = sqlite
+                .prepare("SELECT ai_summary, ai_summary_status, ai_summary_enabled FROM feeds WHERE id = ?")
+                .get(feedId) as any;
+            expect(row.ai_summary_enabled).toBe(0);
+            expect(row.ai_summary).toBe('');
+            expect(row.ai_summary_status).toBe('idle');
         });
 
         it('should return updated content through unchanged alias after edit', async () => {
