@@ -1,6 +1,7 @@
 import { Hono } from "hono";
 import { wrapTime } from "hono/timing";
 import type { AppContext } from "../core/hono-types";
+import { purgeCache } from "../utils/purge-cache";
 import { setAIConfig, getAIConfig } from "../utils/db-config";
 import { testAIModel } from "../utils/ai";
 import { notify } from "../utils/webhook";
@@ -22,6 +23,31 @@ import {
     listBlurhashCompatCandidates,
     runCompatAISummaryBackfill,
 } from "./config-compat-tasks";
+
+/**
+ * 配置改完立刻让 CDN 上的旧副本失效 —— 2026-10-28
+ *
+ * 用户反馈"同一个文章列表里，有的卡片标题大、有的小"。查下来不是组件的问题：
+ * 卡片样式只有全局一个开关（`feed.card_variant`），一页里不可能两套。
+ * 真凶是这个接口原先 `s-maxage=300` 且保存后**没有任何清缓存动作** ——
+ * 改完样式设置后，最多 5 分钟内一部分请求还在吃 CDN 上的旧配置，
+ * 于是新旧两种字号就混在同一份列表里了。
+ *
+ * ⚠️ 没配 `CLOUDFLARE_PURGE_TOKEN` / `CLOUDFLARE_ZONE_ID` 时 purgeCache 会自己跳过，
+ *    这种情况下只能靠下面的 `s-maxage=30` 兜底（把窗口从 5 分钟压到 30 秒）。
+ */
+async function purgeConfigCache(c: AppContext) {
+    const env = c.get("env");
+    try {
+        const origin = new URL(c.req.url).origin;
+        await purgeCache(
+            env as unknown as { CLOUDFLARE_PURGE_TOKEN?: string; CLOUDFLARE_ZONE_ID?: string },
+            [`${origin}/api/config/client`, `${origin}/api/config/client/bootstrap.js`],
+        );
+    } catch (error) {
+        console.error("Config cache purge failed:", error);
+    }
+}
 
 export function ConfigService(): Hono {
     const app = new Hono();
@@ -304,7 +330,7 @@ export function ConfigService(): Hono {
             status: 200,
             headers: {
                 'content-type': 'application/javascript; charset=utf-8',
-                'cache-control': 'public, max-age=0, must-revalidate, s-maxage=300',
+                'cache-control': 'public, max-age=0, must-revalidate, s-maxage=30',
             },
         });
     });
@@ -331,7 +357,7 @@ export function ConfigService(): Hono {
         }
         
         const data = await buildClientConfigResponse(clientConfig, serverConfig, env);
-        c.header('cache-control', 'public, max-age=0, must-revalidate, s-maxage=300');
+        c.header('cache-control', 'public, max-age=0, must-revalidate, s-maxage=30');
         return c.json(data);
     });
 
@@ -366,6 +392,8 @@ export function ConfigService(): Hono {
             await setAIConfig(serverConfig, aiConfigUpdates);
         }
 
+        await purgeConfigCache(c);
+
         return c.json(await buildCombinedConfigResponse(clientConfig, serverConfig, env));
     });
 
@@ -393,7 +421,9 @@ export function ConfigService(): Hono {
         if (Object.keys(aiConfigUpdates).length > 0) {
             await setAIConfig(serverConfig, aiConfigUpdates);
         }
-        
+
+        await purgeConfigCache(c);
+
         return c.text('OK');
     });
 
