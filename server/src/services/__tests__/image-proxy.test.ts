@@ -11,6 +11,7 @@ function createApp() {
 }
 
 const external = "https://pan.xfl.cc.cd/file/ai/DTfuLPoP.jpg";
+const externalVideo = "https://pan.xfl.cc.cd/file/tucao/1784189263473_video_1784189387631.mp4";
 
 afterEach(() => {
     globalThis.fetch = realFetch;
@@ -94,5 +95,31 @@ describe("GET /img-proxy", () => {
 
         expect(res.status).toBe(403);
         expect(called).toBe(false);
+    });
+
+    it("proxies video and passes the Range request through", async () => {
+        const seen: { range: string | null } = { range: null };
+        globalThis.fetch = (async (_input: any, init?: any) => {
+            seen.range = new Headers(init?.headers).get("range");
+            return new Response(new Uint8Array([9, 9]), {
+                status: 206,
+                headers: {
+                    "content-type": "video/mp4",
+                    "content-range": "bytes 0-1/1000000",
+                    "accept-ranges": "bytes",
+                },
+            });
+        }) as typeof fetch;
+
+        const res = await createApp().request(
+            `/img-proxy?url=${encodeURIComponent(externalVideo)}`,
+            { headers: { range: "bytes=0-1" } },
+        );
+
+        expect(seen.range).toBe("bytes=0-1");
+        expect(res.status).toBe(206);
+        expect(res.headers.get("content-range")).toBe("bytes 0-1/1000000");
+        expect(res.headers.get("accept-ranges")).toBe("bytes");
+        expect(res.headers.get("content-type")).toBe("video/mp4");
     });
 });

@@ -34,7 +34,26 @@ function VideoPlayer({ children, locked, lockedText, ...props }: any) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   // 锁定时把 autoplay 摘掉：正文里写了 <video autoplay> 的话，
   // 静音自动播放会绕过遮罩让画面动起来，"点不动"就名存实亡了。
-  const { autoPlay, ...mediaProps } = props;
+  const { autoPlay, src: rawSrc, ...mediaProps } = props;
+  /**
+   * 外链视频同样走本站代理（2026-10-28）。
+   * 上游视频回的是 `Cache-Control: private` + `cf-cache-status: BYPASS`，
+   * 又跟图片一样在同一条连不通的第三方域名上，所以不代理就是"每次都重新加载"。
+   * 代理端透传 Range，进度条照常能拖。
+   */
+  const mediaSrc = proxiedImageUrl(rawSrc);
+  const mediaChildren = useMemo(
+    () =>
+      React.Children.map(children, (child) => {
+        if (!React.isValidElement(child)) return child;
+        const childSrc = (child.props as { src?: string }).src;
+        if (!childSrc) return child;
+        const next = proxiedImageUrl(childSrc);
+        if (!next || next === childSrc) return child;
+        return React.cloneElement(child as React.ReactElement<{ src?: string }>, { src: next });
+      }),
+    [children],
+  );
   return (
     <div className={`my-4 w-full overflow-hidden rounded-xl flex justify-center bg-black/5 relative ${locked ? "" : "cursor-pointer"}`} onClick={() => {
       // 游客锁定时不给播放：整块只当封面看
@@ -51,6 +70,7 @@ function VideoPlayer({ children, locked, lockedText, ...props }: any) {
       )}
       <video
         {...mediaProps}
+        src={mediaSrc}
         autoPlay={locked ? undefined : autoPlay}
         ref={videoRef}
         className={`max-h-[70vh] w-auto h-auto block${locked ? " video-locked-media" : ""}`}
@@ -83,7 +103,7 @@ function VideoPlayer({ children, locked, lockedText, ...props }: any) {
           }
         }}
       >
-        {children}
+        {mediaChildren}
       </video>
       <canvas ref={canvasRef} className="hidden" />
       {locked && (
