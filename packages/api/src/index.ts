@@ -9,3 +9,6 @@ export * from './schemas';
 
 // Schema validator
 export { t } from './schema-validator';
+
+// Media proxy whitelist (shared by client and server)
+export { IMAGE_PROXY_HOSTS, isProxiedMediaHost } from './media-proxy';

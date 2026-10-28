@@ -50,17 +50,20 @@ function gateAiSummary(content: string, aiSummary: string, admin: boolean, uid: 
  * 带隐藏段的响应**不能进公共缓存**：登录用户拿到的是原文，一旦标成 `public`，
  * CDN 就会把那份原文发给游客。游客才允许 `public`。
  *
- * 2026-10-28：游客档从 `max-age=0, must-revalidate` 改成
- * `max-age=60, stale-while-revalidate`。
- * 用户反馈"每次回到首页都要在等着加载"——`must-revalidate` 会让浏览器每进一次列表
- * 都必须先等请求回来才敢渲染。改成 60 秒内直接用本地副本、过期后先渲染旧内容再后台刷新，
- * 回首页就是瞬开。登录档仍是 `private, no-store`，不受影响。
+ * 2026-10-28：列表（游客档）允许浏览器缓存 `browserMaxAge` 秒，过期后
+ * `stale-while-revalidate` 先渲染旧内容再后台刷新，回首页不用再等。
+ * ⚠️ 只有**列表**开这个（`browserMaxAge > 0`）；详情页和 adjacent 保持
+ * `max-age=0, must-revalidate` —— 详情里带 pv/uv 计数，浏览器一缓存计数就不准了。
+ * ⚠️ `stale-while-revalidate` 别开太大：它允许共享缓存继续返回旧副本，
+ * 文章改标题/取消 listed 之后要能较快生效，所以只给 5 分钟。
  */
-function applyCacheControl(c: any, uid: number | undefined, sMaxAge: number) {
+function applyCacheControl(c: any, uid: number | undefined, sMaxAge: number, browserMaxAge = 0) {
     if (typeof uid === 'number') {
         c.header('cache-control', 'private, no-store');
+    } else if (browserMaxAge > 0) {
+        c.header('cache-control', `public, max-age=${browserMaxAge}, s-maxage=${sMaxAge}, stale-while-revalidate=300`);
     } else {
-        c.header('cache-control', `public, max-age=60, s-maxage=${sMaxAge}, stale-while-revalidate=86400`);
+        c.header('cache-control', `public, max-age=0, must-revalidate, s-maxage=${sMaxAge}`);
     }
 }
 
@@ -103,6 +106,9 @@ export function FeedService(): Hono<{
 
         // 缓存里存的是**游客版**（面向所有人公开的那份）；登录用户/作者要按自己视角算，不吃这份缓存
         if (cached && typeof uid !== 'number') {
+            // ⚠️ 这是最热的路径（KV 命中就直接返回），缓存头必须在这里也设一遍，
+            //    否则游客回首页每次都要等一次 Worker 往返，函数末尾那句 max-age 等于白给
+            applyCacheControl(c, uid, 300, 60);
             return c.json(cached);
         }
 
@@ -115,6 +121,8 @@ export function FeedService(): Hono<{
         const size = await profileAsync(c, 'feed_list_count', () => db.select({ count: count() }).from(feeds).where(where));
 
         if (size[0].count === 0) {
+            // 空列表也走同样的缓存策略，别让空首页每次都要等
+            applyCacheControl(c, uid, 300, 60);
             return c.json({ size: 0, data: [], hasNext: false });
         }
 
@@ -164,7 +172,8 @@ export function FeedService(): Hono<{
             }
         }
 
-        applyCacheControl(c, uid, 300);
+        // 列表开浏览器缓存（60s），详情/adjacent 不开
+        applyCacheControl(c, uid, 300, 60);
 
         return c.json(data);
     });

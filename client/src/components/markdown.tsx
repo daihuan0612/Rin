@@ -26,6 +26,19 @@ function VideoLockIcon() {
   );
 }
 
+/** 把 `/api/img-proxy?url=...` 还原成原始地址（只用于取文件名，不用于加载） */
+function unwrapProxyUrl(url: string) {
+  try {
+    const parsed = new URL(url, window.location.href);
+    if (parsed.pathname === "/api/img-proxy") {
+      return parsed.searchParams.get("url") || url;
+    }
+  } catch {
+    // 解析失败就原样返回
+  }
+  return url;
+}
+
 function VideoPlayer({ children, locked, lockedText, ...props }: any) {
   const [played, setPlayed] = useState(false);
   const [poster, setPoster] = useState<string | null>(null);
@@ -34,7 +47,7 @@ function VideoPlayer({ children, locked, lockedText, ...props }: any) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   // 锁定时把 autoplay 摘掉：正文里写了 <video autoplay> 的话，
   // 静音自动播放会绕过遮罩让画面动起来，"点不动"就名存实亡了。
-  const { autoPlay, src: rawSrc, ...mediaProps } = props;
+  const { autoPlay, src: rawSrc, poster: rawPoster, ...mediaProps } = props;
   /**
    * 外链视频同样走本站代理（2026-10-28）。
    * 上游视频回的是 `Cache-Control: private` + `cf-cache-status: BYPASS`，
@@ -71,6 +84,7 @@ function VideoPlayer({ children, locked, lockedText, ...props }: any) {
       <video
         {...mediaProps}
         src={mediaSrc}
+        poster={proxiedImageUrl(rawPoster)}
         autoPlay={locked ? undefined : autoPlay}
         ref={videoRef}
         className={`max-h-[70vh] w-auto h-auto block${locked ? " video-locked-media" : ""}`}
@@ -675,7 +689,8 @@ export function Markdown({ content }: { content: string }) {
       slidesLocal = Array.from(images)
         .map((image) => {
           const url = image.getAttribute("src") || "";
-          const filename = url.split("/").pop() || "";
+          // 代理地址要还原成原始 URL，否则下载下来的文件名会是一长串 `img-proxy?url=...`
+          const filename = unwrapProxyUrl(url).split("/").pop() || "";
           const alt = image.getAttribute("alt") || "";
           return {
             src: url,

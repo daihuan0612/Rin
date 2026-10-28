@@ -1,3 +1,4 @@
+import { isProxiedMediaHost } from "@rin/api";
 import { client } from "../app/runtime";
 import { encodeBlurhash } from "./blurhash";
 
@@ -86,11 +87,12 @@ export function stripImageUrlMetadata(url?: string | null) {
  * 同一台机器上 Chromium 却能取到）。样式上怎么改都不可能把图变出来。
  *
  * 办法：让服务端去取，浏览器只连本站域名（`/api/img-proxy`）。
- * ⚠️ 白名单必须跟 `server/src/services/image-proxy.ts` 的 `IMAGE_PROXY_HOSTS` 一致，
- *    多一个少一个都会出现"前端指向代理、后端 403"的破图。
+ * ⚠️ 白名单来自 `@rin/api`，跟后端 `server/src/services/image-proxy.ts` 用的是**同一份常量**，
+ *    不会出现"前端指向代理、后端 403"的全站破图。
+ * ⚠️ 校验条件也要跟后端一致：协议、默认端口、无凭据。
+ *    只比对 hostname 的话，`http://` 或带端口的地址会被改写成代理，
+ *    后端必然 400 —— 那就从"只有手机看不到"变成"所有设备都看不到"。
  */
-const IMAGE_PROXY_HOSTS = new Set(["pan.xfl.cc.cd", "xfl.cc.cd"]);
-
 export function proxiedImageUrl(url?: string | null): string | undefined {
   if (!url) {
     return undefined;
@@ -104,10 +106,18 @@ export function proxiedImageUrl(url?: string | null): string | undefined {
     return url;
   }
 
-  if (!IMAGE_PROXY_HOSTS.has(parsed.hostname)) {
+  if (parsed.protocol !== "https:") {
+    return url;
+  }
+  if (parsed.port !== "" || parsed.username || parsed.password) {
+    return url;
+  }
+  if (!isProxiedMediaHost(parsed.hostname)) {
     return url;
   }
 
+  // `#blurhash=…&width=…` 是前端自己的元数据，别编进代理参数里（会让同一张图产生多份缓存）
+  parsed.hash = "";
   return `/api/img-proxy?url=${encodeURIComponent(parsed.toString())}`;
 }
 

@@ -163,6 +163,13 @@ export function StorageService(): Hono {
     return app;
 }
 
+/**
+ * 只有**内容哈希命名**的对象才敢下发 `immutable` 一年。
+ * `images/favicon.png` / `images/originFavicon.png` 这类是固定 key，重新上传会原地覆盖，
+ * 一年 immutable 会让"换了头像/图标"在自己的浏览器里一年都不生效。
+ */
+const CONTENT_HASH_KEY_RE = /(^|\/)[0-9a-f]{40}\.[a-z0-9]+$/i;
+
 export function BlobService(): Hono {
     const app = new Hono();
 
@@ -192,7 +199,13 @@ export function BlobService(): Hono {
              * 所以可以放心用 `immutable` + 一年。要换图必然是换一个新 key。
              */
             const headers = new Headers(response.headers);
-            headers.set("Cache-Control", "public, max-age=31536000, immutable");
+            if (CONTENT_HASH_KEY_RE.test(key)) {
+                headers.set("Cache-Control", "public, max-age=31536000, immutable");
+            } else {
+                headers.set("Cache-Control", "public, max-age=300");
+            }
+            // 上传时的 Content-Type 来自客户端，别让浏览器把它当 HTML 执行
+            headers.set("X-Content-Type-Options", "nosniff");
 
             return new Response(response.body, {
                 status: response.status,

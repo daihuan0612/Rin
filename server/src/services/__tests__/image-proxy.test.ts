@@ -61,6 +61,13 @@ describe("resolveProxyTarget", () => {
             expect(result.url.hostname).toBe("pan.xfl.cc.cd");
         }
     });
+
+    it("rejects custom ports and embedded credentials", () => {
+        expect(resolveProxyTarget("https://pan.xfl.cc.cd:8443/file/a.jpg"))
+            .toMatchObject({ ok: false, status: 400 });
+        expect(resolveProxyTarget("https://user:pass@pan.xfl.cc.cd/file/a.jpg"))
+            .toMatchObject({ ok: false, status: 400 });
+    });
 });
 
 describe("GET /img-proxy", () => {
@@ -165,5 +172,45 @@ describe("GET /img-proxy", () => {
         expect(res.headers.get("content-range")).toBe("bytes 0-1/1000000");
         expect(res.headers.get("accept-ranges")).toBe("bytes");
         expect(res.headers.get("content-type")).toBe("video/mp4");
+    });
+
+    it("passes 416 through instead of turning it into 502", async () => {
+        globalThis.fetch = (async () =>
+            new Response(null, {
+                status: 416,
+                headers: { "content-range": "bytes */20240963" },
+            })) as typeof fetch;
+
+        const res = await createApp().request(
+            `/img-proxy?url=${encodeURIComponent(externalVideo)}`,
+            { headers: { range: "bytes=99999999-" } },
+        );
+
+        expect(res.status).toBe(416);
+        expect(res.headers.get("content-range")).toBe("bytes */20240963");
+    });
+
+    it("accepts octet-stream when the path looks like a real image", async () => {
+        globalThis.fetch = (async () =>
+            new Response(new Uint8Array([1]), {
+                status: 200,
+                headers: { "content-type": "application/octet-stream" },
+            })) as typeof fetch;
+
+        const res = await createApp().request(`/img-proxy?url=${encodeURIComponent(external)}`);
+        expect(res.status).toBe(200);
+    });
+
+    it("still rejects octet-stream for a non-media path", async () => {
+        globalThis.fetch = (async () =>
+            new Response(new Uint8Array([1]), {
+                status: 200,
+                headers: { "content-type": "application/octet-stream" },
+            })) as typeof fetch;
+
+        const res = await createApp().request(
+            `/img-proxy?url=${encodeURIComponent("https://pan.xfl.cc.cd/login")}`,
+        );
+        expect(res.status).toBe(502);
     });
 });
