@@ -15,7 +15,25 @@ const externalVideo = "https://pan.xfl.cc.cd/file/tucao/1784189263473_video_1784
 
 afterEach(() => {
     globalThis.fetch = realFetch;
+    delete (globalThis as { caches?: unknown }).caches;
 });
+
+/** 造一个最小的 Cache API 假实现，用来验证"命中边缘缓存就不再回源" */
+function installFakeCaches() {
+    const store = new Map<string, Response>();
+    (globalThis as { caches?: unknown }).caches = {
+        default: {
+            match: async (request: Request) => {
+                const hit = store.get(request.url);
+                return hit ? hit.clone() : undefined;
+            },
+            put: async (request: Request, response: Response) => {
+                store.set(request.url, response.clone());
+            },
+        },
+    };
+    return store;
+}
 
 describe("resolveProxyTarget", () => {
     it("rejects empty url", () => {
@@ -57,8 +75,8 @@ describe("GET /img-proxy", () => {
 
         expect(res.status).toBe(200);
         expect(res.headers.get("content-type")).toBe("image/jpeg");
-        expect(res.headers.get("cache-control")).toContain("max-age=2592000");
-        expect(res.headers.get("x-rin-image-proxy")).toBe("1");
+        expect(res.headers.get("cache-control")).toContain("max-age=31536000");
+        expect(res.headers.get("x-rin-proxy-cache")).toBe("MISS");
     });
 
     it("refuses to pass through a non-image response", async () => {
@@ -95,6 +113,32 @@ describe("GET /img-proxy", () => {
 
         expect(res.status).toBe(403);
         expect(called).toBe(false);
+    });
+
+    it("writes images into the edge cache and serves later hits without refetching", async () => {
+        const store = installFakeCaches();
+        let calls = 0;
+        globalThis.fetch = (async () => {
+            calls++;
+            return new Response(new Uint8Array([7, 7, 7]), {
+                status: 200,
+                headers: { "content-type": "image/jpeg" },
+            });
+        }) as typeof fetch;
+
+        const app = createApp();
+        const first = await app.request(`/img-proxy?url=${encodeURIComponent(external)}`);
+        expect(first.status).toBe(200);
+        expect(first.headers.get("x-rin-proxy-cache")).toBe("MISS");
+
+        // putCache 是异步写（Worker 里走 waitUntil），等它写完
+        await new Promise((resolve) => setTimeout(resolve, 20));
+        expect(store.size).toBe(1);
+
+        const second = await app.request(`/img-proxy?url=${encodeURIComponent(external)}`);
+        expect(second.status).toBe(200);
+        expect(second.headers.get("x-rin-proxy-cache")).toBe("HIT");
+        expect(calls).toBe(1);
     });
 
     it("proxies video and passes the Range request through", async () => {
