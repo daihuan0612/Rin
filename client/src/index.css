@@ -305,10 +305,10 @@ a.toc-link {
  *   2. `.video-glass` 上面再盖一层带 backdrop-filter 的薄雾 —— 第 1 层失效时兜底。
  */
 .video-locked-media {
-  -webkit-filter: blur(4px) saturate(115%);
-  filter: blur(4px) saturate(115%);
+  -webkit-filter: blur(6px) saturate(115%);
+  filter: blur(6px) saturate(115%);
   /* blur 会把边缘像素往里平均，四周露出一圈白边 —— 稍微放大一点顶满容器 */
-  transform: scale(1.01);
+  transform: scale(1.015);
   /* 点不到底下的播放器：B 站那个播放按钮永远点不着 */
   pointer-events: none;
   user-select: none;
