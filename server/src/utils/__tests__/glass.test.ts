@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'bun:test';
-import { balanceGlassTags, hasGlass, hasOwner, maskGlassPlain, maskGlassTagged, maskGlassText, renderGlass, stripHiddenImages } from '../glass';
+import { balanceGlassTags, hasGlass, hasOwner, maskGlassPlain, maskGlassTagged, maskGlassText, renderGlass } from '../glass';
 
 describe('maskGlassText', () => {
     it('非空白字符全换假字，长度 / 换行 / 空格保留（排版不塌）', () => {
@@ -160,13 +160,6 @@ describe('renderGlass', () => {
             expect(out).not.toContain('秘密');
             expect(out).not.toContain('https');
             expect(out).toContain('的一');
-        });
-
-        it('列表封面：隐藏段里的图不参与提取（否则卡片缩略图就是清晰原图）', () => {
-            expect(stripHiddenImages('[glass]![图](https://x/a.png)[/glass]')).not.toContain('https');
-            const mixed = '![公开](https://x/b.png)\n[glass]![私密](https://x/a.png)[/glass]';
-            expect(stripHiddenImages(mixed)).toContain('https://x/b.png');
-            expect(stripHiddenImages(mixed)).not.toContain('https://x/a.png');
         });
     });
 });

@@ -5,7 +5,7 @@ import { profileAsync } from "../core/server-timing";
 import { feeds, visits, visitStats } from "../db/schema";
 import { HyperLogLog } from "../utils/hyperloglog";
 import { extractImageWithMetadata } from "../utils/image";
-import { balanceGlassTags, hasGlass, hasOwner, maskGlassTagged, renderGlass, stripHiddenImages, type GlassViewer } from "../utils/glass";
+import { balanceGlassTags, hasGlass, hasOwner, maskGlassTagged, renderGlass, type GlassViewer } from "../utils/glass";
 import { deleteOrphanImagesFromText } from "../utils/feed-images";
 import { makeSummary, stripMarkdown } from "../utils/markdown";
 import { syncFeedAISummaryQueueState } from "./feed-ai-summary";
@@ -128,8 +128,9 @@ export function FeedService(): Hono<{
             offset: page_num * limit_num,
             limit: limit_num + 1,
         }))).map(({ content, hashtags, summary, ai_summary, ...other }: any) => {
-            // 封面不能取隐藏段里的图：那是打码的，放到卡片上就是一张清晰原图
-            const avatar = extractImageWithMetadata(stripHiddenImages(content));
+            // 封面就取正文第一张图 —— 打码的图也照用：卡片封面只截中间一小块，
+            // 作者认可这个程度（2026-10-28 明确要求"封面可见无所谓"）
+            const avatar = extractImageWithMetadata(content);
             const plainText = stripMarkdown(maskGlassTagged(content, viewer));
             const taggedSummary = maskGlassTagged(summary, viewer);
             return {

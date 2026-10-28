@@ -10,8 +10,8 @@ function VideoLockIcon() {
   return (
     <svg
       viewBox="0 0 24 24"
-      width="14"
-      height="14"
+      width="1em"
+      height="1em"
       fill="none"
       stroke="currentColor"
       strokeWidth="1.8"
@@ -210,7 +210,11 @@ function MarkdownImage({
   return (
     <span
       className={`relative inline-block max-w-full overflow-hidden ${roundedClass}`}
-      style={{ zoom: scale, aspectRatio }}
+      /**
+       * `zoom` 会把里面所有东西一起缩小（块级图是 0.75），
+       * 那颗「登录后可见」胶囊也会跟着变小 —— 把倍率传给 CSS 让它自己补回来。
+       */
+      style={{ zoom: scale, aspectRatio, "--img-zoom": scale } as React.CSSProperties}
     >
       {blurhash && !loaded ? (
         <canvas

@@ -214,18 +214,6 @@ export function balanceGlassTags(text: string): string {
     return out;
 }
 
-/**
- * 把隐藏段里的图片整段删掉（列表卡片封面用）。
- * ⚠️ 封面是从正文里"取第一张图"，不处理的话打码的图会当上首页缩略图 —— 正文里遮了等于没遮。
- * 这里不按视角分：封面所有人可见，作者自己在首页也不拿它当封面（点进详情页照样能看）。
- */
-export function stripHiddenImages(content: string): string {
-    if (!content) return content;
-    return content.replace(HIDDEN_RE, (_m, _kind: string, inner: string) =>
-        inner.replace(MD_IMAGE_ANY_RE, ""),
-    );
-}
-
 /** 正文里有没有任何一种隐藏段（给"AI 摘要这类二次加工产物"当开关用） */export function hasGlass(content: string): boolean {
     if (!content) return false;
     return /\[glass\][\s\S]*?\[\/glass\]/.test(content);

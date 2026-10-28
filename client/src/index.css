@@ -336,14 +336,18 @@ a.toc-link {
     inset 0 1px 0 rgba(255, 255, 255, 0.85);
 }
 
-/* 遮罩上的小锁 + 提示：这层必须是**清晰**的，所以不能继承上面的 filter */
-.video-glass-badge {
+/* 遮罩上的小锁 + 提示：这层必须是**清晰**的，所以不能继承上面的 filter。
+   视频和图片共用这一套 —— 两处各写一份的话尺寸早晚走偏。 */
+.video-glass-badge,
+.glass-img-badge {
   display: inline-flex;
   align-items: center;
   gap: 0.45em;
   padding: 0.5em 0.95em;
   border-radius: 999px;
-  font-size: 0.82rem;
+  /* 图片那颗被外层 `zoom` 缩过（块级图 0.75），按倍率补回来才能跟视频那颗一样大。
+     其余尺寸都用 em，会跟着这个字号自动对齐。 */
+  font-size: calc(0.82rem / var(--img-zoom, 1));
   line-height: 1;
   color: rgba(38, 50, 74, 0.86);
   background: rgba(255, 255, 255, 0.8);
@@ -365,7 +369,8 @@ a.toc-link {
     inset 0 1px 0 rgba(255, 255, 255, 0.3);
 }
 
-[data-color-mode="dark"] .video-glass-badge {
+[data-color-mode="dark"] .video-glass-badge,
+[data-color-mode="dark"] .glass-img-badge {
   color: rgba(226, 234, 250, 0.9);
   background: rgba(26, 32, 46, 0.75);
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.14), 0 0 0 1px rgba(150, 176, 214, 0.3),
@@ -433,36 +438,15 @@ a.toc-link {
   box-shadow: inset 0 0 0 1px rgba(150, 176, 214, 0.3);
 }
 
-/* 图片上那颗小胶囊：跟视频那块同一个长相，位置也居中 */
+/* 图片那颗额外需要自己定位（视频那颗靠父级 `.video-glass` 的 flex 居中） */
 .glass-img-badge {
   position: absolute;
   left: 50%;
   top: 50%;
   transform: translate(-50%, -50%);
   z-index: 2;
-  display: inline-flex;
-  align-items: center;
-  gap: 0.4em;
-  padding: 0.45em 0.85em;
-  border-radius: 999px;
-  font-size: 0.8rem;
-  line-height: 1;
   white-space: nowrap;
-  color: rgba(38, 50, 74, 0.86);
-  background: rgba(255, 255, 255, 0.82);
-  -webkit-backdrop-filter: blur(10px) saturate(160%);
-  backdrop-filter: blur(10px) saturate(160%);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.9), 0 0 0 1px rgba(176, 198, 232, 0.45),
-    0 2px 8px -2px rgba(70, 100, 160, 0.25);
   pointer-events: none;
-  user-select: none;
-}
-
-[data-color-mode="dark"] .glass-img-badge {
-  color: rgba(226, 234, 250, 0.9);
-  background: rgba(26, 32, 46, 0.78);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.14), 0 0 0 1px rgba(150, 176, 214, 0.3),
-    0 2px 8px -2px rgba(0, 0, 0, 0.5);
 }
 
 /* 作者视角（`.self`）和登录读者视角（`.member`）：原文，全部还原成正常文字
