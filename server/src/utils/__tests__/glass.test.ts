@@ -101,6 +101,49 @@ describe('renderGlass', () => {
         expect(renderGlass('普通正文', 'guest')).toBe('普通正文');
         expect(renderGlass('', 'guest')).toBe('');
     });
+
+    describe('隐藏段里的图片', () => {
+        const MD = '[glass]秘密文字\n![截图](https://x/a.png)[/glass]';
+
+        it('游客：图片给模糊版（带锁定类），图片以外的文字仍是假字', () => {
+            const out = renderGlass(MD, 'guest');
+            expect(out).toContain('<img class="glass-img glass-img-masked" src="https://x/a.png"');
+            // 文字部分一个字都不能露
+            expect(out).not.toContain('秘密文字');
+            expect(out).toContain('的一是');
+        });
+
+        it('作者：原图和原文都给', () => {
+            const out = renderGlass(MD, 'owner');
+            expect(out).toContain('<img class="glass-img" src="https://x/a.png"');
+            expect(out).not.toContain('glass-img-masked');
+            expect(out).toContain('秘密文字');
+        });
+
+        it('`[owner]` 段里的图对注册读者也要遮', () => {
+            const out = renderGlass('[owner]![图](https://x/b.png)[/owner]', 'member');
+            expect(out).toContain('glass-img-masked');
+            expect(out).toContain('glass-owner');
+        });
+
+        it('`[glass]` 段里的图对注册读者不遮', () => {
+            const out = renderGlass('[glass]![图](https://x/c.png)[/glass]', 'member');
+            expect(out).toContain('<img class="glass-img"');
+            expect(out).not.toContain('glass-img-masked');
+        });
+
+        it('地址里的 & 会转义成 &amp;（HTML 属性安全）', () => {
+            const out = renderGlass('[glass]![图](https://x/d.png?a=1&b=2)[/glass]', 'guest');
+            expect(out).toContain('src="https://x/d.png?a=1&amp;b=2"');
+        });
+
+        it('纯文字的隐藏段输出结构不变（不能带出 glass-img 相关的东西）', () => {
+            const out = renderGlass('[glass]只有字[/glass]', 'guest');
+            expect(out).toContain('<span class="glass-text">');
+            expect(out).not.toContain('<img');
+            expect(out).not.toContain('glass-img');
+        });
+    });
 });
 
 describe('maskGlassPlain', () => {

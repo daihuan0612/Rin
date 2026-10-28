@@ -372,6 +372,50 @@ a.toc-link {
     0 2px 8px -2px rgba(0, 0, 0, 0.5);
 }
 
+/*
+ * 图片打码（未登录）—— 2026-10-28
+ *
+ * 跟文字打码同一套机制：把图放进 `[glass]` / `[owner]` 段里就行，服务端按视角决定
+ * 给不给 `glass-img-masked` 这个类，前端只负责长相。
+ *   - 想遮的图：让 `[glass]` 段只包住那一张图
+ *   - 不想遮的图：放在段外
+ * 模糊值跟视频一致（6px），三处观感统一。白雾压得很薄：图片通常比视频小，雾一厚就整块发白。
+ */
+.glass-img-masked {
+  -webkit-filter: blur(6px) saturate(115%);
+  filter: blur(6px) saturate(115%);
+  transform: scale(1.02);
+  pointer-events: none;
+  user-select: none;
+}
+
+.glass-img-veil {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  display: block;
+  border-radius: inherit;
+  pointer-events: none;
+  background: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.2) 0%,
+    rgba(206, 226, 254, 0.12) 38%,
+    rgba(233, 244, 255, 0.16) 66%,
+    rgba(255, 255, 255, 0.24) 100%
+  );
+  box-shadow: inset 0 0 0 1px rgba(176, 198, 232, 0.45);
+}
+
+[data-color-mode="dark"] .glass-img-veil {
+  background: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.1) 0%,
+    rgba(196, 220, 255, 0.06) 40%,
+    rgba(255, 255, 255, 0.09) 100%
+  );
+  box-shadow: inset 0 0 0 1px rgba(150, 176, 214, 0.3);
+}
+
 /* 作者视角（`.self`）和登录读者视角（`.member`）：原文，全部还原成正常文字
  * —— 作者侧正文里零提示；读者侧也是普通正文（"这一整段是给我看的"已经由权限说明了） */
 .glass.self,

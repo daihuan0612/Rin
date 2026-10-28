@@ -67,6 +67,46 @@ function maskedSpan(inner: string, ownerOnly: boolean): string {
     return `<span class="${cls}" title="${title}"><span class="glass-text">${maskGlassText(inner)}</span></span>`;
 }
 
+/** 隐藏段里的 markdown 图片：`![说明](地址)` */
+const MD_IMAGE_RE = /!\[([^\]]*)\]\(([^)\s]+)\)/g;
+const HAS_MD_IMAGE_RE = /!\[[^\]]*\]\([^)\s]+\)/;
+
+const escapeAttr = (s: string) => escapeHtml(s).replace(/"/g, "&quot;");
+
+/**
+ * 隐藏段里的内容渲染。
+ *
+ * 纯文字：跟以前**逐字节一致**（`<span class="glass-text">假字</span>` 那套，29 项测试锁着）。
+ *
+ * 含图片：图片必须给成真正的 `<img>` —— 否则 markdown 解析器不会再解析 `<span>` 里的图片语法，
+ * 连作者自己看到的都只是一行 `![图](地址)`（这是改造前的老毛病）。
+ * 游客档保留地址但打上 `glass-img-masked`，由前端糊一层，跟视频打码同一个强度；
+ * **图片以外的文字照旧换假字**，原文一个字都不出服务端。
+ */
+function renderHiddenContent(inner: string, canSee: boolean): string {
+    if (!HAS_MD_IMAGE_RE.test(inner)) {
+        return canSee ? escapeHtml(inner) : maskGlassText(inner);
+    }
+
+    const pieces: string[] = [];
+    let last = 0;
+    for (const match of inner.matchAll(MD_IMAGE_RE)) {
+        const at = match.index ?? 0;
+        const text = inner.slice(last, at);
+        if (text) pieces.push(canSee ? escapeHtml(text) : maskGlassText(text));
+
+        const [, alt, url] = match;
+        pieces.push(
+            `<img class="glass-img${canSee ? "" : " glass-img-masked"}" src="${escapeAttr(url)}" alt="${escapeAttr(alt)}" />`,
+        );
+        last = at + match[0].length;
+    }
+
+    const tail = inner.slice(last);
+    if (tail) pieces.push(canSee ? escapeHtml(tail) : maskGlassText(tail));
+    return pieces.join("");
+}
+
 /**
  * 渲染用：按视角决定每段看原文还是假字。
  * - `owner` 原文套 `.glass.self` —— 作者看到的是普通正文，零提示；编辑器靠这个类把标记还原回去
@@ -77,14 +117,22 @@ export function renderGlass(content: string, viewer: GlassViewer): string {
     return content.replace(HIDDEN_RE, (_m, kind: string, inner: string) => {
         const ownerOnly = kind === "owner";
         if (viewer === "owner") {
+            const body = renderHiddenContent(inner, true);
             return ownerOnly
-                ? `<span class="owner self">${escapeHtml(inner)}</span>`
-                : `<span class="glass self">${escapeHtml(inner)}</span>`;
+                ? `<span class="owner self">${body}</span>`
+                : `<span class="glass self">${body}</span>`;
         }
         if (viewer === "member" && !ownerOnly) {
-            return `<span class="glass member">${escapeHtml(inner)}</span>`;
+            return `<span class="glass member">${renderHiddenContent(inner, true)}</span>`;
         }
-        return maskedSpan(inner, ownerOnly);
+        // 游客：纯文字走老格式（`<span class="glass-text">` 这层样式和测试都依赖），
+        // 含图片时把图片单独放出来（打上锁定类），文字部分照样是假字
+        if (!HAS_MD_IMAGE_RE.test(inner)) {
+            return maskedSpan(inner, ownerOnly);
+        }
+        const cls = ownerOnly ? "glass glass-owner" : "glass";
+        const title = ownerOnly ? "此处内容仅作者可见" : "此处内容已隐藏（注册后可读）";
+        return `<span class="${cls}" title="${title}">${renderHiddenContent(inner, false)}</span>`;
     });
 }
 

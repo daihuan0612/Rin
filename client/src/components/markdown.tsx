@@ -163,6 +163,11 @@ function MarkdownImage({
   scale: string;
   className?: string;
 }) {
+  /**
+   * 图片打码跟文字走同一套：服务端按视角决定给不给 `glass-img-masked` 这个类，
+   * 前端只负责长相（模糊 + 一层薄雾），自己不再判断登录态。
+   */
+  const masked = Boolean(className?.includes("glass-img-masked"));
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const { src: cleanSrc, blurhash, width, height } = parseImageUrlMetadata(src);
   const { failed, imageRef, loaded, onError, onLoad } = useImageLoadState(cleanSrc);
@@ -198,15 +203,22 @@ function MarkdownImage({
         alt={alt}
         width={width}
         height={height}
-        onClick={() => {
-          show(cleanSrc);
-        }}
+        onClick={
+          masked
+            ? undefined
+            : () => {
+                show(cleanSrc);
+              }
+        }
         onLoad={onLoad}
         onError={onError}
-        className={`mx-auto max-w-full cursor-zoom-in transition-opacity ${roundedClass} ${className || ""} ${
+        className={`mx-auto max-w-full transition-opacity ${roundedClass} ${
+          masked ? "cursor-default" : "cursor-zoom-in"
+        } ${className || ""} ${
           blurhash && (!loaded || failed) ? "opacity-0" : "opacity-100"
         }`}
       />
+      {masked ? <span className="glass-img-veil" aria-hidden="true" /> : null}
     </span>
   );
 }
@@ -600,7 +612,8 @@ export function Markdown({ content }: { content: string }) {
     if (!slidesLocal) {
       const parent = document.getElementsByClassName("toc-content")[0];
       if (!parent) return;
-      const images = parent.querySelectorAll("img");
+      // ⚠️ 必须排除被蒙住的图：否则游客点开任意一张别的图、左右翻页就能看到原图
+      const images = parent.querySelectorAll("img:not(.glass-img-masked)");
       slidesLocal = Array.from(images)
         .map((image) => {
           const url = image.getAttribute("src") || "";
