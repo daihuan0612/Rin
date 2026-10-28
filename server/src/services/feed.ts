@@ -49,12 +49,18 @@ function gateAiSummary(content: string, aiSummary: string, admin: boolean, uid: 
 /**
  * 带隐藏段的响应**不能进公共缓存**：登录用户拿到的是原文，一旦标成 `public`，
  * CDN 就会把那份原文发给游客。游客才允许 `public`。
+ *
+ * 2026-10-28：游客档从 `max-age=0, must-revalidate` 改成
+ * `max-age=60, stale-while-revalidate`。
+ * 用户反馈"每次回到首页都要在等着加载"——`must-revalidate` 会让浏览器每进一次列表
+ * 都必须先等请求回来才敢渲染。改成 60 秒内直接用本地副本、过期后先渲染旧内容再后台刷新，
+ * 回首页就是瞬开。登录档仍是 `private, no-store`，不受影响。
  */
 function applyCacheControl(c: any, uid: number | undefined, sMaxAge: number) {
     if (typeof uid === 'number') {
         c.header('cache-control', 'private, no-store');
     } else {
-        c.header('cache-control', `public, max-age=0, must-revalidate, s-maxage=${sMaxAge}`);
+        c.header('cache-control', `public, max-age=60, s-maxage=${sMaxAge}, stale-while-revalidate=86400`);
     }
 }
 

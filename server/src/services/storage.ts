@@ -181,9 +181,22 @@ export function BlobService(): Hono {
                 return c.text("Not found", 404);
             }
 
+            /**
+             * 2026-10-28：给 blob 补长缓存。
+             *
+             * 背景（用户："每次回到首页都要在等着加载，而且我的图片是本站的图库"）：
+             * 之前这里把存储层的响应头原样透传，R2 对象没带 `Cache-Control`，
+             * 浏览器（尤其 iOS Safari）拿不到明确的缓存指令 ⇒ 每次进首页都可能重新拉 1.9MB 的 PNG。
+             *
+             * blob 的 key 是**内容哈希**（`images/<sha1>.png`），同一个 key 的内容永远不会变，
+             * 所以可以放心用 `immutable` + 一年。要换图必然是换一个新 key。
+             */
+            const headers = new Headers(response.headers);
+            headers.set("Cache-Control", "public, max-age=31536000, immutable");
+
             return new Response(response.body, {
                 status: response.status,
-                headers: response.headers,
+                headers,
             });
         } catch (error) {
             console.error("Blob fetch failed:", error);
