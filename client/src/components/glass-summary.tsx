@@ -77,14 +77,39 @@ export function splitGlassSegments(text: string): GlassSegment[] {
     return segments;
 }
 
+/**
+ * 把文本里的 `\n` 换成真正的 `<br>` —— 2026-10-29
+ *
+ * ⚠️ 不能只靠外层的 `whitespace-pre-line`：摘要容器同时挂着 `line-clamp-*`
+ * （`display: -webkit-box`），那个布局下换行符会被吃掉，段落就挤成一大坨、
+ * 缩进也跟着没了。表现就是"同一页里有的摘要分段、有的不分段，文字对不齐"。
+ * 换成 `<br>` 后不依赖任何 CSS 就能断行。
+ */
+function withLineBreaks(text: string, keyPrefix: string): ReactNode {
+    if (!text.includes("\n")) {
+        return text;
+    }
+
+    const parts: ReactNode[] = [];
+    text.split("\n").forEach((line, index) => {
+        if (index > 0) {
+            parts.push(<br key={`${keyPrefix}-br-${index}`} />);
+        }
+        if (line) {
+            parts.push(line);
+        }
+    });
+    return parts;
+}
+
 export function GlassSummary({ text }: { text: string }) {
     const nodes: ReactNode[] = splitGlassSegments(text).map((segment, index) =>
         segment.masked ? (
             <span key={index} className={segment.ownerOnly ? "glass glass-owner" : "glass"}>
-                <span className="glass-text">{segment.text}</span>
+                <span className="glass-text">{withLineBreaks(segment.text, `m${index}`)}</span>
             </span>
         ) : (
-            <span key={index}>{segment.text}</span>
+            <span key={index}>{withLineBreaks(segment.text, `p${index}`)}</span>
         ),
     );
 

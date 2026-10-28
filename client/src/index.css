@@ -513,6 +513,17 @@ a.toc-link {
  * `padding: 0.12em 0.62em` 时上下会顶到邻行，两行摘要的罩子会叠在一起。
  * ⚠️ 改的只是几何尺寸，观感（磨砂罩子 + 雾里有字）跟正文一致。
  */
+/* 摘要两端对齐 —— 2026-10-29
+ * 用户指出"字尾（右边缘）不齐"。默认左对齐时中文每行末尾必然参差，
+ * 因为一个整字放不下就换行，剩下的空当最大有一个字宽。
+ * `inter-ideograph` 让中文字间距参与拉伸（英文/数字尽量不动），最后一行保持左对齐。
+ */
+.glass-summary {
+  text-align: justify;
+  text-justify: inter-ideograph;
+  text-align-last: left;
+}
+
 .glass-summary .glass {
   padding: 0.04em 0.62em;
   border-radius: 0.6em;
