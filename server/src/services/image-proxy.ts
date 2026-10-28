@@ -107,20 +107,6 @@ function buildCacheKey(url: string) {
     return new Request(`${CACHE_API_PREFIX}${encodeURIComponent(url)}`, { method: "GET" });
 }
 
-/** `waitUntil` 在非 Worker 环境取不到，取不到就同步写 */
-function putCache(c: AppContext, key: Request, response: Response) {
-    const cache = getEdgeCache();
-    if (!cache) return;
-    const write = cache.put(key, response).catch((error) => {
-        console.error("Edge cache put failed:", error);
-    });
-    try {
-        c.executionCtx.waitUntil(write);
-    } catch {
-        // 没有执行上下文（本地测试）就让它自己跑完
-    }
-}
-
 export function ImageProxyService(): Hono {
     const app = new Hono();
 
@@ -185,22 +171,35 @@ export function ImageProxyService(): Hono {
             }
 
             /**
-             * 图片整份读进内存再决定：存一份进边缘缓存，回一份给浏览器。
-             * ⚠️ 视频不能走这条路 —— 20MB 缓冲 + 每次播放几十个 Range 请求，
-             *    内存和 CPU 都吃不消，而且 206 的分片内容本来也不能单独整存。
+             * 图片先克隆一份丢给边缘缓存（`clone()` 会 tee 出两条流，客户端那条照常流式返回，
+             * 不受缓存写入拖累），视频不参与 —— 20MB 缓冲 + 每次播放几十个 Range 请求，扛不住，
+             * 而且 206 的分片本来就存不了。
+             *
+             * ⚠️ 这里**必须 `await`**，不要塞 `waitUntil`：早先试过 waitUntil，
+             *    部署后连测三次都是 MISS，缓存压根没落地（请求结束后写入被掐了）。
              */
             const cacheable = !range && upstream.status === 200 && contentType.startsWith("image/");
-            if (cacheable) {
-                const buffer = await upstream.arrayBuffer();
-                putCache(c, cacheKey, new Response(buffer, { status: 200, headers: new Headers(headers) }));
-                return new Response(buffer, { status: 200, headers });
-            }
-
-            // 206 必须原样带回去，否则播放器拿不到这一段的 Content-Range 会判定失败
-            return new Response(upstream.body, {
+            const response = new Response(upstream.body, {
+                // 206 必须原样带回去，否则播放器拿不到这一段的 Content-Range 会判定失败
                 status: upstream.status === 206 ? 206 : 200,
                 headers,
             });
+
+            if (!cacheable || !edgeCache) {
+                return response;
+            }
+
+            let storeState = "stored";
+            try {
+                await edgeCache.put(cacheKey, response.clone());
+            } catch (error) {
+                storeState = `failed: ${String((error as Error)?.message || error).slice(0, 80)}`;
+                console.error("Edge cache put failed:", error);
+            }
+
+            const outHeaders = new Headers(response.headers);
+            outHeaders.set("X-Rin-Proxy-Store", storeState);
+            return new Response(response.body, { status: response.status, headers: outHeaders });
         } catch (error) {
             console.error("Media proxy failed:", error);
             return c.text("Media proxy failed", 502);
