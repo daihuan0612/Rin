@@ -142,6 +142,14 @@ describe('renderGlass', () => {
             expect(out).toContain('<span class="glass-text">');
             expect(out).not.toContain('<img');
             expect(out).not.toContain('glass-img');
+            expect(out).not.toContain('glass-with-image');
+        });
+
+        it('含图片的游客段要挂 glass-with-image（前端靠它把文字的玻璃壳去掉，否则图片四周露白边）', () => {
+            const out = renderGlass('[glass]![图](https://x/e.png)[/glass]', 'guest');
+            expect(out).toContain('glass-with-image');
+            // 作者/读者用的是 .glass.self / .glass.member，本来就没有壳，不需要这个类
+            expect(renderGlass('[glass]![图](https://x/e.png)[/glass]', 'owner')).not.toContain('glass-with-image');
         });
     });
 });

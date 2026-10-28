@@ -168,11 +168,33 @@ function MarkdownImage({
    * 前端只负责长相（模糊 + 一层薄雾），自己不再判断登录态。
    */
   const masked = Boolean(className?.includes("glass-img-masked"));
+  const { t } = useTranslation();
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const { src: cleanSrc, blurhash, width, height } = parseImageUrlMetadata(src);
   const { failed, imageRef, loaded, onError, onLoad } = useImageLoadState(cleanSrc);
   const roundedClass = rounded ? "rounded-xl" : "";
   const aspectRatio = width && height ? `${width} / ${height}` : undefined;
+
+  /**
+   * 模糊半径按图片**实际显示宽度**算，不用固定像素。
+   * 固定像素在越大的图上相对越轻 —— 同一张图 332 宽时 6px 够糊，铺满 1200 宽就几乎看不出来了。
+   * 按宽度的 2.2% 取（下限 6px、上限 28px），大小图观感才一致。
+   */
+  const [blurPx, setBlurPx] = useState(6);
+  useEffect(() => {
+    if (!masked) return;
+    const el = imageRef.current;
+    if (!el) return;
+    const update = () => {
+      const width = el.clientWidth;
+      if (!width) return;
+      setBlurPx(Math.min(28, Math.max(6, Math.round(width * 0.022))));
+    };
+    update();
+    const observer = new ResizeObserver(update);
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [masked, loaded, imageRef]);
 
   useEffect(() => {
     if (!blurhash || !canvasRef.current) {
@@ -212,6 +234,7 @@ function MarkdownImage({
         }
         onLoad={onLoad}
         onError={onError}
+        style={masked ? { filter: `blur(${blurPx}px) saturate(115%)` } : undefined}
         className={`mx-auto max-w-full transition-opacity ${roundedClass} ${
           masked ? "cursor-default" : "cursor-zoom-in"
         } ${className || ""} ${
@@ -219,6 +242,12 @@ function MarkdownImage({
         }`}
       />
       {masked ? <span className="glass-img-veil" aria-hidden="true" /> : null}
+      {masked ? (
+        <span className="glass-img-badge">
+          <VideoLockIcon />
+          {t("markdown.video_locked")}
+        </span>
+      ) : null}
     </span>
   );
 }

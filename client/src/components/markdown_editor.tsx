@@ -517,6 +517,47 @@ export function MarkdownEditor({ content, setContent, placeholder = "> Write you
     );
   };
 
+  /**
+   * 图片打码：把图片包进 `[glass]` 段 —— 跟文字打码是同一个机制，这里只是替你把位置找准。
+   * 不用精确拖选（拖漏一个感叹号或右括号，图片就变回一段文字了）：
+   * - 选区本身就是一行完整图片 ⇒ 直接包；
+   * - 光标停在图片那一行 ⇒ 自动选中整行再包；
+   * - 其它情况 ⇒ 提示先选中图片，免得把标记插到随便什么地方。
+   */
+  const maskImage = () => {
+    const editorState = getEditorAndSelection();
+    if (!editorState) return;
+
+    const { editorInstance, model, selection } = editorState;
+    const IMAGE_LINE_RE = /^\s*!\[[^\]]*\]\([^)\s]+\)\s*$/;
+
+    const selectedText = model.getValueInRange(selection).trim();
+    if (IMAGE_LINE_RE.test(selectedText)) {
+      if (/\[(glass|owner)\]/.test(selectedText)) {
+        showAlert(t("markdown_editor.toolbar.image_glass_already"));
+        return;
+      }
+      wrapSelection("[glass]", "[/glass]", "");
+      return;
+    }
+
+    const lineNumber = selection.startLineNumber;
+    const lineContent = model.getLineContent(lineNumber);
+    if (IMAGE_LINE_RE.test(lineContent)) {
+      if (/\[(glass|owner)\]/.test(lineContent)) {
+        showAlert(t("markdown_editor.toolbar.image_glass_already"));
+        return;
+      }
+      editorInstance.setSelection(
+        new Selection(lineNumber, 1, lineNumber, lineContent.length + 1),
+      );
+      wrapSelection("[glass]", "[/glass]", "");
+      return;
+    }
+
+    showAlert(t("markdown_editor.toolbar.image_glass_empty"));
+  };
+
   const markdownActions = [
     { key: "heading", icon: "ri-heading", label: t("markdown_editor.toolbar.heading"), onClick: formatHeading },
     { key: "indent", icon: "ri-indent-increase", label: t("markdown_editor.toolbar.indent"), onClick: formatIndent },
@@ -529,6 +570,7 @@ export function MarkdownEditor({ content, setContent, placeholder = "> Write you
     { key: "glass-off", icon: "ri-eye-line", label: t("markdown_editor.toolbar.glass_off"), onClick: unwrapHidden },
     { key: "link", icon: "ri-link", label: t("markdown_editor.toolbar.link"), onClick: insertLink },
     { key: "image", icon: "ri-image-line", label: t("markdown_editor.toolbar.image"), onClick: insertMarkdownImage },
+    { key: "image-glass", icon: "ri-image-circle-line", label: t("markdown_editor.toolbar.image_glass"), onClick: maskImage },
     { key: "video", icon: "ri-video-line", label: t("markdown_editor.toolbar.insert_video"), onClick: openVideoDialog },
     { key: "download", icon: "ri-download-line", label: t("markdown_editor.toolbar.insert_download"), onClick: openDownloadDialog },
     { key: "quote", icon: "ri-double-quotes-l", label: t("markdown_editor.toolbar.quote"), onClick: formatQuote },

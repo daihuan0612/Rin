@@ -126,11 +126,13 @@ export function renderGlass(content: string, viewer: GlassViewer): string {
             return `<span class="glass member">${renderHiddenContent(inner, true)}</span>`;
         }
         // 游客：纯文字走老格式（`<span class="glass-text">` 这层样式和测试都依赖），
-        // 含图片时把图片单独放出来（打上锁定类），文字部分照样是假字
+        // 含图片时把图片单独放出来（打上锁定类），文字部分照样是假字。
+        // ⚠️ 含图片的段要额外挂 `glass-with-image`：`.glass` 那套背景/内边距/backdrop 是给文字做磨砂玻璃壳的，
+        //    套到图片上会在四周留一圈白边、还会把已经糊过的图再糊一层（前端 index.css 里把壳重置掉）。
         if (!HAS_MD_IMAGE_RE.test(inner)) {
             return maskedSpan(inner, ownerOnly);
         }
-        const cls = ownerOnly ? "glass glass-owner" : "glass";
+        const cls = ownerOnly ? "glass glass-owner glass-with-image" : "glass glass-with-image";
         const title = ownerOnly ? "此处内容仅作者可见" : "此处内容已隐藏（注册后可读）";
         return `<span class="${cls}" title="${title}">${renderHiddenContent(inner, false)}</span>`;
     });

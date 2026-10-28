@@ -389,6 +389,23 @@ a.toc-link {
   user-select: none;
 }
 
+/*
+ * 隐藏段里**含图片**时，容器不再套文字那套磨砂玻璃壳。
+ * `.glass` 的背景渐变 + 内边距 + 圆角 + 14px 的 backdrop-filter 是为了让"假字"看着像磨砂玻璃，
+ * 套到图片上会在四周留一圈白边（内边距+背景露出来的那块），还会把已经 6px 的图再糊一层。
+ * 图片自己的 `.glass-img-masked` + `.glass-img-veil` 已经够表达"这张被遮了"。
+ */
+.glass.glass-with-image {
+  padding: 0;
+  background: none;
+  box-shadow: none;
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+  border-radius: 0;
+  text-shadow: none;
+  letter-spacing: normal;
+}
+
 .glass-img-veil {
   position: absolute;
   inset: 0;
@@ -414,6 +431,38 @@ a.toc-link {
     rgba(255, 255, 255, 0.09) 100%
   );
   box-shadow: inset 0 0 0 1px rgba(150, 176, 214, 0.3);
+}
+
+/* 图片上那颗小胶囊：跟视频那块同一个长相，位置也居中 */
+.glass-img-badge {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 2;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4em;
+  padding: 0.45em 0.85em;
+  border-radius: 999px;
+  font-size: 0.8rem;
+  line-height: 1;
+  white-space: nowrap;
+  color: rgba(38, 50, 74, 0.86);
+  background: rgba(255, 255, 255, 0.82);
+  -webkit-backdrop-filter: blur(10px) saturate(160%);
+  backdrop-filter: blur(10px) saturate(160%);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.9), 0 0 0 1px rgba(176, 198, 232, 0.45),
+    0 2px 8px -2px rgba(70, 100, 160, 0.25);
+  pointer-events: none;
+  user-select: none;
+}
+
+[data-color-mode="dark"] .glass-img-badge {
+  color: rgba(226, 234, 250, 0.9);
+  background: rgba(26, 32, 46, 0.78);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.14), 0 0 0 1px rgba(150, 176, 214, 0.3),
+    0 2px 8px -2px rgba(0, 0, 0, 0.5);
 }
 
 /* 作者视角（`.self`）和登录读者视角（`.member`）：原文，全部还原成正常文字
