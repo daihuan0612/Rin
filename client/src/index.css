@@ -409,6 +409,18 @@ a.toc-link {
   border-radius: 0;
   text-shadow: none;
   letter-spacing: normal;
+  /* 图片通常独占一段 */
+  display: block;
+}
+
+/*
+ * ⚠️ `.glass::after` 是给文字做的那层斜向反光。
+ * `.glass` 是 `display: inline`，行内盒的"高度"只按一行字算（约 20px），
+ * 于是 `inset: 0` 的反光层被压成一条横贯全宽的白带，糊在图片正中间。
+ * 含图片的段直接把它关掉；图片自己的 `.glass-img-veil` 已经够表达"这里被罩住了"。
+ */
+.glass.glass-with-image::after {
+  content: none;
 }
 
 .glass-img-veil {
