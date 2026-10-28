@@ -168,6 +168,9 @@
   "draft": "草稿",
   "draft_bin": "草稿箱",
   "edit": "编辑",
+  "markdown": {
+    "video_locked": "登录后可见"
+  },
   "markdown_editor": {
     "placeholder": {
       "bold": "加粗文字",

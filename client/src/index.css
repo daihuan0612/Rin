@@ -294,6 +294,84 @@ a.toc-link {
   color: rgba(226, 234, 250, 0.6);
 }
 
+/*
+ * 视频打码（游客 / 未登录）—— 2026-10-28
+ *
+ * 目标观感「似透非透」：看得出这儿有个视频、有明暗和色块，但内容一个都认不出。
+ * 诀窍是**反着调**：模糊要重、白雾要薄。白雾一厚就变成一块白板，就不"隐约"了。
+ *
+ * 两层保险（跨域 iframe 的模糊在不同内核下表现不一致）：
+ *   1. `.video-locked-media` 直接给 iframe / video / 封面截图加 filter —— 主力；
+ *   2. `.video-glass` 上面再盖一层带 backdrop-filter 的薄雾 —— 第 1 层失效时兜底。
+ */
+.video-locked-media {
+  -webkit-filter: blur(4px) saturate(115%);
+  filter: blur(4px) saturate(115%);
+  /* blur 会把边缘像素往里平均，四周露出一圈白边 —— 稍微放大一点顶满容器 */
+  transform: scale(1.01);
+  /* 点不到底下的播放器：B 站那个播放按钮永远点不着 */
+  pointer-events: none;
+  user-select: none;
+}
+
+.video-glass {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: inherit;
+  /* 薄雾：只提亮一点点，保留底下画面的明暗与色彩倾向 */
+  background: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.2) 0%,
+    rgba(206, 226, 254, 0.12) 38%,
+    rgba(233, 244, 255, 0.16) 66%,
+    rgba(255, 255, 255, 0.24) 100%
+  );
+  -webkit-backdrop-filter: blur(1px) saturate(130%);
+  backdrop-filter: blur(1px) saturate(130%);
+  box-shadow: inset 0 0 0 1px rgba(176, 198, 232, 0.45),
+    inset 0 1px 0 rgba(255, 255, 255, 0.85);
+}
+
+/* 遮罩上的小锁 + 提示：这层必须是**清晰**的，所以不能继承上面的 filter */
+.video-glass-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45em;
+  padding: 0.5em 0.95em;
+  border-radius: 999px;
+  font-size: 0.82rem;
+  line-height: 1;
+  color: rgba(38, 50, 74, 0.86);
+  background: rgba(255, 255, 255, 0.8);
+  -webkit-backdrop-filter: blur(10px) saturate(160%);
+  backdrop-filter: blur(10px) saturate(160%);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.9), 0 0 0 1px rgba(176, 198, 232, 0.45),
+    0 2px 8px -2px rgba(70, 100, 160, 0.25);
+  user-select: none;
+}
+
+[data-color-mode="dark"] .video-glass {
+  background: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.1) 0%,
+    rgba(196, 220, 255, 0.06) 40%,
+    rgba(255, 255, 255, 0.09) 100%
+  );
+  box-shadow: inset 0 0 0 1px rgba(150, 176, 214, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.3);
+}
+
+[data-color-mode="dark"] .video-glass-badge {
+  color: rgba(226, 234, 250, 0.9);
+  background: rgba(26, 32, 46, 0.75);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.14), 0 0 0 1px rgba(150, 176, 214, 0.3),
+    0 2px 8px -2px rgba(0, 0, 0, 0.5);
+}
+
 /* 作者视角（`.self`）和登录读者视角（`.member`）：原文，全部还原成正常文字
  * —— 作者侧正文里零提示；读者侧也是普通正文（"这一整段是给我看的"已经由权限说明了） */
 .glass.self,

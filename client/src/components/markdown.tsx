@@ -1,17 +1,44 @@
 import "katex/dist/katex.min.css";
-import React, { cloneElement, isValidElement, useEffect, useMemo, useRef, useState } from "react";
+import React, { cloneElement, isValidElement, useContext, useEffect, useMemo, useRef, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
 
-function VideoPlayer({ children, ...props }: any) {
+/**
+ * 游客可见的锁图标（内联 SVG，不用图标字体/emoji）。
+ */
+function VideoLockIcon() {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      width="14"
+      height="14"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+      focusable="false"
+    >
+      <rect x="4" y="10.5" width="16" height="10.5" rx="2.5" />
+      <path d="M8 10.5V7.5a4 4 0 0 1 8 0v3" />
+    </svg>
+  );
+}
+
+function VideoPlayer({ children, locked, lockedText, ...props }: any) {
   const [played, setPlayed] = useState(false);
   const [poster, setPoster] = useState<string | null>(null);
   const [ready, setReady] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  // 锁定时把 autoplay 摘掉：正文里写了 <video autoplay> 的话，
+  // 静音自动播放会绕过遮罩让画面动起来，"点不动"就名存实亡了。
+  const { autoPlay, ...mediaProps } = props;
   return (
-    <div className="my-4 w-full overflow-hidden rounded-xl flex justify-center bg-black/5 relative cursor-pointer" onClick={() => {
-      if (played) return;
+    <div className={`my-4 w-full overflow-hidden rounded-xl flex justify-center bg-black/5 relative ${locked ? "" : "cursor-pointer"}`} onClick={() => {
+      // 游客锁定时不给播放：整块只当封面看
+      if (locked || played) return;
       const video = videoRef.current;
       if (video) {
         setPlayed(true);
@@ -20,13 +47,14 @@ function VideoPlayer({ children, ...props }: any) {
       }
     }}>
       {poster && !played && (
-        <img src={poster} alt="" className="absolute inset-0 w-full h-full object-contain rounded-xl pointer-events-none" />
+        <img src={poster} alt="" className={`absolute inset-0 w-full h-full object-contain rounded-xl pointer-events-none${locked ? " video-locked-media" : ""}`} />
       )}
       <video
-        {...props}
+        {...mediaProps}
+        autoPlay={locked ? undefined : autoPlay}
         ref={videoRef}
-        className="max-h-[70vh] w-auto h-auto block"
-        controls
+        className={`max-h-[70vh] w-auto h-auto block${locked ? " video-locked-media" : ""}`}
+        controls={!locked}
         preload="metadata"
         playsInline
         muted={!ready && !played}
@@ -58,6 +86,14 @@ function VideoPlayer({ children, ...props }: any) {
         {children}
       </video>
       <canvas ref={canvasRef} className="hidden" />
+      {locked && (
+        <div className="video-glass">
+          <span className="video-glass-badge">
+            <VideoLockIcon />
+            {lockedText}
+          </span>
+        </div>
+      )}
     </div>
   );
 }
@@ -82,6 +118,8 @@ import { useColorMode } from "../utils/darkModeUtils";
 import { parseImageUrlMetadata } from "../utils/image-upload";
 import { useImageLoadState } from "../utils/use-image-load-state";
 import { DownloadCard } from "./download-card";
+import { useTranslation } from "react-i18next";
+import { ProfileContext } from "../state/profile";
 
 
 const countNewlinesBeforeNode = (text: string, offset: number) => {
@@ -175,6 +213,16 @@ function MarkdownImage({
 
 export function Markdown({ content }: { content: string }) {
   const colorMode = useColorMode();
+  const { t } = useTranslation();
+  const profile = useContext(ProfileContext);
+  /**
+   * 视频锁：只有登录用户（作者，或用注册码注册的读者）能看视频画面。
+   * 游客 / 未登录只看到一层模糊封面，并且点不动播放。
+   * ⚠️ `profile === undefined`（还没加载完）也按锁定处理 —— fail-closed：
+   *    宁可让登录用户闪一下遮罩，也不能让未登录的人先看到一帧清晰画面。
+   */
+  const videoLocked = !profile;
+  const videoLockedText = t("markdown.video_locked");
   const [index, setIndex] = React.useState(-1);
   const slides = useRef<SlideImage[]>();
 
@@ -505,19 +553,27 @@ export function Markdown({ content }: { content: string }) {
                   {...props}
                   src={src}
                   title={title || "Embedded content"}
-                  className="absolute top-0 left-0 w-full h-full border-0"
+                  className={`absolute top-0 left-0 w-full h-full border-0${videoLocked ? " video-locked-media" : ""}`}
                   loading="lazy"
                   referrerPolicy="no-referrer"
                   sandbox="allow-scripts allow-same-origin allow-popups allow-forms"
                   allowFullScreen
                 />
+                {videoLocked && (
+                  <div className="video-glass">
+                    <span className="video-glass-badge">
+                      <VideoLockIcon />
+                      {videoLockedText}
+                    </span>
+                  </div>
+                )}
               </div>
             </div>
           );
         },
         video({ children, ...props }) {
           return (
-            <VideoPlayer {...props}>{children}</VideoPlayer>
+            <VideoPlayer {...props} locked={videoLocked} lockedText={videoLockedText}>{children}</VideoPlayer>
           );
         },
         div({ children, node: _node, ...props }) {
@@ -535,7 +591,7 @@ export function Markdown({ content }: { content: string }) {
         },
       }}
     />
-    </div>), [content])
+    </div>), [content, videoLocked, videoLockedText])
 
 
 

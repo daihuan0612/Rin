@@ -143,6 +143,9 @@
   "draft": "Draft",
   "draft_bin": "Draft Bin",
   "edit": "Edit",
+  "markdown": {
+    "video_locked": "Sign in to view"
+  },
   "markdown_editor": {
     "placeholder": {
       "bold": "bold text",
