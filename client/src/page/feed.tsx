@@ -2,7 +2,6 @@ import type { Feed } from "@rin/api";
 import { useContext, useEffect, useRef, useState } from "react";
 import { Helmet } from "react-helmet";
 import { useTranslation } from "react-i18next";
-import ReactModal from "react-modal";
 import Popup from "reactjs-popup";
 import { Link, useLocation } from "wouter";
 import { useAlert, useConfirm } from "../components/dialog";
@@ -17,7 +16,6 @@ import { siteName } from "../utils/constants";
 import { timeago } from "../utils/timeago";
 import { Button } from "../components/button";
 import { Tips } from "../components/tips";
-import mermaid from "mermaid";
 import { AdjacentSection } from "../components/adjacent_feed.tsx";
 import { stripImageUrlMetadata } from "../utils/image-upload";
 
@@ -112,23 +110,43 @@ export function FeedPage({ id, TOC, clean }: { id: string, TOC: () => JSX.Elemen
     ref.current = id;
   }, [id]);
   useEffect(() => {
-    mermaid.initialize({
-      startOnLoad: false,
-      theme: "default",
-    });
-    mermaid.run({
-      suppressErrors: true,
-      nodes: document.querySelectorAll("pre.mermaid_default")
-    }).then(() => {
-      mermaid.initialize({
-        startOnLoad: false,
-        theme: "dark",
+    // mermaid 单独一个 chunk（光流程图解析器就 1.4MB），文章里没画图就一分钟都别拉。
+    const lightNodes = document.querySelectorAll<HTMLElement>("pre.mermaid_default");
+    const darkNodes = document.querySelectorAll<HTMLElement>("pre.mermaid_dark");
+    if (lightNodes.length === 0 && darkNodes.length === 0) return;
+
+    let cancelled = false;
+    void import("mermaid")
+      .then(({ default: mermaid }) => {
+        if (cancelled) return;
+        mermaid.initialize({
+          startOnLoad: false,
+          theme: "default",
+        });
+        return mermaid
+          .run({
+            suppressErrors: true,
+            nodes: lightNodes,
+          })
+          .then(() => {
+            if (cancelled) return;
+            mermaid.initialize({
+              startOnLoad: false,
+              theme: "dark",
+            });
+            return mermaid.run({
+              suppressErrors: true,
+              nodes: darkNodes,
+            });
+          });
+      })
+      .catch(() => {
+        // 图画不出来就当普通代码块看，别把整页弄挂
       });
-      mermaid.run({
-        suppressErrors: true,
-        nodes: document.querySelectorAll("pre.mermaid_dark")
-      });
-    })
+
+    return () => {
+      cancelled = true;
+    };
   }, [feed]);
 
   return (
@@ -329,50 +347,8 @@ export function FeedPage({ id, TOC, clean }: { id: string, TOC: () => JSX.Elemen
   );
 }
 
-export function TOCHeader({ TOC }: { TOC: () => JSX.Element }) {
-  const [isOpened, setIsOpened] = useState(false);
-
-  return (
-    <div className="shrink-0 lg:hidden">
-      <button
-        onClick={() => setIsOpened(true)}
-        className="w-10 h-10 rounded-full flex flex-row items-center justify-center"
-      >
-        <i className="ri-menu-2-line text-neutral-500 transition-colors hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-neutral-100 ri-lg md:ri-sm md:t-secondary"></i>
-      </button>
-      <ReactModal
-        isOpen={isOpened}
-        style={{
-          content: {
-            top: "50%",
-            left: "50%",
-            right: "auto",
-            bottom: "auto",
-            marginRight: "-50%",
-            transform: "translate(-50%, -50%)",
-            padding: "0",
-            border: "none",
-            borderRadius: "16px",
-            display: "flex",
-            flexDirection: "column",
-            justifyContent: "center",
-            alignItems: "center",
-            background: "none",
-          },
-          overlay: {
-            backgroundColor: "rgba(0, 0, 0, 0.5)",
-            zIndex: 1000,
-          },
-        }}
-        onRequestClose={() => setIsOpened(false)}
-      >
-        <div className="w-[80vw] sm:w-[60vw] lg:w-[40vw] overflow-clip relative t-primary">
-          <TOC />
-        </div>
-      </ReactModal>
-    </div>
-  );
-}
+// TOCHeader 已挪到 ../components/toc-header.tsx（首屏不再因此拖进整页 markdown / mermaid）
+export { TOCHeader } from "../components/toc-header";
 
 function CommentInput({
   id,

@@ -64,10 +64,16 @@ function CommentItem({ comment, onApprove, onDelete, onRefresh }: {
                 {comment.feed.title}
               </a>
             )}
-            {authorEmail && <span className="text-xs">📧 {authorEmail}</span>}
+            {authorEmail && (
+              <span className="text-xs">
+                <i className="ri-mail-line mr-1" aria-hidden="true" />
+                {authorEmail}
+              </span>
+            )}
             {authorWebsite && (
               <a href={authorWebsite} target="_blank" rel="noopener noreferrer" className="text-xs text-blue-500 hover:underline">
-                🌐 {authorWebsite}
+                <i className="ri-global-line mr-1" aria-hidden="true" />
+                {authorWebsite}
               </a>
             )}
             <span className="text-xs">

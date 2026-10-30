@@ -11,7 +11,6 @@ import { client } from "../app/runtime";
 import {Cache} from '../utils/cache';
 import {useSiteConfig} from "../hooks/useSiteConfig";
 import {siteName} from "../utils/constants";
-import mermaid from 'mermaid';
 import { MarkdownEditor } from '../components/markdown_editor';
 
 /**
@@ -245,23 +244,36 @@ export function WritingPage({ id }: { id?: number }) {
   }, []);
   const debouncedUpdate = useCallback(
     _.debounce(() => {
-      mermaid.initialize({
-        startOnLoad: false,
-        theme: "default",
-      });
-      mermaid.run({
-        suppressErrors: true,
-        nodes: document.querySelectorAll("pre.mermaid_default")
-      }).then(()=>{
-        mermaid.initialize({
-          startOnLoad: false,
-          theme: "dark",
+      // 预览里没画 mermaid 图就不要去拉那 1.4MB 的解析器
+      const lightNodes = document.querySelectorAll<HTMLElement>("pre.mermaid_default");
+      const darkNodes = document.querySelectorAll<HTMLElement>("pre.mermaid_dark");
+      if (lightNodes.length === 0 && darkNodes.length === 0) return;
+
+      void import("mermaid")
+        .then(({ default: mermaid }) => {
+          mermaid.initialize({
+            startOnLoad: false,
+            theme: "default",
+          });
+          return mermaid
+            .run({
+              suppressErrors: true,
+              nodes: lightNodes,
+            })
+            .then(() => {
+              mermaid.initialize({
+                startOnLoad: false,
+                theme: "dark",
+              });
+              return mermaid.run({
+                suppressErrors: true,
+                nodes: darkNodes,
+              });
+            });
+        })
+        .catch(() => {
+          // 图画不出来不影响写正文
         });
-        mermaid.run({
-          suppressErrors: true,
-          nodes: document.querySelectorAll("pre.mermaid_dark")
-        });
-      })
     }, 100),
     []
   );
