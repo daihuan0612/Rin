@@ -92,21 +92,13 @@ class DatabaseStorageProvider implements StorageProvider {
     }
 
     async save(): Promise<void> {
-        // Get all existing keys from database for this cache type
-        const existingRows = await this.db.select({ key: cache.key }).from(cache).where(eq(cache.type, this.type));
-        const existingKeys = new Set(existingRows.map((row: { key: string }) => row.key));
-        const currentKeys = new Set(this.cacheMap.keys());
-
-        // Delete keys from database that are no longer in memory
-        for (const key of existingKeys) {
-            if (!currentKeys.has(key)) {
-                await this.db.delete(cache)
-                    .where(and(eq(cache.key, key), eq(cache.type, this.type)));
-                console.log('Cache removed from database:', key);
-            }
-        }
-
-        // Save or update current cache entries
+        /**
+         * ⚠️ 这里**只做 upsert**，不要再恢复"DB 里有、内存里没有 ⇒ 删掉"的差集逻辑。
+         * CacheImpl 是每请求新建 + 快照式 load/save：两个并发请求各拿一份快照，
+         * 谁的 save 后跑，谁就把对方刚写进去的键当成"已被删除"抹掉
+         * （首页冷启动、登录失败计数都踩得到，2026-11-07 回归测试里实际复现过）。
+         * 删除一律显式走 delete() / deletePrefix() / deleteSuffix() / clear()。
+         */
         for (const [key, value] of this.cacheMap.entries()) {
             if (value === undefined) {
                 console.warn(`Cache: Skipping undefined value for key "${key}"`);
@@ -115,17 +107,16 @@ class DatabaseStorageProvider implements StorageProvider {
 
             const valueStr = serializeCacheValue(value);
 
-            if (existingKeys.has(key)) {
-                await this.db.update(cache)
-                    .set({ value: valueStr, updatedAt: new Date() })
-                    .where(and(eq(cache.key, key), eq(cache.type, this.type)));
-            } else {
-                await this.db.insert(cache).values({
-                    key,
-                    value: valueStr,
-                    type: this.type,
+            /**
+             * 必须用 upsert，别用 "existingKeys.has(key) ? update : insert"：
+             * 同样的快照问题会让两个请求都走 insert，后一个撞 (key, type) 唯一约束 → 接口 500。
+             */
+            await this.db.insert(cache)
+                .values({ key, value: valueStr, type: this.type })
+                .onConflictDoUpdate({
+                    target: [cache.key, cache.type],
+                    set: { value: valueStr, updatedAt: new Date() },
                 });
-            }
         }
     }
 
@@ -363,26 +354,25 @@ export class CacheImpl {
     }
 
     async deletePrefix(prefix: string) {
-        // ⚠️ 必须先 load：CacheImpl 是**每请求新建**的（hono-middleware 的 LazyInitContainer），
-        // 内存 Map 默认是空的。不 load 就删，下面 save() 的差集（DB 有、内存没有 ⇒ 删）
-        // 会把这一整个 type 的行全部删掉 —— 发一篇文章就把列表缓存、搜索缓存、注册限流计数一起清空。
+        // ⚠️ 必须先 load：CacheImpl 是**每请求新建**的，内存 Map 默认是空的。
+        // 不 load 就删，等于拿一张空快照去覆盖持久层 —— 发一篇文章就把列表缓存、
+        // 搜索缓存、限流计数一起清空。
         if (!this.loaded) await this.load();
         for (const key of [...this.cache.keys()]) {
             if (key.startsWith(prefix)) {
-                await this.delete(key, false);
+                // save() 已经不再做"差集删除"兜底，这里必须逐键把持久层也删掉
+                await this.delete(key);
             }
         }
-        await this.save();
     }
 
     async deleteSuffix(suffix: string) {
         if (!this.loaded) await this.load();
         for (const key of [...this.cache.keys()]) {
             if (key.endsWith(suffix)) {
-                await this.delete(key, false);
+                await this.delete(key);
             }
         }
-        await this.save();
     }
 
     async clear() {

@@ -87,16 +87,20 @@ export function FeedPage({ id, TOC, clean }: { id: string, TOC: () => JSX.Elemen
   }
   useEffect(() => {
     if (ref.current == id) return;
+    // ⚠️ 快速 A→B 切换时，A 的响应可能后到并覆盖 B：用 cancelled 作废本轮请求
+    let cancelled = false;
     setFeed(undefined);
     setError(undefined);
     setHeadImage(undefined);
     client.feed
       .get(id)
       .then(({ data, error }) => {
+        if (cancelled) return;
         if (error) {
           setError(error.value as string);
         } else if (data && typeof data !== "string") {
           setTimeout(() => {
+            if (cancelled) return;
             setFeed(data as any);
             setTop(data.top || 0);
             const headImageUrl = extractFirstMarkdownImageUrl(data.content);
@@ -108,6 +112,9 @@ export function FeedPage({ id, TOC, clean }: { id: string, TOC: () => JSX.Elemen
         }
       });
     ref.current = id;
+    return () => {
+      cancelled = true;
+    };
   }, [id]);
   useEffect(() => {
     // mermaid 单独一个 chunk（光流程图解析器就 1.4MB），文章里没画图就一分钟都别拉。

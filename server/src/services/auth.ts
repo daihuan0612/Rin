@@ -4,6 +4,7 @@ import type { AppContext, Variables } from "../core/hono-types";
 import { profileAsync } from "../core/server-timing";
 import { setJWTCookie, clearJWTCookie } from "../core/hono-middleware";
 import { inviteCodes, users } from "../db/schema";
+import { CacheImpl } from "../utils/cache";
 import { normalizeInviteCode } from "./invite";
 import {
     BadRequestError,
@@ -11,13 +12,122 @@ import {
     InternalServerError,
 } from "../errors";
 
-// Hash password using SHA-256
-async function hashPassword(password: string): Promise<string> {
-    const encoder = new TextEncoder();
-    const data = encoder.encode(password);
-    const hashBuffer = await crypto.subtle.digest("SHA-256", data);
-    const hashArray = Array.from(new Uint8Array(hashBuffer));
-    return hashArray.map(b => b.toString(16).padStart(2, "0")).join("");
+/**
+ * 密码哈希（2026-11-07 交叉审查后升级）
+ *
+ * 原来是无盐单轮 SHA-256：同一个密码哈希永远相同、可被彩虹表/GPU 秒破。
+ * 现在改成 PBKDF2-SHA256 + 每个用户独立随机盐，存成 `pbkdf2$<轮数>$<盐b64>$<哈希b64>`。
+ * 轮数只给 1 万不是不够狠，是 Cloudflare 免费档的 CPU 预算有限 —— 登录接口不能因为
+ * 加盐慢哈希直接超时。老库里 64 位十六进制的无盐哈希继续认（见 verifyPassword），
+ * 并且**登录成功时顺手升级**，不需要谁去重设密码。
+ */
+const PBKDF2_ITERATIONS = 10_000;
+const PBKDF2_PREFIX = "pbkdf2";
+
+/** 登录失败限流：同 IP 10 分钟内最多 10 次失败 */
+const LOGIN_WINDOW_MS = 10 * 60 * 1000;
+const LOGIN_MAX_FAILURES = 10;
+
+function bytesToBase64(bytes: Uint8Array): string {
+    let binary = "";
+    for (const byte of bytes) {
+        binary += String.fromCharCode(byte);
+    }
+    return btoa(binary);
+}
+
+function base64ToBytes(value: string): Uint8Array {
+    const binary = atob(value);
+    const out = new Uint8Array(binary.length);
+    for (let i = 0; i < binary.length; i += 1) {
+        out[i] = binary.charCodeAt(i);
+    }
+    return out;
+}
+
+async function pbkdf2(password: string, salt: Uint8Array, iterations: number): Promise<Uint8Array> {
+    const key = await crypto.subtle.importKey(
+        "raw",
+        new TextEncoder().encode(password),
+        "PBKDF2",
+        false,
+        ["deriveBits"],
+    );
+    const bits = await crypto.subtle.deriveBits(
+        { name: "PBKDF2", salt, iterations, hash: "SHA-256" } as Pbkdf2Params,
+        key,
+        256,
+    );
+    return new Uint8Array(bits);
+}
+
+/** 老格式用到的无盐 SHA-256，只为了兼容库里已有的哈希 */
+async function sha256Hex(value: string): Promise<string> {
+    const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(value));
+    return Array.from(new Uint8Array(digest)).map((b) => b.toString(16).padStart(2, "0")).join("");
+}
+
+/** 常数时间比较，别按字符逐位泄露前缀 */
+export function timingSafeEqual(a: string, b: string): boolean {
+    if (a.length !== b.length) {
+        return false;
+    }
+    let diff = 0;
+    for (let i = 0; i < a.length; i += 1) {
+        diff |= a.charCodeAt(i) ^ b.charCodeAt(i);
+    }
+    return diff === 0;
+}
+
+export async function hashPassword(password: string): Promise<string> {
+    const salt = crypto.getRandomValues(new Uint8Array(16));
+    const derived = await pbkdf2(password, salt, PBKDF2_ITERATIONS);
+    return `${PBKDF2_PREFIX}$${PBKDF2_ITERATIONS}$${bytesToBase64(salt)}$${bytesToBase64(derived)}`;
+}
+
+/** 认新格式，也认老的无盐 SHA-256 */
+export async function verifyPassword(password: string, stored: string | null | undefined): Promise<boolean> {
+    if (!stored) {
+        return false;
+    }
+
+    if (stored.startsWith(`${PBKDF2_PREFIX}$`)) {
+        const [, iterationsRaw, saltRaw, hashRaw] = stored.split("$");
+        const iterations = Number(iterationsRaw);
+        if (!Number.isInteger(iterations) || iterations <= 0 || !saltRaw || !hashRaw) {
+            return false;
+        }
+        const derived = await pbkdf2(password, base64ToBytes(saltRaw), iterations);
+        return timingSafeEqual(bytesToBase64(derived), hashRaw);
+    }
+
+    return timingSafeEqual(await sha256Hex(password), stored);
+}
+
+/** 老格式（无盐 SHA-256 / 空）才需要重新哈希 —— 新格式每次登录重算盐纯属浪费 */
+export function needsRehash(stored: string | null | undefined): boolean {
+    return !stored || !stored.startsWith(`${PBKDF2_PREFIX}$`);
+}
+
+/** 取客户端 IP：优先 Cloudflare 的头，别信 x-forwarded-for 的第一段以外的东西 */
+function clientIp(c: AppContext): string {
+    return c.req.header('cf-connecting-ip')
+        || c.req.header('x-real-ip')
+        || (c.req.header('x-forwarded-for') || '').split(',')[0].trim()
+        || '';
+}
+
+/**
+ * 限流专用存储。
+ * ⚠️ 不能复用 `c.get('cache')`：那是公共内容缓存，`cache.enabled=false` 时 get/set 直接空转
+ * （cache.ts 的 isEnabled 只 gate type === 'cache'），限流会连带失效。
+ * 用独立 type 就绕开了那道开关，也不会被文章失效时的 deletePrefix 顺手清掉。
+ */
+function rateLimitStore(c: AppContext): CacheImpl {
+    // ⚠️ storageMode 必须钉死 'database'：不传就跟着 env.CACHE_STORAGE_MODE 走，
+    // 而它的默认值是 's3'。S3 不可用时 S3StorageProvider 只打日志、把异常吞掉，
+    // 计数永远为空 —— 安全计数不能挂在一个"失败即静默清空"的存储上。
+    return new CacheImpl(c.get('db'), c.get('env'), 'ratelimit', 'database');
 }
 
 export function PasswordAuthService(): Hono<{
@@ -48,15 +158,29 @@ export function PasswordAuthService(): Hono<{
             throw new BadRequestError('Username and password are required');
         }
 
-        // Hash the provided password
-        const hashedPassword = await profileAsync(c, 'auth_login_hash', () => hashPassword(password));
+        // 登录失败限流：挡在线爆破（以前登录接口完全没有限流，只有注册有）
+        const limiter = rateLimitStore(c);
+        const failKey = `login_fail_${clientIp(c)}`;
+        const now = Date.now();
+        const rawFailures = await profileAsync(c, 'auth_login_rate_get', () => limiter.get(failKey));
+        const failureHits: number[] = Array.isArray((rawFailures as any)?.hits) ? (rawFailures as any).hits : [];
+        const recentFailures = failureHits.filter((t) => typeof t === 'number' && now - t < LOGIN_WINDOW_MS);
+        if (recentFailures.length >= LOGIN_MAX_FAILURES) {
+            throw new ForbiddenError('Too many attempts, try again later');
+        }
+
+        // 记一次失败再抛：写成 `throw await fail(...)` 是为了让 TS 认出这条分支不会继续往下走
+        const fail = async (message: string): Promise<ForbiddenError> => {
+            recentFailures.push(Date.now());
+            await profileAsync(c, 'auth_login_rate_set', () => limiter.set(failKey, { hits: recentFailures }));
+            return new ForbiddenError(message);
+        };
 
         // Check if this is the admin login
         if (username === adminUsername) {
-            const expectedHash = await profileAsync(c, 'auth_admin_hash', () => hashPassword(adminPassword));
-            
-            if (hashedPassword !== expectedHash) {
-                throw new ForbiddenError('Invalid credentials');
+            // 管理员是 env 里的密码，直接比明文；库里那份哈希只是给"普通用户登录"路径用的缓存
+            if (!timingSafeEqual(password, adminPassword)) {
+                throw await fail('Invalid credentials');
             }
 
             // Find or create admin user
@@ -66,12 +190,13 @@ export function PasswordAuthService(): Hono<{
 
             if (!user) {
                 // Create admin user if not exists
+                const adminPasswordHash = await hashPassword(adminPassword);
                 const result = await profileAsync(c, 'auth_admin_insert', () => db.insert(users).values({
                     username: adminUsername,
                     openid: "admin",
                     avatar: "",
                     permission: 1,
-                    password: expectedHash,
+                    password: adminPasswordHash,
                 }).returning({ insertedId: users.id }));
 
                 if (!result || result.length === 0) {
@@ -87,12 +212,17 @@ export function PasswordAuthService(): Hono<{
                 throw new InternalServerError('Failed to get admin user');
             }
 
-            if (user.password !== expectedHash) {
-                // Update admin password if changed
+            // env 里的密码改了、或者库里还是老的 SHA-256，就在这里同步一次
+            if (needsRehash(user.password) || user.username !== adminUsername) {
+                const nextHash = needsRehash(user.password)
+                    ? await hashPassword(adminPassword)
+                    : user.password;
                 await profileAsync(c, 'auth_admin_sync', () => db.update(users)
-                    .set({ password: expectedHash, username: adminUsername })
+                    .set({ password: nextHash, username: adminUsername })
                     .where(eq(users.id, user.id)));
             }
+
+            await profileAsync(c, 'auth_login_rate_clear', () => limiter.delete(failKey));
 
             // Generate JWT token
             const token = await profileAsync(c, 'auth_admin_token', () => jwt.sign({ id: user.id }));
@@ -118,17 +248,27 @@ export function PasswordAuthService(): Hono<{
         }));
 
         if (!user || !user.password) {
-            throw new ForbiddenError('Invalid credentials');
+            throw await fail('Invalid credentials');
         }
 
         // 被作者停用的账号：能验证密码，但不给登录
         if (user.disabled === 1) {
-            throw new ForbiddenError('Account disabled');
+            throw await fail('Account disabled');
         }
 
-        if (user.password !== hashedPassword) {
-            throw new ForbiddenError('Invalid credentials');
+        if (!(await verifyPassword(password, user.password))) {
+            throw await fail('Invalid credentials');
         }
+
+        // 老的无盐哈希：这次密码刚好是对的，就地升级成 PBKDF2
+        if (needsRehash(user.password)) {
+            const upgraded = await hashPassword(password);
+            await profileAsync(c, 'auth_user_rehash', () => db.update(users)
+                .set({ password: upgraded })
+                .where(eq(users.id, user.id)));
+        }
+
+        await profileAsync(c, 'auth_login_rate_clear', () => limiter.delete(failKey));
 
         // Generate JWT token
         const token = await profileAsync(c, 'auth_user_token', () => jwt.sign({ id: user.id }));
@@ -158,29 +298,28 @@ export function PasswordAuthService(): Hono<{
     app.post("/register", async (c: AppContext) => {
         const db = c.get('db');
         const jwt = c.get('jwt');
-        const cache = c.get('cache');
+        // ⚠️ 限流不能用 c.get('cache')：那是公共内容缓存，`cache.enabled` 关掉后
+        // get 恒 null / set 直接 return，限流会跟着失效（见 rateLimitStore 注释）
+        const limiter = rateLimitStore(c);
 
         if (!jwt) {
             throw new InternalServerError('Auth is not configured');
         }
 
-        const ip = c.req.header('cf-connecting-ip')
-            || c.req.header('x-real-ip')
-            || (c.req.header('x-forwarded-for') || '').split(',')[0].trim()
-            || '';
+        const ip = clientIp(c);
 
         // 简单限流：同一 IP 10 分钟内最多 8 次注册尝试（邀请码本身已经是主要防线，这层挡脚本）
         const rateKey = `reg_try_${ip}`;
         const now = Date.now();
         const windowMs = 10 * 60 * 1000;
-        const raw = await profileAsync(c, 'auth_register_rate_get', () => cache.get(rateKey));
+        const raw = await profileAsync(c, 'auth_register_rate_get', () => limiter.get(rateKey));
         const hits: number[] = Array.isArray((raw as any)?.hits) ? (raw as any).hits : [];
         const recent = hits.filter((t) => typeof t === 'number' && now - t < windowMs);
         if (recent.length >= 8) {
             throw new ForbiddenError('Too many attempts, try again later');
         }
         recent.push(now);
-        await profileAsync(c, 'auth_register_rate_set', () => cache.set(rateKey, { hits: recent }));
+        await profileAsync(c, 'auth_register_rate_set', () => limiter.set(rateKey, { hits: recent }));
 
         const body = await profileAsync(c, 'auth_register_parse', () => c.req.json()) as {
             username?: string;

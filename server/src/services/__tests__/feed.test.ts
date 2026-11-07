@@ -79,8 +79,34 @@ describe('FeedService', () => {
             expect(data.data).toBeArray();
         });
 
-        it('should return empty list when no feeds exist', async () => {
-            const res = await app.request('/', { method: 'GET' }, env);
+        it('?limit=abc / ?limit=0 不会被当成 LIMIT 塞进 SQL', async () => {
+            const create = async (title: string) => app.request('/', {
+                method: 'POST',
+                headers: {
+                    'Authorization': 'Bearer mock_token_1',
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ title, content: `Body of ${title}`, listed: true, draft: false, tags: [] }),
+            }, env);
+            const c1 = await create('Paging One');
+            const c2 = await create('Paging Two');
+            expect(c1.status).toBe(200);
+            expect(c2.status).toBe(200);
+
+            // 旧代码：limit=abc ⇒ NaN ⇒ SQLite datatype mismatch ⇒ 500；
+            // limit=0 ⇒ LIMIT 0 ⇒ 空列表。新代码两者都回退成默认 20。
+            const nan = await app.request('/?limit=abc', { method: 'GET' }, env);
+            expect(nan.status).toBe(200);
+            const nanBody = await nan.json() as any;
+            expect(nanBody.size).toBe(2);
+
+            const zero = await app.request('/?limit=0', { method: 'GET' }, env);
+            expect(zero.status).toBe(200);
+            const zeroBody = await zero.json() as any;
+            expect(zeroBody.size).toBe(2);
+        });
+
+        it('should return empty list when no feeds exist', async () => {            const res = await app.request('/', { method: 'GET' }, env);
             
             expect(res.status).toBe(200);
             const data = await res.json() as any;
@@ -761,6 +787,39 @@ describe('FeedService', () => {
             expect(data.title).toBe('Updated Title');
         });
 
+        it('只改标题、不传 listed ⇒ 文章不会被静默下架', async () => {
+            const createRes = await app.request('/', {
+                method: 'POST',
+                headers: {
+                    'Authorization': 'Bearer mock_token_1',
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    title: '已列出的文章',
+                    content: '正文',
+                    listed: true,
+                    draft: false,
+                    tags: [],
+                }),
+            }, env);
+            expect(createRes.status).toBe(200);
+            const feedId = (await createRes.json() as any).insertedId;
+
+            // 前端只改标题时不会回传 listed —— 以前这里被当成 false，写完就下架了
+            const updateRes = await app.request(`/${feedId}`, {
+                method: 'POST',
+                headers: {
+                    'Authorization': 'Bearer mock_token_1',
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ title: '改个标题', content: '正文' }),
+            }, env);
+            expect(updateRes.status).toBe(200);
+
+            const row = sqlite.prepare('SELECT listed FROM feeds WHERE id = ?').get(feedId) as any;
+            expect(row.listed).toBe(1);
+        });
+
         it('把单篇 AI 摘要关掉时，已有摘要一起清空、也不再入队', async () => {
             const sent: any[] = [];
             env.TASK_QUEUE = {
@@ -1094,5 +1153,13 @@ describe('SearchService - 缓存不能跨视角泄漏草稿', () => {
         }, env);
         const adminBody = await adminRes.json() as any;
         expect(adminBody.size).toBe(2);
+    });
+
+    it('搜索词里带裸百分号（搜「100%」）不会 500', async () => {
+        // 以前直接 decodeURI(keyword)，已解码过的文本里再遇到 `%` 会抛 URIError → 500
+        const res = await app.request(`/${encodeURIComponent('100%')}`, { method: 'GET' }, env);
+        expect(res.status).toBe(200);
+        const body = await res.json() as any;
+        expect(Array.isArray(body.data)).toBe(true);
     });
 });

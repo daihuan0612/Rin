@@ -4,6 +4,7 @@ import { moments } from "../db/schema";
 import type { AppContext } from "../core/hono-types";
 import { profileAsync } from "../core/server-timing";
 import { momentCreateSchema, momentUpdateSchema } from "@rin/api";
+import { parsePageParam } from "../utils/pagination";
 
 export function MomentsService(): Hono {
     const app = new Hono();
@@ -15,8 +16,8 @@ export function MomentsService(): Hono {
         const page = c.req.query('page');
         const limit = c.req.query('limit');
         
-        const page_num = (page ? parseInt(page) > 0 ? parseInt(page) : 1 : 1) - 1;
-        const limit_num = limit ? parseInt(limit) > 50 ? 50 : parseInt(limit) : 20;
+        const page_num = parsePageParam(page, 1, 10_000) - 1;
+        const limit_num = parsePageParam(limit, 20, 50);
         const cacheKey = `moments_${page_num}_${limit_num}`;
         const cached = await profileAsync(c, 'moments_list_cache_get', () => cache.get(cacheKey));
         

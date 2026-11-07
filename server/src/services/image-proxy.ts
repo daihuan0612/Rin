@@ -32,8 +32,6 @@ const CACHE_API_PREFIX = "https://rin-media-cache.internal/v1/";
 /** Range 相关的头必须原样带回去，否则 <video> 拖不动进度 */
 const PASSTHROUGH_HEADERS = [
     "content-range",
-    "content-length",
-    "content-encoding",
     "accept-ranges",
     "etag",
     "last-modified",
@@ -116,6 +114,25 @@ function buildCacheKey(url: string) {
     return new Request(`${CACHE_API_PREFIX}${encodeURIComponent(url)}`, { method: "GET" });
 }
 
+/** 等响应头的上限；body 传输不受这个限制（否则大视频会被一刀切断） */
+const HEADER_TIMEOUT_MS = 8000;
+
+/**
+ * 回源超时（2026-11-07 交叉审查）。
+ * 图床/视频站挂起时，裸 fetch 会一直挂到平台超时，手机端首屏图片就长时间转圈。
+ * 这里只给「拿到响应头」设上限：计时器在 fetch resolve 后立刻清掉，
+ * 之后 body 照常流式传输，不会被 abort。
+ */
+async function fetchWithHeaderTimeout(url: string, init: RequestInit) {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), HEADER_TIMEOUT_MS);
+    try {
+        return await fetch(url, { ...init, signal: controller.signal });
+    } finally {
+        clearTimeout(timer);
+    }
+}
+
 export function ImageProxyService(): Hono {
     const app = new Hono();
 
@@ -162,10 +179,10 @@ export function ImageProxyService(): Hono {
              * 也按一年缓存。缓存由下面的 Cache API 自己管。
              */
             const upstream = await profileAsync(c, "img_proxy_fetch", () =>
-                fetch(sourceUrl, {
+                fetchWithHeaderTimeout(sourceUrl, {
                     method,
                     headers: upstreamHeaders,
-                } as RequestInit),
+                }),
             );
 
             const contentType = upstream.headers.get("content-type") || "";
@@ -198,12 +215,15 @@ export function ImageProxyService(): Hono {
             const headers = new Headers();
             headers.set("Content-Type", contentType || "application/octet-stream");
             /**
-             * 完整对象才给 immutable；206 是分片，别让浏览器把某一段当成整份长期复用。
+             * 完整对象才给 immutable。
+             * 206 是分片：以前也给一年 max-age + immutable，浏览器按 URL 缓存后容易把某一段
+             * 当成整份复用（视频花屏/截断）。这里收成 60 秒的私有缓存 ——
+             * 兼顾"拖进度条时不用每次回源"，又不至于把分片长期当成整份。
              */
             headers.set(
                 "Cache-Control",
                 upstream.status === 206
-                    ? `public, max-age=${PROXY_CACHE_TTL}`
+                    ? "private, max-age=60"
                     : `public, max-age=${PROXY_CACHE_TTL}, immutable`,
             );
             headers.set("X-Rin-Proxy-Cache", "MISS");
@@ -211,6 +231,18 @@ export function ImageProxyService(): Hono {
                 const value = upstream.headers.get(name);
                 if (value) {
                     headers.set(name, value);
+                }
+            }
+            /**
+             * ⚠️ 只在**上游没有压缩**时透传 content-length：
+             * Workers 的 fetch 会把 gzip/br 解压，此时原来的长度是压缩后的字节数，
+             * 带回去浏览器会按那个长度截断 —— 图片变半截、视频直接坏。
+             * content-encoding 同理一律不透传（运行时已经解过了）。
+             */
+            if (!upstream.headers.get("content-encoding")) {
+                const contentLength = upstream.headers.get("content-length");
+                if (contentLength) {
+                    headers.set("Content-Length", contentLength);
                 }
             }
 

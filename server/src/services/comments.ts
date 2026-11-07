@@ -4,6 +4,7 @@ import { desc, eq, and, count, isNull } from "drizzle-orm";
 import { comments, feeds, users } from "../db/schema";
 import { profileAsync } from "../core/server-timing";
 import { notify } from "../utils/webhook";
+import { parsePageParam } from "../utils/pagination";
 import { resolveWebhookConfig } from "./config-helpers";
 
 export function CommentService(): Hono {
@@ -17,8 +18,9 @@ export function CommentService(): Hono {
             return c.text('Permission denied', 403);
         }
 
-        const page = parseInt(c.req.query('page') || '1');
-        const pageSize = parseInt(c.req.query('pageSize') || '20');
+        // 用 parsePageParam：`?page=abc` 以前是 NaN 进 SQL（datatype mismatch → 500）
+        const page = parsePageParam(c.req.query('page'), 1, Number.MAX_SAFE_INTEGER);
+        const pageSize = parsePageParam(c.req.query('pageSize'), 20, Number.MAX_SAFE_INTEGER);
         const status = c.req.query('status') || 'all';
 
         let whereClause: any = undefined;

@@ -174,8 +174,50 @@ describe("GET /img-proxy", () => {
         expect(res.headers.get("content-type")).toBe("video/mp4");
     });
 
-    it("passes 416 through instead of turning it into 502", async () => {
+    it("does not let a 206 segment be cached as if it were the whole file", async () => {
         globalThis.fetch = (async () =>
+            new Response(new Uint8Array([9, 9]), {
+                status: 206,
+                headers: {
+                    "content-type": "video/mp4",
+                    "content-range": "bytes 0-1/1000000",
+                },
+            })) as typeof fetch;
+
+        const res = await createApp().request(
+            `/img-proxy?url=${encodeURIComponent(externalVideo)}`,
+            { headers: { range: "bytes=0-1" } },
+        );
+
+        expect(res.status).toBe(206);
+        // 以前是 public, max-age=31536000 + immutable：浏览器按 URL 缓存，
+        // 把某一段当整份复用会花屏/截断；现在收成短时私有缓存
+        const cacheControl = res.headers.get("cache-control") || "";
+        expect(cacheControl).not.toContain("31536000");
+        expect(cacheControl).not.toContain("immutable");
+        expect(cacheControl).toContain("max-age=60");
+    });
+
+    it("drops content-length / content-encoding when upstream compressed the body", async () => {
+        // Workers 的 fetch 会自动解压，但 header 还是压缩前那套；
+        // 原样透传会让浏览器按压缩后的长度截断响应（图片半截、视频坏）
+        globalThis.fetch = (async () =>
+            new Response(new Uint8Array([1, 2, 3]), {
+                status: 200,
+                headers: {
+                    "content-type": "image/png",
+                    "content-encoding": "gzip",
+                    "content-length": "3",
+                },
+            })) as typeof fetch;
+
+        const res = await createApp().request(`/img-proxy?url=${encodeURIComponent(external)}`);
+
+        expect(res.status).toBe(200);
+        expect(res.headers.get("content-encoding")).toBeNull();
+    });
+
+    it("passes 416 through instead of turning it into 502", async () => {        globalThis.fetch = (async () =>
             new Response(null, {
                 status: 416,
                 headers: { "content-range": "bytes */20240963" },

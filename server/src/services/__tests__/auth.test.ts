@@ -142,6 +142,38 @@ describe("PasswordAuthService", () => {
       expect(result.data?.user.permission).toBe(false);
     });
 
+    it("同一 IP 连续输错密码会被限流（以前登录接口完全没有限流）", async () => {
+      for (let attempt = 0; attempt < 10; attempt += 1) {
+        const result = await api.auth.login({ username: "admin", password: "wrong-password" });
+        expect(result.error?.status).toBe(403);
+      }
+
+      // 第 11 次即使密码是对的也进不来 —— 限流挡在线爆破，不能靠"密码对了就放行"
+      const blocked = await api.auth.login({ username: "admin", password: "admin123" });
+      expect(blocked.error?.status).toBe(403);
+      expect((blocked.error?.value as any).error.message).toContain("Too many attempts");
+    });
+
+    it("老库里的无盐 SHA-256 密码还能登录，并在登录后就地升级成 PBKDF2", async () => {
+      // 这里的 hashPassword 是测试文件里那份"老算法"，故意造一条老数据
+      sqlite.exec(`
+        INSERT INTO users (id, username, avatar, openid, password, permission)
+        VALUES (4, 'legacyuser', 'avatar.png', 'user_4', '${await hashPassword('legacypass')}', 0)
+      `);
+
+      const ok = await api.auth.login({ username: "legacyuser", password: "legacypass" });
+      expect(ok.error).toBeUndefined();
+      expect(ok.data?.success).toBe(true);
+
+      const row = sqlite.prepare("SELECT password FROM users WHERE id = 4").get() as any;
+      expect(row.password.startsWith("pbkdf2$")).toBe(true);
+
+      // 升级之后照样能登录（别把新格式写成谁都验不过）
+      const again = await api.auth.login({ username: "legacyuser", password: "legacypass" });
+      expect(again.error).toBeUndefined();
+      expect(again.data?.success).toBe(true);
+    });
+
     it("should reject non-existent user", async () => {
       const result = await api.auth.login({
         username: "nonexistent",
@@ -152,6 +184,7 @@ describe("PasswordAuthService", () => {
       expect(result.error?.status).toBe(403);
       const errorData = result.error?.value as any;
       expect(errorData.error.message).toBe("Invalid credentials");
+
     });
 
     it("should require username and password", async () => {

@@ -822,4 +822,28 @@ describe('CacheImpl - 未加载时删除前缀不能误删整表', () => {
             sqlite.close();
         }
     });
+
+    /**
+     * 同一个毛病在"并发写"这一侧：两个请求各持一份快照，后 save 的那个
+     * 会把对方刚写进去的键当成"已被删除"抹掉（登录失败计数就是这么丢的）。
+     * save() 现在只做 upsert，删除必须显式调用。
+     */
+    it('两个实例先后写不同的键，谁的 save 后跑都不会删掉对方的键', async () => {
+        const { db, sqlite } = createTestDB();
+        const env = createMockEnv('database');
+        try {
+            const first = new CacheImpl(db as any, env, 'cache', 'database');
+            const second = new CacheImpl(db as any, env, 'cache', 'database');
+
+            await first.set('feeds_page_0', { a: 1 });
+            // second 是 first 写入之前就建好的实例，它的快照里没有 feeds_page_0
+            await second.set('search_guest_y', { b: 2 });
+
+            const reader = new CacheImpl(db as any, env, 'cache', 'database');
+            expect(await reader.get('feeds_page_0')).toEqual({ a: 1 });
+            expect(await reader.get('search_guest_y')).toEqual({ b: 2 });
+        } finally {
+            sqlite.close();
+        }
+    });
 });

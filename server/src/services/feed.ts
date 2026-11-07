@@ -1,4 +1,4 @@
-import { and, asc, count, desc, eq, gt, like, lt, or } from "drizzle-orm";
+import { and, asc, count, desc, eq, gt, like, lt, or, sql } from "drizzle-orm";
 import { Hono } from "hono";
 import type { Variables } from "../core/hono-types";
 import { profileAsync } from "../core/server-timing";
@@ -8,6 +8,7 @@ import { extractImageWithMetadata } from "../utils/image";
 import { balanceGlassTags, hasGlass, hasOwner, maskGlassTagged, renderGlass, type GlassViewer } from "../utils/glass";
 import { deleteOrphanImagesFromText } from "../utils/feed-images";
 import { makeSummary, stripMarkdown } from "../utils/markdown";
+import { parsePageParam } from "../utils/pagination";
 import { syncFeedAISummaryQueueState } from "./feed-ai-summary";
 import { bindTagToPost } from "./tag";
 import { clearFeedCache } from "./clear-feed-cache";
@@ -98,8 +99,8 @@ export function FeedService(): Hono<{
             return c.text('Permission denied', 403);
         }
 
-        const page_num = (page ? parseInt(page) > 0 ? parseInt(page) : 1 : 1) - 1;
-        const limit_num = limit ? parseInt(limit) > 50 ? 50 : parseInt(limit) : 20;
+        const page_num = parsePageParam(page, 1, 10_000) - 1;
+        const limit_num = parsePageParam(limit, 20, 50);
         const viewer = viewerOf(admin, uid);
         const cacheKey = `feeds_${type}_${page_num}_${limit_num}`;
         const cached = await profileAsync(c, 'feed_list_cache_get', () => cache.get(cacheKey));
@@ -307,36 +308,49 @@ export function FeedService(): Hono<{
             const ip = c.req.header('cf-connecting-ip') || c.req.header('x-real-ip') || "UNK";
             const visitorKey = `${ip}`;
 
-            // Get or create visit stats for this feed
-            let stats = await profileAsync(c, 'feed_detail_stats_lookup', () => db.query.visitStats.findFirst({
+            const stats = await profileAsync(c, 'feed_detail_stats_lookup', () => db.query.visitStats.findFirst({
                 where: eq(visitStats.feedId, feed.id)
             }));
 
-            if (!stats) {
-                // Create new stats record
-                await profileAsync(c, 'feed_detail_stats_insert', () => db.insert(visitStats).values({
-                    feedId: feed.id,
-                    pv: 1,
-                    hllData: new HyperLogLog().serialize()
-                }));
-                pv = 1;
-                uv = 1;
-            } else {
-                // Update existing stats
-                const hll = new HyperLogLog(stats.hllData);
-                hll.add(visitorKey);
-                const newHllData = hll.serialize();
-                const newPv = stats.pv + 1;
+            const hll = new HyperLogLog(stats?.hllData);
+            hll.add(visitorKey);
+            const newHllData = hll.serialize();
 
+            if (!stats) {
+                // 首次访问：并发时两个请求都会走到这里，靠主键冲突让其中一个落空（onConflictDoNothing）
+                const inserted = await profileAsync(c, 'feed_detail_stats_insert', () => db.insert(visitStats)
+                    .values({ feedId: feed.id, pv: 1, hllData: newHllData })
+                    .onConflictDoNothing()
+                    .returning({ feedId: visitStats.feedId }));
+
+                if (inserted.length > 0) {
+                    pv = 1;
+                    uv = Math.round(hll.count());
+                } else {
+                    // 别人先插进去了：把他刚写进去的 HLL 读回来合并，
+                    // 别拿"只含当前访客"的 hllData 整体覆盖，否则会抹掉他的 UV
+                    const winner = await profileAsync(c, 'feed_detail_stats_reload', () => db.query.visitStats.findFirst({
+                        where: eq(visitStats.feedId, feed.id)
+                    }));
+                    const merged = new HyperLogLog(winner?.hllData);
+                    merged.add(visitorKey);
+                    await profileAsync(c, 'feed_detail_stats_update', () => db.update(visitStats)
+                        .set({ pv: sql`${visitStats.pv} + 1`, hllData: merged.serialize(), updatedAt: new Date() })
+                        .where(eq(visitStats.feedId, feed.id)));
+                    const after = await profileAsync(c, 'feed_detail_stats_reread', () => db.query.visitStats.findFirst({
+                        where: eq(visitStats.feedId, feed.id)
+                    }));
+                    pv = after?.pv ?? 1;
+                    uv = Math.round(merged.count());
+                }
+            } else {
+                // ⚠️ pv 用 SQL 自增，别用"读出来 +1 再写回"：并发浏览会互相覆盖、少计
                 await profileAsync(c, 'feed_detail_stats_update', () => db.update(visitStats)
-                    .set({
-                        pv: newPv,
-                        hllData: newHllData,
-                        updatedAt: new Date()
-                    })
+                    .set({ pv: sql`${visitStats.pv} + 1`, hllData: newHllData, updatedAt: new Date() })
                     .where(eq(visitStats.feedId, feed.id)));
 
-                pv = newPv;
+                pv = stats.pv + 1;
+                // HLL 仍是"读→合并→写回"，并发下可能丢一次基数更新（只影响 UV 估算，不影响 PV）
                 uv = Math.round(hll.count());
             }
 
@@ -519,7 +533,8 @@ export function FeedService(): Hono<{
             ai_summary_error: clearAISummary || isDraft ? "" : undefined,
             alias,
             top,
-            listed: listed ? 1 : 0,
+            // ⚠️ 未传就保持原值：以前无条件写 `listed ? 1 : 0`，前端只改标题时会把文章静默下架
+            listed: listed === undefined ? undefined : listed ? 1 : 0,
             draft: draft === undefined ? undefined : draft ? 1 : 0,
             show_toc: show_toc === undefined ? undefined : show_toc ? 1 : 0,
             ai_summary_enabled: ai_summary_enabled === undefined ? undefined : ai_summary_enabled ? 1 : 0,
@@ -625,11 +640,15 @@ export function SearchService(): Hono<{
         const uid = c.get('uid');
         const page = c.req.query('page');
         const limit = c.req.query('limit');
-        let keyword = c.req.param('keyword');
-
-        keyword = decodeURI(keyword);
-        const page_num = (page ? parseInt(page) > 0 ? parseInt(page) : 1 : 1) - 1;
-        const limit_num = limit ? parseInt(limit) > 50 ? 50 : parseInt(limit) : 20;
+        let keyword = c.req.param('keyword') || '';
+        try {
+            // Hono 可能已经解码过一次；已解码的文本里带裸 `%`（搜「100%」）会让 decodeURI 抛错
+            keyword = decodeURI(keyword);
+        } catch {
+            // 解不开就按原样搜，别把 500 抛给搜索页
+        }
+        const page_num = parsePageParam(page, 1, 10_000) - 1;
+        const limit_num = parsePageParam(limit, 20, 50);
 
         if (keyword === undefined || keyword.trim().length === 0) {
             return c.json({ size: 0, data: [], hasNext: false });
