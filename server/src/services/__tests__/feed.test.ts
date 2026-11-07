@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach } from 'bun:test';
-import { FeedService } from '../feed';
+import { FeedService, SearchService } from '../feed';
 import { buildQueueStatusResponse } from '../config-queue-status';
 import { Hono } from "hono";
 import type { Variables } from "../../core/hono-types";
@@ -1034,5 +1034,65 @@ describe('FeedService', () => {
 
             expect(res.status).toBe(404);
         });
+    });
+});
+
+/**
+ * 回归：搜索缓存以前键是 `search_${keyword}`、不含视角，
+ * 管理员搜一次（他那版不排 draft）就把草稿写进公共缓存，游客命中也拿到。
+ */
+describe('SearchService - 缓存不能跨视角泄漏草稿', () => {
+    let sqlite: Database;
+    let env: Env;
+    let app: Hono<{ Bindings: Env; Variables: Variables }>;
+
+    beforeEach(async () => {
+        const ctx = await setupTestApp(SearchService);
+        sqlite = ctx.sqlite;
+        env = ctx.env;
+        app = ctx.app;
+
+        await createTestUser(sqlite);
+        sqlite.exec(`
+            INSERT INTO feeds (id, title, content, uid, draft, listed, created_at, updated_at) VALUES
+                (1, '公开文章 关键词', '正文 关键词', 1, 0, 1, unixepoch(), unixepoch()),
+                (2, '草稿标题 关键词', '草稿正文 关键词', 1, 1, 0, unixepoch(), unixepoch())
+        `);
+    });
+
+    afterEach(() => {
+        cleanupTestDB(sqlite);
+    });
+
+    it('管理员搜过之后，游客搜同一个词也拿不到草稿', async () => {
+        // 1. 管理员先搜（他会看到草稿，这是正常的）
+        const adminRes = await app.request('/关键词', {
+            method: 'GET',
+            headers: { 'Authorization': 'Bearer mock_token_1' },
+        }, env);
+        expect(adminRes.status).toBe(200);
+        const adminBody = await adminRes.json() as any;
+        expect(adminBody.size).toBe(2);
+
+        // 2. 游客搜同一个词：只能看到那篇公开的
+        const guestRes = await app.request('/关键词', { method: 'GET' }, env);
+        expect(guestRes.status).toBe(200);
+        const guestBody = await guestRes.json() as any;
+        expect(guestBody.size).toBe(1);
+        expect(guestBody.data).toHaveLength(1);
+        expect(guestBody.data[0].title).toBe('公开文章 关键词');
+    });
+
+    it('游客先搜、管理员后搜，两边各拿各的', async () => {
+        const guestRes = await app.request('/关键词', { method: 'GET' }, env);
+        const guestBody = await guestRes.json() as any;
+        expect(guestBody.size).toBe(1);
+
+        const adminRes = await app.request('/关键词', {
+            method: 'GET',
+            headers: { 'Authorization': 'Bearer mock_token_1' },
+        }, env);
+        const adminBody = await adminRes.json() as any;
+        expect(adminBody.size).toBe(2);
     });
 });

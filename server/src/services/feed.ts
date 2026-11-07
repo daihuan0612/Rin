@@ -635,7 +635,13 @@ export function SearchService(): Hono<{
             return c.json({ size: 0, data: [], hasNext: false });
         }
 
-        const cacheKey = `search_${keyword}`;
+        /**
+         * ⚠️ 缓存里只存**游客版**（已排 draft）的原始行，键上也标了 `guest`。
+         * 以前键是 `search_${keyword}` 且不看视角：管理员搜一次（他那版不排 draft），
+         * 含草稿的行就进了公共缓存，游客搜同一个词直接吃这份 —— 标题/摘要/别名全是明文，
+         * 后面只做 `maskGlassTagged` 打码，不会再把草稿过滤掉。管理员的查询不进缓存。
+         */
+        const cacheKey = `search_guest_${keyword}`;
         const viewer = viewerOf(admin, uid);
         const searchKeyword = `%${keyword}%`;
         const whereClause = or(
@@ -645,7 +651,7 @@ export function SearchService(): Hono<{
             like(feeds.alias, searchKeyword)
         );
 
-        const feed_list = (await profileAsync(c, 'feed_search_cache_db', () => cache.getOrSet(cacheKey, () => db.query.feeds.findMany({
+        const runSearch = () => db.query.feeds.findMany({
             where: admin ? whereClause : and(whereClause, eq(feeds.draft, 0)),
             columns: admin ? undefined : { draft: false, listed: false },
             with: {
@@ -656,7 +662,15 @@ export function SearchService(): Hono<{
                 user: { columns: { id: true, username: true, avatar: true } }
             },
             orderBy: [desc(feeds.createdAt), desc(feeds.updatedAt)],
-        })))).map(({ content, hashtags, summary, ai_summary, ...other }: any) => {
+        });
+
+        // 读者与游客拿的是同一批行（都排掉了 draft），打码在上面的 map 里按视角做，
+        // 所以读者可以复用游客缓存，管理员必须绕过缓存。
+        const rawRows = await profileAsync(c, 'feed_search_db', () =>
+            admin ? runSearch() : cache.getOrSet(cacheKey, runSearch),
+        );
+
+        const feed_list = (rawRows as any[]).map(({ content, hashtags, summary, ai_summary, ...other }: any) => {
             const plainText = stripMarkdown(maskGlassTagged(content, viewer));
             const taggedSummary = maskGlassTagged(summary, viewer);
             return {

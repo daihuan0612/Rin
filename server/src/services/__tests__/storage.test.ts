@@ -176,8 +176,8 @@ describe('StorageService', () => {
 
             const r2App = createAppWithEnv(r2Env, 1);
             const formData = new FormData();
-            formData.append('key', 'test.txt');
-            formData.append('file', new File(['test content'], 'test.txt', { type: 'text/plain' }));
+            formData.append('key', 'test.png');
+            formData.append('file', new File(['test content'], 'test.png', { type: 'image/png' }));
 
             const res = await r2App.request('/', {
                 method: 'POST',
@@ -186,10 +186,39 @@ describe('StorageService', () => {
 
             expect(res.status).toBe(200);
             expect(putCalls).toHaveLength(1);
-            expect(putCalls[0]?.key).toMatch(/^images\/[a-f0-9]+\.txt$/);
-            expect(putCalls[0]?.type).toBe('text/plain;charset=utf-8');
+            expect(putCalls[0]?.key).toMatch(/^images\/[a-f0-9]+\.png$/);
+            expect(putCalls[0]?.type).toBe('image/png');
             const payload = await res.json() as { url: string };
-            expect(payload.url).toMatch(/^https:\/\/images\.example\.com\/images\/[a-f0-9]+\.txt$/);
+            expect(payload.url).toMatch(/^https:\/\/images\.example\.com\/images\/[a-f0-9]+\.png$/);
+        });
+
+        it('should reject non-image uploads (html / svg / txt)', async () => {
+            const r2Env = createMockEnv({
+                R2_BUCKET: { put: async () => { throw new Error('should not be called'); } } as unknown as R2Bucket,
+                S3_ACCESS_HOST: 'https://images.example.com' as any,
+                S3_ENDPOINT: '' as any,
+                S3_BUCKET: '' as any,
+                S3_ACCESS_KEY_ID: '',
+                S3_SECRET_ACCESS_KEY: '',
+            });
+            const r2App = createAppWithEnv(r2Env, 1);
+
+            for (const [name, type] of [['evil.html', 'text/html'], ['evil.svg', 'image/svg+xml'], ['note.txt', 'text/plain']]) {
+                const formData = new FormData();
+                formData.append('key', name);
+                formData.append('file', new File(['<script>alert(1)</script>'], name, { type }));
+                const res = await r2App.request('/', { method: 'POST', body: formData }, r2Env);
+                expect(res.status).toBe(400);
+            }
+        });
+
+        it('should reject an upload without a key', async () => {
+            const r2Env = createMockEnv({ R2_BUCKET: {} as unknown as R2Bucket });
+            const r2App = createAppWithEnv(r2Env, 1);
+            const formData = new FormData();
+            formData.append('file', new File(['x'], 'a.png', { type: 'image/png' }));
+            const res = await r2App.request('/', { method: 'POST', body: formData }, r2Env);
+            expect(res.status).toBe(400);
         });
 
         it('should return an /api/blob URL when R2 is configured without S3_ACCESS_HOST', async () => {
@@ -220,8 +249,8 @@ describe('StorageService', () => {
 
             const r2App = createAppWithEnv(r2Env, 1);
             const formData = new FormData();
-            formData.append('key', 'test.txt');
-            formData.append('file', new File(['test'], 'test.txt', { type: 'text/plain' }));
+            formData.append('key', 'test.png');
+            formData.append('file', new File(['test'], 'test.png', { type: 'image/png' }));
 
             const res = await r2App.request('/', {
                 method: 'POST',
@@ -232,7 +261,7 @@ describe('StorageService', () => {
             expect(putCalls).toHaveLength(1);
 
             const payload = await res.json() as { url: string };
-            expect(payload.url).toMatch(/^http:\/\/localhost\/api\/blob\/images\/[a-f0-9]+\.txt$/);
+            expect(payload.url).toMatch(/^http:\/\/localhost\/api\/blob\/images\/[a-f0-9]+\.png$/);
         });
 
         it('should return 500 when S3_ENDPOINT is not defined without R2 binding', async () => {
@@ -242,8 +271,8 @@ describe('StorageService', () => {
             const appNoS3 = createAppWithEnv(envNoS3, 1);
 
             const formData = new FormData();
-            formData.append('key', 'test.txt');
-            formData.append('file', new File(['test content'], 'test.txt', { type: 'text/plain' }));
+            formData.append('key', 'test.png');
+            formData.append('file', new File(['test content'], 'test.png', { type: 'image/png' }));
             
             const res = await appNoS3.request('/', {
                 method: 'POST',
@@ -261,8 +290,8 @@ describe('StorageService', () => {
             const appNoKey = createAppWithEnv(envNoKey, 1);
 
             const formData = new FormData();
-            formData.append('key', 'test.txt');
-            formData.append('file', new File(['test content'], 'test.txt', { type: 'text/plain' }));
+            formData.append('key', 'test.png');
+            formData.append('file', new File(['test content'], 'test.png', { type: 'image/png' }));
             
             const res = await appNoKey.request('/', {
                 method: 'POST',
@@ -317,6 +346,8 @@ describe('StorageService', () => {
 
             expect(res.status).toBe(200);
             expect(res.headers.get('content-type')).toBe('text/plain');
+            // 非图片一律当附件下发：不能让 text/html / svg 在本站域内联执行
+            expect(res.headers.get('content-disposition')).toBe('attachment');
             expect(await res.text()).toBe('test');
         });
     });

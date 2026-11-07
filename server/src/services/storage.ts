@@ -11,6 +11,18 @@ function buf2hex(buffer: ArrayBuffer) {
         .join('');
 }
 
+/**
+ * 上传白名单（2026-11-07 按交叉审查收紧）。
+ *
+ * 以前后缀直接取客户端给的 `key`、content-type 也直接用 `file.type`，而入口只判 `uid`，
+ * 于是**任何注册读者**都能往本站域塞一个 `x.html` 或带脚本的 `.svg`，
+ * 再通过 `/api/blob/<sha1>.html` 同源打开 —— 存储型 XSS，能偷管理员 cookie。
+ * 现在只收常见图片格式，其余一律 400；BlobService 那头也补了兜底。
+ */
+const ALLOWED_IMAGE_EXT = /^(jpe?g|png|gif|webp|avif|ico)$/i;
+/** 免费额度下别让一个人把 R2/S3 写满 */
+const MAX_UPLOAD_BYTES = 10 * 1024 * 1024;
+
 export function StorageService(): Hono {
     const app = new Hono();
 
@@ -24,10 +36,31 @@ export function StorageService(): Hono {
         }
 
         const body = await profileAsync(c, 'storage_parse', () => c.req.parseBody());
-        const key = body.key as string;
+        const key = typeof body.key === 'string' ? body.key : '';
         const file = body.file as File;
 
-        const suffix = key.includes(".") ? key.split('.').pop() : "";
+        if (!key) {
+            return c.text('key is required', 400);
+        }
+        if (!file || typeof file.arrayBuffer !== 'function') {
+            return c.text('file is required', 400);
+        }
+        if (file.size > MAX_UPLOAD_BYTES) {
+            return c.text('file is too large', 413);
+        }
+
+        const suffix = key.includes('.') ? (key.split('.').pop() || '').toLowerCase() : '';
+        if (!ALLOWED_IMAGE_EXT.test(suffix)) {
+            return c.text('only image files are allowed', 400);
+        }
+        const declaredType = (file.type || '').toLowerCase();
+        if (declaredType && !declaredType.startsWith('image/')) {
+            return c.text('only image files are allowed', 400);
+        }
+        if (declaredType === 'image/svg+xml') {
+            return c.text('svg is not allowed', 400);
+        }
+
         const fileBuffer = await profileAsync(c, 'storage_file_buffer', () => file.arrayBuffer());
         const hashArray = await profileAsync(c, 'storage_hash', () => crypto.subtle.digest(
             { name: 'SHA-1' },
@@ -37,7 +70,7 @@ export function StorageService(): Hono {
         const hashkey = `${hash}.${suffix}`;
 
         try {
-            const result = await profileAsync(c, 'storage_put', () => putStorageObject(env, hashkey, file, file.type, new URL(c.req.url).origin));
+            const result = await profileAsync(c, 'storage_put', () => putStorageObject(env, hashkey, file, declaredType || 'application/octet-stream', new URL(c.req.url).origin));
             return c.json({ url: result.url });
         } catch (e: any) {
             console.error(e.message);
@@ -206,6 +239,15 @@ export function BlobService(): Hono {
             }
             // 上传时的 Content-Type 来自客户端，别让浏览器把它当 HTML 执行
             headers.set("X-Content-Type-Options", "nosniff");
+            /**
+             * 2026-11-07：只有**真图片**允许内联渲染，其余一律当附件下载。
+             * `nosniff` 只阻止嗅探，不阻止 `text/html` / `image/svg+xml` 按自己的类型执行 ——
+             * 而上传入口只判 uid，等于任何注册读者都能在本站域托管一个会跑脚本的页面。
+             */
+            const serveType = (headers.get("Content-Type") || "").toLowerCase();
+            if (!/^image\/(jpeg|png|gif|webp|avif|x-icon|vnd\.microsoft\.icon)$/.test(serveType)) {
+                headers.set("Content-Disposition", "attachment");
+            }
 
             return new Response(response.body, {
                 status: response.status,

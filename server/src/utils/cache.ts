@@ -363,10 +363,12 @@ export class CacheImpl {
     }
 
     async deletePrefix(prefix: string) {
-        for (let key of this.cache.keys()) {
-            console.log('Cache key', key);
+        // ⚠️ 必须先 load：CacheImpl 是**每请求新建**的（hono-middleware 的 LazyInitContainer），
+        // 内存 Map 默认是空的。不 load 就删，下面 save() 的差集（DB 有、内存没有 ⇒ 删）
+        // 会把这一整个 type 的行全部删掉 —— 发一篇文章就把列表缓存、搜索缓存、注册限流计数一起清空。
+        if (!this.loaded) await this.load();
+        for (const key of [...this.cache.keys()]) {
             if (key.startsWith(prefix)) {
-                console.log('Cache delete', key);
                 await this.delete(key, false);
             }
         }
@@ -374,10 +376,9 @@ export class CacheImpl {
     }
 
     async deleteSuffix(suffix: string) {
-        for (let key of this.cache.keys()) {
-            console.log("Cache key", key);
+        if (!this.loaded) await this.load();
+        for (const key of [...this.cache.keys()]) {
             if (key.endsWith(suffix)) {
-                console.log("Cache delete", key);
                 await this.delete(key, false);
             }
         }
@@ -385,11 +386,14 @@ export class CacheImpl {
     }
 
     async clear() {
+        if (!this.loaded) await this.load();
         this.cache.clear();
         await this.storageProvider.clear();
     }
 
     async save() {
+        // 同上：没 load 过就落库，等于拿一张空快照去覆盖持久层
+        if (!this.loaded) await this.load();
         await this.storageProvider.save();
     }
 

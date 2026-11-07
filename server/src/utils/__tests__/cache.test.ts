@@ -794,3 +794,32 @@ describe('CacheImpl - 公共缓存开关', () => {
         expect(await freshClientConfig.get('site.name')).toBe('Rin Test');
     });
 });
+/**
+ * 回归（交叉审查 2026-11-07）：CacheImpl 是每请求新建的，内存 Map 默认是空的。
+ * 未 load 就 deletePrefix，下面 save() 的差集（DB 有、内存没有 ⇒ 删）会把
+ * 这一整个 type 的行全部删光 —— 发一篇文章就把列表缓存、搜索缓存、注册限流计数一起清空。
+ */
+describe('CacheImpl - 未加载时删除前缀不能误删整表', () => {
+    it('新实例 deletePrefix 只删命中前缀的键', async () => {
+        const { db, sqlite } = createTestDB();
+        const env = createMockEnv('database');
+        try {
+            const writer = new CacheImpl(db as any, env, 'cache', 'database');
+            await writer.set('feeds_page_0', { a: 1 });
+            await writer.set('search_guest_x', { b: 2 });
+            await writer.set('reg_try_1.2.3.4', { hits: [1] });
+
+            // 模拟"另一个请求"：全新实例，还没 load 过
+            const fresh = new CacheImpl(db as any, env, 'cache', 'database');
+            expect(fresh.loaded).toBe(false);
+            await fresh.deletePrefix('feeds_');
+
+            const reader = new CacheImpl(db as any, env, 'cache', 'database');
+            expect(await reader.get('feeds_page_0')).toBeUndefined();
+            expect(await reader.get('search_guest_x')).toEqual({ b: 2 });
+            expect(await reader.get('reg_try_1.2.3.4')).toEqual({ hits: [1] });
+        } finally {
+            sqlite.close();
+        }
+    });
+});

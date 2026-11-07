@@ -99,6 +99,32 @@ describe('邀请码注册', () => {
         expect(count.c).toBe(1);
     });
 
+    it('两个请求并发用同一枚码 ⇒ 只能有一个注册成功、只建出一个用户', async () => {
+        makeInvite('RRRR-SSSS');
+
+        // 交叉审查 2026-11-07：原来"抢码"的条件判的是 used_by IS NULL，而 used_by 要等建完用户
+        // 才写 ⇒ 并发的两个请求条件同时成立，一枚码能注册出两个人。现在 used_by 和条件更新一起写。
+        // 注：bun:sqlite 是同步的，没法确定性复现交错；这条守的是最终不变量，不是时序本身。
+        const [a, b] = await Promise.all([
+            register({ username: 'raceA', password: 'secret123', invite: 'RRRR-SSSS' }),
+            register({ username: 'raceB', password: 'secret123', invite: 'RRRR-SSSS' }),
+        ]);
+
+        const statuses = [a.status, b.status].sort();
+        expect(statuses.filter((s) => s === 200)).toHaveLength(1);
+        expect(statuses).toContain(403);
+
+        const created = sqlite.prepare(
+            "SELECT COUNT(*) as c FROM users WHERE username IN ('raceA','raceB')"
+        ).get() as any;
+        expect(created.c).toBe(1);
+
+        const invite = sqlite.prepare(
+            "SELECT used_by FROM invite_codes WHERE code = 'RRRR-SSSS'"
+        ).get() as any;
+        expect(invite.used_by).not.toBeNull();
+    });
+
     it('码不存在 / 被作废 ⇒ 拒绝', async () => {
         const missing = await register({ username: 'userC', password: 'secret123', invite: 'ZZZZ-ZZZZ' });
         expect(missing.status).toBe(403);

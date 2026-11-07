@@ -223,18 +223,16 @@ export function PasswordAuthService(): Hono<{
 
         const hashedPassword = await profileAsync(c, 'auth_register_hash', () => hashPassword(password));
 
-        // 先抢码（条件更新，并发下只有一个请求能成功），再建用户
-        const claimed = await profileAsync(c, 'auth_register_claim', () =>
-            db.update(inviteCodes)
-                .set({ used_at: new Date() })
-                .where(and(eq(inviteCodes.id, invite.id), isNull(inviteCodes.used_by)))
-                .returning({ id: inviteCodes.id })
-        );
-        if (!claimed || claimed.length === 0) {
-            throw new ForbiddenError('Invalid invite code');
-        }
-
-        let insertedId: number;
+        /**
+         * ⚠️ 顺序：**先建用户 → 再用条件更新抢码（同时写 used_by）**。
+         *
+         * 旧写法是「先抢码，`set({ used_at })`，条件 `isNull(used_by)`」，而 `used_by`
+         * 要等建完用户才写 —— 并发时两个请求的条件同时成立，两次更新都成功、两个用户都建出来，
+         * 一枚码注册出两个人，后写的 used_by 还把先注册者的对应关系顶掉。
+         *
+         * 现在把 `used_by` 一起写进条件更新：只有一条能命中；没抢到的把刚建的用户删掉。
+         */
+        let insertedId: number | null = null;
         try {
             const result = await profileAsync(c, 'auth_register_insert', () =>
                 db.insert(users).values({
@@ -256,25 +254,41 @@ export function PasswordAuthService(): Hono<{
             }
             insertedId = result[0].insertedId;
         } catch (error) {
-            // 建用户失败就把码放回去，别让它白白作废
-            await profileAsync(c, 'auth_register_release', () =>
-                db.update(inviteCodes).set({ used_at: null }).where(eq(inviteCodes.id, invite.id))
-            ).catch(() => undefined);
+            // 注意：库里 `users.username` **没有**唯一约束（schema.ts），并发同名这一层
+            // 目前其实挡不住；这里留着只是兜住"以后加了唯一索引"的情况。跟本次修复无关。
+            if (String((error as any)?.message || '').toUpperCase().includes('UNIQUE')) {
+                throw new BadRequestError('Username already taken');
+            }
             throw error;
         }
 
-        await profileAsync(c, 'auth_register_bind', () =>
-            db.update(inviteCodes).set({ used_by: insertedId }).where(eq(inviteCodes.id, invite.id))
-        );
+        if (insertedId === null) {
+            throw new InternalServerError('Failed to create user');
+        }
+        const newUserId = insertedId;
 
-        const token = await profileAsync(c, 'auth_register_token', () => jwt.sign({ id: insertedId }));
+        const claimed = await profileAsync(c, 'auth_register_claim', () =>
+            db.update(inviteCodes)
+                .set({ used_at: new Date(), used_by: newUserId })
+                .where(and(eq(inviteCodes.id, invite.id), isNull(inviteCodes.used_by)))
+                .returning({ id: inviteCodes.id })
+        );
+        if (!claimed || claimed.length === 0) {
+            // 码在这中间被别人抢走了：把这次建出来的账号删掉，别留下"没花钱就进站"的用户
+            await profileAsync(c, 'auth_register_rollback', () =>
+                db.delete(users).where(eq(users.id, newUserId))
+            ).catch(() => undefined);
+            throw new ForbiddenError('Invalid invite code');
+        }
+
+        const token = await profileAsync(c, 'auth_register_token', () => jwt.sign({ id: newUserId }));
         setJWTCookie(c, token);
 
         return c.json({
             success: true,
             token,
             user: {
-                id: insertedId,
+                id: newUserId,
                 username,
                 avatar: '',
                 permission: false,
